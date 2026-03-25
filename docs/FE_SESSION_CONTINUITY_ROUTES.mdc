@@ -1,0 +1,101 @@
+# FE — Tính liên tục & lộ trình route (phiên làm việc tiếp theo)
+
+Mục đích: giữ **toàn vẹn** phần đã làm (layout, UI dùng lại, dashboard demo, auth), tránh regression khi bổ sung route; định hướng triển khai **đúng sitemap** và API đã chốt trong docs.
+
+## 1) Đọc bắt buộc trước khi code thêm route hoặc đổi luồng
+
+Thứ tự ưu tiên (đã có trong workflow dự án):
+
+1. `docs/MAIN_RULES.mdc` — nghiệp vụ & rule hệ thống
+2. `docs/FRONTEND_SITEMAP_UX.mdc` — **URL, block UI, quyền Owner/Member** (nguồn sự thật cho route FE)
+3. `docs/FRONTEND_SITEMAP_ADMIN_STAFF.mdc` — route `/admin/*`, `/staff/*`, ma trận API ADMIN vs STAFF (duyệt template chỉ STAFF)
+4. `docs/FE_SECURITY_CONTRACT.mdc` — JWT, workspace, 401/403, public API key
+5. `docs/FRONTEND_API_GUIDE_NEXTJS.mdc` — `comviaFetch`, path backend `/workspaces/:id/...`
+6. `docs/BACKEND_AUTH_API_SETUP.mdc` — endpoint thực tế backend
+
+Nếu **code hiện tại** lệch `.mdc`, coi `.mdc` là product intent: khi sửa, **cân nhắc chỉnh code về sitemap** thay vì “đi tắt” URL mới lệch tài liệu (trừ khi team chủ động cập nhật `.mdc`).
+
+## 2) Baseline đã có trong repo (coi là vùng cần bảo vệ)
+
+Các thay đổi sau này **không được phá vỡ** nếu không có lý do rõ và cập nhật đồng bộ toàn chỗ dùng:
+
+| Khu vực | Vị trí / ghi chú |
+|--------|-------------------|
+| Layout app (shell) | `app-chrome.tsx` (sidebar + `workspace-topbar`), `app-shell.tsx`, `internal-app-shell.tsx`, `internal-sidebar.tsx`, `workspace-sidebar.tsx`, `workspace-switcher.tsx`, `sidebar-user-card.tsx` |
+| UI primitives | `components/ui/*` — ưu tiên variant/props có sẵn; page không tự hardcode màu/font tùy ý (theo rule `components-first-styling`) |
+| Layout route `/app` | `app/app/layout.tsx` bọc `AppShell` |
+| Workspace segment | `app/app/w/[workspaceId]/layout.tsx` (hiện pass-through) |
+| Trang đã tồn tại | `app/page.tsx`, `app/auth/login`, `register`, `verify-otp`, `app/app/w/[workspaceId]/dashboard/page.tsx`, `app/ui-kit/page.tsx` |
+
+Khi sửa sidebar/nav: cập nhật **cùng lúc** `href`, active state (`usePathname`), và mọi link hard-code tới `workspaceId`.
+
+### Chat Sidebar — triển khai ở phase sau (không được “bỏ ngoài” quy định)
+
+- **Chat Sidebar** ở đây là thanh/cột **chat tích hợp trong app** (khác với `workspace-sidebar.tsx` đang dùng cho điều hướng). Phần này **chưa nằm trong baseline** và dự kiến **xây sau** các route + layout cốt lõi theo sitemap.
+- **Không** hiểu là được phép làm tự do khi tới phase đó: khi bắt đầu code Chat Sidebar vẫn phải tuân **cùng bộ quy định** như mọi FE khác — tối thiểu:
+  - `docs/FRONTEND_SITEMAP_UX.mdc` — vị trí/hành vi UI, visibility theo role, pattern route nếu có màn/chat gắn workspace;
+  - `docs/FE_SECURITY_CONTRACT.mdc` — JWT, ngữ cảnh workspace, 401/403; không log hay hard-code token/key;
+  - `docs/FRONTEND_API_GUIDE_NEXTJS.mdc` + `docs/BACKEND_AUTH_API_SETUP.mdc` — mọi gọi API đúng path/header và quyền;
+  - `docs/MAIN_RULES.mdc` — nếu chat dính nghiệp vụ (audit, workspace, v.v.);
+  - rule **components-first-styling**: ưu tiên `components/ui`, không tự thêm token visual một mẻ trên page.
+- Nếu tại thời điểm làm Chat Sidebar mà **sitemap (hoặc `.mdc` khác) chưa mô tả** đủ block/flow chat: **cập nhật `FRONTEND_SITEMAP_UX.mdc` (hoặc doc product tương ứng) trước hoặc song song** với PR FE — tránh drift giữa code và tài liệu.
+
+## 3) Quy tắc không regression (ngắn gọn, bắt buộc)
+
+- **Route mới** dùng đúng pattern App Router và **đúng path trong `FRONTEND_SITEMAP_UX.mdc`** (prefix `/app/w/[workspaceId]/...`, `/app/workspaces`, `/admin/...`, v.v.).
+- **Dynamic `workspaceId`**: lấy từ `params` hoặc `useParams()`; không hard-code workspace thật trong production code (demo `main-workspace` chỉ là fallback UI — thu hẹp dần khi có data thật).
+- **Gọi API**: dùng helper chuẩn dự án (`comviaFetch` / client đã thống nhất), header `Authorization: Bearer`, path backend `/workspaces/:workspaceId/...` như `FRONTEND_API_GUIDE_NEXTJS.mdc`.
+- **401 / 403**: xử lý thống nhất (redirect login / thông báo không đủ quyền) theo `FE_SECURITY_CONTRACT.mdc`.
+- **Quyền Owner vs Member**: ẩn/disable nút theo ma trận sitemap mục *Role-based UI Visibility*; không dựa chỉ FE — backend vẫn là chốt.
+- **Trạng thái page** (sitemap §8): loading, empty, error, 403, 401 — áp dụng cho page mới; có thể tái dùng pattern từ dashboard/ui-kit.
+
+## 4) Route & nav: lệch giữa code hiện tại và sitemap (cần xử lý khi làm tiếp)
+
+`FRONTEND_SITEMAP_UX.mdc` định nghĩa sidebar gồm: Dashboard, **Templates**, Messaging, **OA**, Members, **Wallet**, **Orders/Invoices**, **API Keys**.
+
+Trong `components/layout/workspace-sidebar.tsx` hiện có thêm/khác: **Messages** (segment `messages`), **Analytics**, **Settings** — và **chưa** có các mục riêng OA, Orders, Invoices, Topup như spec.
+
+**Hướng xử lý khuyến nghị** khi triển khai route đầy đủ:
+
+1. Căn chỉnh `navItems` (label + `segment`/`href`) với **§9 Suggested Layouts** trong sitemap.
+2. Messaging: thay vì một segment mơ hồ `messages`, dùng cấu trúc sitemap — ví dụ `messages/send-single`, `messages/logs` (layout nhóm `messages` với `layout.tsx` nếu cần).
+3. Tránh để link sidebar trỏ tới route **chưa tạo** `page.tsx` (404) sau khi merge: hoặc tạo placeholder page tối thiểu, hoặc tạm `disabled` + tooltip “sắp có” (ưu tiên vẫn là tạo route shell sớm).
+
+## 5) Danh sách route ưu tiên triển khai (sau dashboard)
+
+Thực hiện lần lượt theo nhu cầu nghiệp vụ; mỗi route nên có tối thiểu: layout kế thừa `AppShell`, page với states §8 sitemap, gọi API tương ứng trong `BACKEND_AUTH_API_SETUP.mdc` / `FRONTEND_API_GUIDE_NEXTJS.mdc`.
+
+**Trong workspace** (`/app/w/[workspaceId]/...`):
+
+- [x] `templates`, `templates/new`, `templates/[templateId]`
+- [x] `messages/send-single`, `messages/logs`
+- [x] `oa`
+- [x] `members`
+- [x] `wallet`, `topup`
+- [x] `orders`, `orders/[orderId]`, `invoices`, `invoices/[invoiceId]`
+- [x] `api-keys`
+
+**App không gắn workspace cụ thể trong path** (theo sitemap):
+
+- [x] `app/workspaces`, `app/workspaces/new`
+- [x] `app/profile`, `app/settings/security`
+
+**Public** (bổ sung nếu thiếu):
+
+- [x] `auth/forgot-password` (placeholder được phép theo sitemap)
+
+**Admin / Staff** (khi FE sẵn sàng):
+
+- [x] `admin/...`, `staff/...` theo §5–6 sitemap (kèm role gate; template review dùng workspace mà user/STAFF thuộc)
+
+## 6) Checklist trước khi coi một PR/route xong
+
+- [ ] URL khớp `FRONTEND_SITEMAP_UX.mdc` (hoặc đã cập nhật `.mdc` + sidebar).
+- [ ] Không phá `AppShell` / không làm vỡ auth pages đã có.
+- [ ] UI dùng `components/ui` đúng variant; không thêm styling một mẻ trái rule styling dự án.
+- [ ] Có xử lý lỗi API và 401/403.
+- [ ] Owner-only actions đã ẩn hoặc vô hiệu hóa với Member (theo ma trận sitemap).
+
+---
+
+*Tài liệu này bổ sung cho các `.mdc` nghiệp vụ/kỹ thuật; không thay thế chúng. Cập nhật file này khi baseline “đã xong” thay đổi (ví dụ sau khi merge xong toàn bộ route workspace).*

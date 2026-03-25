@@ -1,0 +1,11 @@
+---
+description: Enforce component-first styling from components/ui
+alwaysApply: true
+---
+
+# Components First Styling
+
+- When using UI primitives from `components/ui` (e.g. `Button`, `Input`, `Card`, `Modal`), consume their built-in variants/props first.
+- In page-level code, do not hardcode visual design tokens for those primitives (no custom hex colors, no fixed px font sizes, no custom background/border/text colors) unless explicitly requested.
+- Allowed page-level utility overrides are layout-only adjustments (e.g. `w-full`, grid/flex spacing, positioning).
+- If a new visual style is needed, update the component in `components/ui` (or add a new variant) instead of styling one-off in page files.

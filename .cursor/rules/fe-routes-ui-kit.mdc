@@ -1,0 +1,14 @@
+---
+description: Khi thêm/sửa route app hoặc component UI dùng chung
+globs: app/**/*.tsx,components/**/*.tsx
+alwaysApply: false
+---
+
+# Route & UI dùng lại
+
+- Trước khi thêm route hoặc màn mới: đọc `docs/FRONTEND_SITEMAP_UX.mdc`, `docs/FE_SESSION_CONTINUITY_ROUTES.mdc`, và gọi API qua `lib/comviaFetch.ts` + token từ `lib/auth.ts` (không hard-code dữ liệu nghiệp vụ giả trên page production).
+- Trang trong workspace (`/app/w/[workspaceId]/...`) nên dùng `useWorkspaceContext()` / `isWorkspaceOwner()` từ `components/workspace/workspace-gate.tsx` để ẩn hành động Owner-only (backend vẫn là chốt).
+- Trạng thái trang: dùng `PageLoading`, `PageError`, `PageEmpty`, `PageForbidden` từ `components/app/page-state.tsx`; tiêu đề block dùng `PageHeader` từ `components/app/page-header.tsx`.
+- Bảng động: ưu tiên `SimpleTable` (`components/ui/simple-table.tsx`); badge trạng thái API: `EntityStatusBadge`.
+- Mỗi primitive UI mới hoặc pattern lặp lại nên có ví dụ trên `app/ui-kit/page.tsx` (section tương ứng).
+- Nút kết hợp `next/link`: dùng `Button` với prop `asChild` (`components/ui/button.tsx`).

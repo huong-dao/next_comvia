@@ -1,0 +1,19 @@
+---
+description: Always prioritize MDC docs for project context
+alwaysApply: true
+---
+
+# MDC First Workflow
+
+- Before implementing, changing architecture, or planning features, read relevant `.mdc` docs in `docs/`.
+- Prioritize these files first when available:
+  - `docs/MAIN_RULES.mdc`
+  - `docs/FRONTEND_SITEMAP_UX.mdc`
+  - `docs/FRONTEND_SITEMAP_ADMIN_STAFF.mdc` (route + API ADMIN/STAFF, khác `FRONTEND_SITEMAP_UX` ở chi tiết backoffice)
+  - `docs/FE_SESSION_CONTINUITY_ROUTES.mdc` (baseline FE đã làm + route tiếp theo, tránh regression)
+  - `docs/FE_SECURITY_CONTRACT.mdc`
+  - `docs/FRONTEND_API_GUIDE_NEXTJS.mdc`
+  - `docs/BACKEND_AUTH_API_SETUP.mdc`
+- If docs conflict with code, treat `.mdc` as product intent and call out the mismatch explicitly.
+- When answering or implementing, align naming, roles, routes, and flows with `.mdc` definitions.
+- If a task is unrelated to product/domain logic (e.g., tiny styling fix), keep this lightweight but still check whether an `.mdc` rule applies.

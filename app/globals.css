@@ -1,0 +1,75 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #faf8ff;
+  --surface: #ffffff;
+  --surface-muted: #eef2f8;
+  --card: #ffffff;
+  --foreground: #0f172a;
+  --muted-foreground: #5b6b83;
+  --border: #d9e2ef;
+  --ring: #8ac9ff;
+  --primary: #17bbff;
+  --primary-hover: #0ea5e9;
+  --secondary: #1bc2ff;
+  --accent: #bfb8ff;
+  --danger: #f87171;
+  --success: #22c55e;
+  --shadow-soft: 0 16px 44px rgba(14, 26, 48, 0.08);
+  --button-ghost-fg: #334155;
+  --button-outline-fg: #334155;
+}
+
+.dark {
+  --background: #090f1d;
+  --surface: #121b32;
+  --surface-muted: #1a2542;
+  --card: #161f37;
+  --foreground: #e8edf8;
+  --muted-foreground: #94a3bf;
+  --border: #283454;
+  --ring: #8ac9ff;
+  --primary: #17bbff;
+  --primary-hover: #3cd2ff;
+  --secondary: #1bc2ff;
+  --accent: #bfb8ff;
+  --danger: #f87171;
+  --success: #22c55e;
+  --shadow-soft: 0 18px 50px rgba(0, 8, 22, 0.45);
+  --button-ghost-fg: var(--secondary);
+  --button-outline-fg: var(--secondary);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --font-sans: var(--font-app-sans);
+  --font-mono: var(--font-app-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-app-sans), Arial, Helvetica, sans-serif;
+}
+
+* {
+  border-color: var(--border);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: color-mix(in oklab, var(--muted-foreground) 82%, transparent);
+}
