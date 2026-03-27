@@ -1,13 +1,13 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { PageHeader } from "@/components/app/page-header";
 import { PageForbidden } from "@/components/app/page-state";
 import { isWorkspaceOwner, useWorkspaceContext } from "@/components/workspace/workspace-gate";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input, Textarea } from "@/components/ui/input";
+import { Input, Select, Textarea } from "@/components/ui/input";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken, getStoredUser } from "@/lib/auth";
 import { formatVND } from "@/lib/utils";
@@ -20,6 +20,17 @@ type QrRes = {
   paymentRef?: string;
   qrContent?: string;
   qrExpiredAt?: string;
+};
+
+type MoneyAccountRow = {
+  id?: string;
+  accountNumber?: string;
+  bankName?: string;
+  bankCode?: string;
+  pay2sBankId?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export default function TopupPage() {
@@ -40,6 +51,9 @@ export default function TopupPage() {
   const [whBusy, setWhBusy] = useState(false);
   const [whMsg, setWhMsg] = useState<string | null>(null);
 
+  const [moneyAccounts, setMoneyAccounts] = useState<MoneyAccountRow[]>([]);
+  const [moneyAccountId, setMoneyAccountId] = useState<string | null>(null);
+
   const vat = useMemo(() => {
     const n = Number(amount.replace(/\D/g, "")) || 0;
     return Math.round(n * 0.1);
@@ -55,6 +69,25 @@ export default function TopupPage() {
   if (!owner) {
     return <PageForbidden message="Chỉ Owner mới được tạo QR nạp tiền." backHref={`/app/w/${workspaceId}/wallet`} />;
   }
+
+  const fetchMoneyAccounts = async () => {
+    try {
+      const res = await comviaFetch<{ success: boolean; data: MoneyAccountRow[]; message: string }>(`/public/money-accounts/active-for-topup`, {
+        token: getAccessToken() ?? undefined,
+      });
+      if (!res.success) {
+        throw new Error(res.message);
+      }
+      setMoneyAccounts(res.data);
+      setMoneyAccountId(res.data[0].id ?? null);
+    } catch (err) {
+      alert(err instanceof ComviaApiError ? err.message : "Không lấy được danh sách tài khoản ngân hàng.");
+    }
+  };
+    
+  useEffect(() => {
+    void fetchMoneyAccounts();
+  }, []);
 
   async function createQr() {
     const token = getAccessToken();
@@ -111,8 +144,8 @@ export default function TopupPage() {
     <div>
       <PageHeader
         eyebrow="Topup"
-        title="Nạp credit (QR mock)"
-        description="Hiển thị breakdown VAT 10% theo MAIN_RULES. Thanh toán qua cổng mock."
+        title="Nạp credit"
+        description="VAT 10%"
       />
 
       <div className="grid gap-6 lg:grid-cols-2">
@@ -122,6 +155,18 @@ export default function TopupPage() {
               Số tiền nạp (trước VAT)
             </label>
             <Input value={amount} onChange={(e) => setAmount(e.target.value)} inputMode="numeric" />
+          </div>
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Tài khoản ngân hàng
+            </label>
+            <Select value={moneyAccountId} onValueChange={(value) => setMoneyAccountId(value)}>
+              {moneyAccounts.map((account) => (
+                <option selected={moneyAccountId === account.id} key={account.id} value={account.id}>
+                  {account.bankCode} - {account.bankName} - {account.accountNumber}
+                </option>
+              ))}
+            </Select>
           </div>
           <div className="rounded-xl bg-surface-muted p-4 text-sm space-y-2">
             <div className="flex justify-between">
@@ -191,7 +236,7 @@ export default function TopupPage() {
         </Card>
       ) : (
         <p className="mt-4 text-xs text-muted-foreground">
-          Mô phỏng webhook chỉ hiển thị khi tài khoản có role ADMIN (theo tài liệu API).
+          Vui lòng liên hệ số điện thoại 0909090909 nếu có bất kỳ lỗi liên quan đến nạp tiền.
         </p>
       )}
     </div>

@@ -82,6 +82,12 @@ const adminLinks = [
     href: "/staff/templates-review/submitted",
     icon: HiOutlineBolt,
   },
+  {
+    title: "Create Money Account",
+    description: "Chức năng tạo tài khoản ngân hàng công ty.",
+    href: "/admin/money-accounts",
+    icon: HiOutlineBolt,
+  },
 ] as const;
 
 export default function AdminOverviewPage() {
