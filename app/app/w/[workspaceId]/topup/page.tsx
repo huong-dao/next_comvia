@@ -18,8 +18,10 @@ type QrRes = {
   topupCode?: string;
   paymentProvider?: string;
   paymentRef?: string;
-  qrContent?: string;
-  qrExpiredAt?: string;
+  qrCodeUrl?: string; // Thêm dòng này
+  amountExclVat?: number;
+  vatAmount?: number;
+  amountInclVat?: number;
 };
 
 type MoneyAccountRow = {
@@ -101,10 +103,13 @@ export default function TopupPage() {
       return;
     }
     try {
-      const res = await comviaFetch<QrRes>(`/topups/workspaces/${workspaceId}/qr`, {
+      const res = await comviaFetch<QrRes>(`/topups/create-with-pay2s`, {
         method: "POST",
         token,
-        body: JSON.stringify({ amountExclVat: n }),
+        headers: {
+          "x-workspace-id": workspaceId, // Tên header này phải khớp với WorkspaceHeaderGuard
+        },
+        body: JSON.stringify({ amountExclVat: n, moneyAccountId: moneyAccountId }),
       });
       setQr(res);
       setWhCode(res.topupCode ?? "");
@@ -188,30 +193,61 @@ export default function TopupPage() {
           {err ? <p className="text-sm text-danger">{err}</p> : null}
         </Card>
 
-        <Card className="space-y-3">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Kết quả QR</p>
-          {qr ? (
-            <>
-              <p className="text-sm">
-                <span className="text-muted-foreground">Mã topup: </span>
-                {qr.topupCode}
-              </p>
-              <p className="text-sm">
-                <span className="text-muted-foreground">Payment ref: </span>
-                {qr.paymentRef}
-              </p>
-              <p className="text-sm">
-                <span className="text-muted-foreground">Provider: </span>
-                {qr.paymentProvider}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Hết hạn QR: {qr.qrExpiredAt ? new Date(qr.qrExpiredAt).toLocaleString() : "—"}
-              </p>
-              <Textarea readOnly rows={4} value={qr.qrContent ?? ""} className="font-mono text-xs" />
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">Chưa có QR. Nhập số tiền và bấm Tạo QR.</p>
-          )}
+        <Card className="overflow-hidden">
+          <div className="border-b border-border/60 bg-surface-muted/50 px-4 py-3">
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              Thông tin thanh toán
+            </p>
+          </div>
+
+          <div className="p-5 space-y-6">
+            {qr ? (
+              <>
+                {/* Phần hiển thị mã QR */}
+                <div className="flex flex-col items-center justify-center space-y-3 rounded-xl border border-dashed border-border p-6 bg-white">
+                  {qr.qrCodeUrl ? (
+                    <div className="relative aspect-square w-64 overflow-hidden rounded-lg border shadow-sm">
+                      <img 
+                        src={qr.qrCodeUrl} 
+                        alt="QR Code thanh toán" 
+                        className="h-full w-full object-contain"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex aspect-square w-64 items-center justify-center bg-muted">
+                      <p className="text-xs text-muted-foreground">Đang tải ảnh QR...</p>
+                    </div>
+                  )}
+                  <p className="text-[10px] text-muted-foreground italic">
+                    Quét mã qua ứng dụng Ngân hàng hoặc Ví điện tử
+                  </p>
+                </div>
+
+                {/* Thông tin chi tiết */}
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-medium uppercase text-muted-foreground">Mã nạp tiền</p>
+                    <p className="font-mono font-semibold text-primary">{qr.topupCode}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-medium uppercase text-muted-foreground">Nhà cung cấp</p>
+                    <p className="font-medium">{qr.paymentProvider?.toUpperCase()}</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-medium uppercase text-muted-foreground">Tổng tiền</p>
+                    <p className="font-bold text-success">{formatVND(qr.amountInclVat || 0)}</p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="flex min-h-[300px] flex-col items-center justify-center space-y-3 text-center opacity-50">
+                <HiQrCode className="size-12 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  Chưa có yêu cầu thanh toán.<br />Vui lòng nhập số tiền ở bên trái.
+                </p>
+              </div>
+            )}
+          </div>
         </Card>
       </div>
 
