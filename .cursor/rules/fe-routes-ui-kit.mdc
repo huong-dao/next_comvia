@@ -1,7 +1,7 @@
 ---
 description: Khi thêm/sửa route app hoặc component UI dùng chung
 globs: app/**/*.tsx,components/**/*.tsx
-alwaysApply: false
+alwaysApply: true
 ---
 
 # Route & UI dùng lại
