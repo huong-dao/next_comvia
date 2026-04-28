@@ -84,19 +84,19 @@ export default function WalletPage() {
       <div className="mb-6 grid gap-4 md:grid-cols-4">
         <Card>
           <p className="text-sm text-muted-foreground">Số dư</p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums">{bal?.balance != null ? formatVND(bal.balance) : "—"}</p>
+          <p className="mt-2 text-2xl font-semibold tabular-nums">{bal?.balance != null ? formatVND(Number(bal.balance)) : "—"}</p>
         </Card>
         <Card>
           <p className="text-sm text-muted-foreground">Tổng nạp</p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums">{bal?.totalTopup != null ? formatVND(bal.totalTopup) : "—"}</p>
+          <p className="mt-2 text-2xl font-semibold tabular-nums">{bal?.totalTopup != null ? formatVND(Number(bal.totalTopup)) : "—"}</p>
         </Card>
         <Card>
           <p className="text-sm text-muted-foreground">Đã chi</p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums">{bal?.totalSpent != null ? formatVND(bal.totalSpent) : "—"}</p>
+          <p className="mt-2 text-2xl font-semibold tabular-nums">{bal?.totalSpent != null ? formatVND(Number(bal.totalSpent)) : "—"}</p>
         </Card>
         <Card>
           <p className="text-sm text-muted-foreground">Hoàn</p>
-          <p className="mt-2 text-2xl font-semibold tabular-nums">{bal?.totalRefund != null ? formatVND(bal.totalRefund) : "—"}</p>
+          <p className="mt-2 text-2xl font-semibold tabular-nums">{bal?.totalRefund != null ? formatVND(Number(bal.totalRefund)) : "—"}</p>
         </Card>
       </div>
 
@@ -123,9 +123,9 @@ export default function WalletPage() {
         columns={[
           { key: "code", header: "Mã", cell: (r) => r.transactionCode ?? "—" },
           { key: "type", header: "Loại", cell: (r) => r.type ?? "—" },
-          { key: "amt", header: "Số tiền", cell: (r) => r.amount != null ? formatVND(r.amount) : "—" },
-          { key: "before", header: "Trước", cell: (r) => r.balanceBefore != null ? formatVND(r.balanceBefore) : "—" },
-          { key: "after", header: "Sau", cell: (r) => r.balanceAfter != null ? formatVND(r.balanceAfter) : "—" },
+          { key: "amt", header: "Số tiền", cell: (r) => r.amount != null ? formatVND(Number(r.amount)) : "—" },
+          { key: "before", header: "Trước", cell: (r) => r.balanceBefore != null ? formatVND(Number(r.balanceBefore)) : "—" },
+          { key: "after", header: "Sau", cell: (r) => r.balanceAfter != null ? formatVND(Number(r.balanceAfter)) : "—" },
           {
             key: "at",
             header: "Thời gian",
