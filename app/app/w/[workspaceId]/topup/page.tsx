@@ -54,7 +54,7 @@ export default function TopupPage() {
   const [whMsg, setWhMsg] = useState<string | null>(null);
 
   const [moneyAccounts, setMoneyAccounts] = useState<MoneyAccountRow[]>([]);
-  const [moneyAccountId, setMoneyAccountId] = useState<string | null>(null);
+  const [moneyAccountId, setMoneyAccountId] = useState("");
 
   const vat = useMemo(() => {
     const n = Number(amount.replace(/\D/g, "")) || 0;
@@ -81,7 +81,7 @@ export default function TopupPage() {
         throw new Error(res.message);
       }
       setMoneyAccounts(res.data);
-      setMoneyAccountId(res.data[0].id ?? null);
+      setMoneyAccountId(res.data[0]?.id ?? "");
     } catch (err) {
       alert(err instanceof ComviaApiError ? err.message : "Không lấy được danh sách tài khoản ngân hàng.");
     }
