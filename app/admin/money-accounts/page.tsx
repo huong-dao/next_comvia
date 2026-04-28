@@ -48,8 +48,10 @@ export default function AdminMoneyAccountPage() {
     function handleOpenModal(title: string, data?: MoneyAccountRow | null) {
         setModalTitle(title);
         setIsOpen(true);
-        if (title === 'Sửa tài khoản ngân hàng') {
-            setEditingId(data.id); // Lưu ID để dùng khi Update
+    
+        if (title === 'Sửa tài khoản ngân hàng' && data) {
+            setEditingId(data.id);
+    
             setFormData({
                 accountNumber: data.accountNumber ?? '',
                 bankName: data.bankName ?? '',
@@ -59,6 +61,7 @@ export default function AdminMoneyAccountPage() {
             });
         } else {
             setEditingId(null);
+    
             setFormData({
                 accountNumber: '',
                 bankName: '',
