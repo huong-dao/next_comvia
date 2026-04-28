@@ -165,7 +165,7 @@ export default function TopupPage() {
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Tài khoản ngân hàng
             </label>
-            <Select value={moneyAccountId} onValueChange={(value) => setMoneyAccountId(value)}>
+            <Select value={moneyAccountId} onChange={(e) => setMoneyAccountId(e.target.value)}>
               {moneyAccounts.map((account) => (
                 <option selected={moneyAccountId === account.id} key={account.id} value={account.id}>
                   {account.bankCode} - {account.bankName} - {account.accountNumber}
