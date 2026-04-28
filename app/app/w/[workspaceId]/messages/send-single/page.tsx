@@ -111,7 +111,7 @@ export default function SendSinglePage() {
         </Card>
         <Card>
           <p className="text-xs font-semibold uppercase text-muted-foreground">Số dư ví (owner)</p>
-          <p className="mt-2 text-xl font-semibold tabular-nums">{data?.wallet?.balance != null ? formatVND(data.wallet.balance) : "—"}</p>
+          <p className="mt-2 text-xl font-semibold tabular-nums">{data?.wallet?.balance != null ? formatVND(Number(data.wallet.balance)) : "—"}</p>
         </Card>
         <Card>
           <p className="text-xs font-semibold uppercase text-muted-foreground">Template đã duyệt</p>
