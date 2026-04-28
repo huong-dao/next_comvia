@@ -160,7 +160,7 @@ export default function AdminMoneyAccountPage() {
             />
             <SimpleTable
             rows={rows}
-            getRowKey={(r) => r.id}
+            getRowKey={(r) => String((r as MoneyAccountRow).id)}
             columns={[
                 { key: "accountNumber", header: "Số tài khoản", cell: (r) => r.accountNumber ?? "—" },
                 { key: "bankName", header: "Tên tài khoản", cell: (r) => r.bankName ?? "—" },
