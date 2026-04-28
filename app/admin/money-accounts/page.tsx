@@ -30,7 +30,7 @@ type MoneyAccountRow = {
 export default function AdminMoneyAccountPage() {
     const fetcher = useCallback((token: string) => comviaFetch<MoneyAccountRow[]>("/money-accounts/all", { token }), []);
     const { data, loading, error, refetch } = useComviaQuery(true, fetcher);
-    const rows = (data as any)?.data || [];
+    const rows: MoneyAccountRow[] = (data as any)?.data || [];
 
     const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -162,24 +162,27 @@ export default function AdminMoneyAccountPage() {
             rows={rows}
             getRowKey={(r) => String((r as MoneyAccountRow).id)}
             columns={[
-                { key: "accountNumber", header: "Số tài khoản", cell: (r) => r.accountNumber ?? "—" },
-                { key: "bankName", header: "Tên tài khoản", cell: (r) => r.bankName ?? "—" },
-                { key: "bankCode", header: "Mã ngân hàng", cell: (r) => r.bankCode ?? "—" },
-                { key: "pay2sBankId", header: "Pay2S Bank ID", cell: (r) => r.pay2sBankId ?? "—" },
-                { key: "isActive", header: "Trạng thái", cell: (r) => (r.isActive ? <EntityStatusBadge value="ACTIVE" /> : <EntityStatusBadge value="INACTIVE" />) },
                 {
-                    key: "c",
-                    header: "Ngày tạo",
-                    cell: (r) => (r.createdAt ? new Date(r.createdAt).toLocaleString() : "—"),
+                  key: "accountNumber",
+                  header: "Số tài khoản",
+                  cell: (r) => (r as MoneyAccountRow).accountNumber ?? "—",
                 },
                 {
-                    key: "tool",
-                    header: "",
-                    cell: (r) => (
-                        <Button icon={<HiOutlinePencilSquare className="size-4" />} type="button" variant="outline" onClick={() => handleOpenModal("Sửa tài khoản ngân hàng", r as MoneyAccountRow)}></Button>
-                    ),
+                  key: "bankName",
+                  header: "Tên tài khoản",
+                  cell: (r) => (r as MoneyAccountRow).bankName ?? "—",
                 },
-            ]}
+                {
+                  key: "bankCode",
+                  header: "Mã ngân hàng",
+                  cell: (r) => (r as MoneyAccountRow).bankCode ?? "—",
+                },
+                {
+                  key: "pay2sBankId",
+                  header: "Pay2S Bank ID",
+                  cell: (r) => (r as MoneyAccountRow).pay2sBankId ?? "—",
+                },
+              ]}
             />
 
             <Modal 
