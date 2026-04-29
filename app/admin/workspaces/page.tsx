@@ -95,6 +95,7 @@ export default function AdminWorkspacesPage() {
                 header: "",
                 cell: (r) => (
                   <Button
+                    className="bg-red-600"
                     type="button"
                     size="sm"
                     variant="outline"
