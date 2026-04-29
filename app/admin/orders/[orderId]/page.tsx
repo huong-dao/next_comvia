@@ -28,6 +28,18 @@ type AdminOrderDetail = {
   orderCode?: string;
   orderType?: string;
   workspaceId?: string;
+  workspace?: {
+    name?: string;
+    slug?: string;
+  };
+  owner?: {
+    fullName?: string;
+    email?: string;
+  };
+  topupRequest?: {
+    id?: string;
+    topupCode?: string;
+  };
   ownerUserId?: string;
   status?: string;
   totalAmountExclVat?: number | string;
@@ -73,7 +85,7 @@ export default function AdminOrderDetailPage() {
           <PageHeader
             eyebrow="Order (admin)"
             title={data.orderCode ?? data.id ?? "Chi tiết đơn"}
-            description={data.workspaceId ? `Workspace: ${data.workspaceId}` : undefined}
+            description={data.workspaceId ? `Workspace: ${data.workspace?.name ?? "—"}` : undefined}
             actions={
               <Button icon={<HiArrowLeft className="size-4" />} variant="outline" size="sm" asChild>
                 <Link href="/admin/orders">Danh sách đơn</Link>
@@ -91,12 +103,12 @@ export default function AdminOrderDetailPage() {
               <p className="font-medium">{data.orderType ?? "—"}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-muted-foreground">Owner</p>
-              <p className="font-mono text-sm">{data.ownerUserId ?? "—"}</p>
+              <p className="text-xs uppercase text-muted-foreground">Người dùng</p>
+              <p className="text-sm">{data.owner?.fullName ?? "—"}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-muted-foreground">Topup request</p>
-              <p className="font-mono text-sm">{data.topupRequestId ?? "—"}</p>
+              <p className="text-xs uppercase text-muted-foreground">Mã Topup</p>
+              <p className="text-sm">{data.topupRequest?.topupCode ?? "—"}</p>
             </div>
             <div>
               <p className="text-xs uppercase text-muted-foreground">Trước VAT</p>
@@ -123,7 +135,7 @@ export default function AdminOrderDetailPage() {
           {data.invoice?.id ? (
             <Card className="mb-6 space-y-2">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Hóa đơn liên kết</p>
-              <p className="font-mono text-sm">{data.invoice.invoiceCode ?? data.invoice.id}</p>
+              <p className="text-sm">{data.invoice.invoiceCode ?? data.invoice.id}</p>
               {data.invoice.status ? (
                 <p className="mt-1">
                   <EntityStatusBadge value={data.invoice.status} />
