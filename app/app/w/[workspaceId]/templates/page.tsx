@@ -21,12 +21,20 @@ type TemplateRow = {
   updatedAt?: string;
 };
 
-const FILTERS = ["ALL", "DRAFT", "SUBMITTED", "PENDING_ZALO_APPROVAL", "APPROVED", "REJECTED", "DISABLED"] as const;
+const FILTERS = [
+  { value: "ALL", label: "Tất cả" },
+  { value: "DRAFT", label: "Bản nháp" },
+  { value: "SUBMITTED", label: "Đã gửi" },
+  { value: "PENDING_ZALO_APPROVAL", label: "Đang chờ duyệt" },
+  { value: "APPROVED", label: "Đã duyệt" },
+  { value: "REJECTED", label: "Đã từ chối" },
+  { value: "DISABLED", label: "Đã khóa" },
+] as const;
 
 export default function TemplatesListPage() {
   const params = useParams();
   const workspaceId = params.workspaceId as string;
-  const [filter, setFilter] = useState<(typeof FILTERS)[number]>("ALL");
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]["value"]>("ALL");
 
   const fetcher = useCallback(
     (token: string) => comviaFetch<TemplateRow[]>(`/workspaces/${workspaceId}/templates`, { token }),
@@ -49,10 +57,10 @@ export default function TemplatesListPage() {
       <PageHeader
         eyebrow="Templates"
         title="Danh sách template"
-        description="Lọc theo trạng thái, xem chi tiết và thao tác submit (theo quyền backend)."
+        // description="Lọc theo trạng thái, xem chi tiết và thao tác submit (theo quyền backend)."
         actions={
           <Button icon={<HiMiniPlus className="size-4" />} asChild>
-            <Link href={workspacePath(workspaceId, "templates", "new")}>Tạo template</Link>
+            <Link href={workspacePath(workspaceId, "templates", "new")}>Tạo mẫu tin nhắn</Link>
           </Button>
         }
       />
@@ -60,13 +68,13 @@ export default function TemplatesListPage() {
       <div className="mb-4 flex flex-wrap gap-2">
         {FILTERS.map((f) => (
           <Button
-            key={f}
+            key={f.value}
             type="button"
             size="sm"
-            variant={filter === f ? "primary" : "outline"}
-            onClick={() => setFilter(f)}
+            variant={filter === f.value ? "primary" : "outline"}
+            onClick={() => setFilter(f.value)}
           >
-            {f === "ALL" ? "Tất cả" : f.replace(/_/g, " ")}
+            {f.label}
           </Button>
         ))}
       </div>

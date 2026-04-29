@@ -32,13 +32,13 @@ type NavItem = {
 /** Cùng thứ tự & nhãn như layout ban đầu; href map sang route thật trong app. */
 const navItems: NavItem[] = [
   {
-    label: "Dashboard",
+    label: "Tổng quan",
     icon: HiOutlineHome,
     href: (w) => workspacePath(w, "dashboard"),
     isActive: (p, w) => p === workspacePath(w, "dashboard"),
   },
   {
-    label: "Messages",
+    label: "Tin nhắn",
     icon: HiOutlineChatBubbleLeftRight,
     href: (w) => workspacePath(w, "messages", "send-single"),
     isActive: (p, w) => p.startsWith(workspacePath(w, "messages")),
@@ -50,25 +50,25 @@ const navItems: NavItem[] = [
     isActive: (p, w) => p.startsWith(workspacePath(w, "oa")),
   },
   {
-    label: "Analytics",
+    label: "Thống kê",
     icon: HiOutlineChartBar,
     href: (w) => workspacePath(w, "analytics"),
     isActive: (p, w) => p.startsWith(workspacePath(w, "analytics")),
   },
   {
-    label: "Templates",
+    label: "Mẫu tin nhắn",
     icon: HiOutlineRectangleGroup,
     href: (w) => workspacePath(w, "templates"),
     isActive: (p, w) => p.startsWith(workspacePath(w, "templates")),
   },
   {
-    label: "Members",
+    label: "Thành viên",
     icon: HiOutlineUserGroup,
     href: (w) => workspacePath(w, "members"),
     isActive: (p, w) => p.startsWith(workspacePath(w, "members")),
   },
   {
-    label: "Wallet",
+    label: "Ví tiền",
     icon: HiOutlineCreditCard,
     href: (w) => workspacePath(w, "wallet"),
     isActive: (p, w) =>
@@ -81,7 +81,7 @@ const navItems: NavItem[] = [
     isActive: (p, w) => p.startsWith(workspacePath(w, "api-keys")),
   },
   {
-    label: "Settings",
+    label: "Cài đặt",
     icon: HiOutlineCog6Tooth,
     href: () => APP_PATHS.settingsSecurity,
     isActive: (p) => p.startsWith("/app/settings"),

@@ -29,7 +29,7 @@ type NavItem = {
 
 const adminNav: NavItem[] = [
   { label: "Tổng quan", icon: HiOutlineHome, href: "/admin", match: (p) => p === "/admin" },
-  { label: "Users", icon: HiOutlineUsers, href: "/admin/users", match: (p) => p.startsWith("/admin/users") },
+  { label: "Người dùng", icon: HiOutlineUsers, href: "/admin/users", match: (p) => p.startsWith("/admin/users") },
   {
     label: "Workspaces",
     icon: HiOutlineRectangleStack,
@@ -38,7 +38,7 @@ const adminNav: NavItem[] = [
   },
   {
     label: "Tài khoản công ty",
-    icon: HiOutlineRectangleStack,
+    icon: HiOutlineCreditCard,
     href: "/admin/money-accounts",
     match: (p) => p.startsWith("/admin/money-accounts"),
   },

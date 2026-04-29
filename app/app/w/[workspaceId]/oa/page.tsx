@@ -75,7 +75,7 @@ export default function OaPage() {
       <PageHeader
         eyebrow="Zalo OA"
         title="Kết nối Official Account"
-        description="Trạng thái lấy từ API OA (mock). Chỉ Owner kết nối/ngắt."
+        // description="Trạng thái lấy từ API OA (mock). Chỉ Owner kết nối/ngắt."
       />
 
       <Card className="max-w-xl space-y-4">

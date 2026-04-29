@@ -70,14 +70,14 @@ export default function DashboardPage() {
       <PageHeader
         eyebrow="Dashboard"
         title="Tổng quan workspace"
-        description="Số liệu lấy từ API ví, template và nhật ký tin nhắn."
-        actions={
-          owner ? (
-            <EntityStatusBadge value="OWNER" />
-          ) : (
-            <EntityStatusBadge value="MEMBER" />
-          )
-        }
+        // description="Số liệu lấy từ API ví, template và nhật ký tin nhắn."
+        // actions={
+        //   owner ? (
+        //     <EntityStatusBadge value="OWNER" />
+        //   ) : (
+        //     <EntityStatusBadge value="MEMBER" />
+        //   )
+        // }
       />
 
       <div className="mb-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -113,7 +113,7 @@ export default function DashboardPage() {
         <Button icon={<HiOutlinePaperAirplane className="size-4" />} variant="outline" asChild>
           <Link href={workspacePath(workspaceId, "messages", "send-single")}>Gửi tin</Link>
         </Button>
-        <Button icon={<HiOutlineDocumentText className="size-4" />} variant="ghost" asChild>
+        <Button icon={<HiOutlineDocumentText className="size-4" />} variant="outline" asChild>
           <Link href={workspacePath(workspaceId, "messages", "logs")}>Nhật ký tin</Link>
         </Button>
       </div>

@@ -86,7 +86,7 @@ const adminLinks = [
     title: "Tài khoản công ty",
     description: "Quản lý tài khoản ngân hàng công ty.",
     href: "/admin/money-accounts",
-    icon: HiOutlineRectangleStack,
+    icon: HiOutlineCreditCard,
   },
 ] as const;
 

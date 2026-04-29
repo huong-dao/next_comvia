@@ -99,7 +99,7 @@ export default function SendSinglePage() {
       <PageHeader
         eyebrow="Messaging"
         title="Gửi tin single"
-        description="Chỉ template APPROVED. Preflight OA & ví hiển thị bên dưới."
+        description="Chỉ được sử dụng các mẫu tin đã được duyệt."
       />
 
       <div className="mb-6 grid gap-4 md:grid-cols-3">
@@ -110,11 +110,11 @@ export default function SendSinglePage() {
           </p>
         </Card>
         <Card>
-          <p className="text-xs font-semibold uppercase text-muted-foreground">Số dư ví (owner)</p>
+          <p className="text-xs font-semibold uppercase text-muted-foreground">Số dư ví (chủ workspace)</p>
           <p className="mt-2 text-xl font-semibold tabular-nums">{data?.wallet?.balance != null ? formatVND(Number(data.wallet.balance)) : "—"}</p>
         </Card>
         <Card>
-          <p className="text-xs font-semibold uppercase text-muted-foreground">Template đã duyệt</p>
+          <p className="text-xs font-semibold uppercase text-muted-foreground">Mẫu tin nhắn đã duyệt</p>
           <p className="mt-2 text-xl font-semibold tabular-nums">{approved.length}</p>
         </Card>
       </div>
@@ -122,7 +122,7 @@ export default function SendSinglePage() {
       <Card className="max-w-2xl space-y-4">
         <div>
           <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Template
+            Mẫu tin nhắn
           </label>
           <Select value={templateId} onChange={(e) => setTemplateId(e.target.value)}>
             <option value="">— Chọn —</option>
