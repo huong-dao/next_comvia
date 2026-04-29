@@ -232,7 +232,7 @@ export default function NewTemplatePage() {
             </div>
             <p className="text-xs text-muted-foreground">
               Mỗi dòng: tên biến (slug, ví dụ <code className="rounded bg-surface-muted px-1">name</code>) và giá trị
-              mẫu để xem preview.
+              mẫu để xem trước.
             </p>
             <ul className="space-y-3">
               {placeholderRows.map((row) => (
@@ -252,7 +252,7 @@ export default function NewTemplatePage() {
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                      Giá trị mặc định (xem trước)
+                      Giá trị mẫu (xem trước)
                     </label>
                     <Input
                       value={row.defaultValue}
