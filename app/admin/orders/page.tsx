@@ -102,8 +102,8 @@ export default function AdminOrdersPage() {
     () =>
       (wsData ?? []).map((w) => ({
         value: w.id,
-        label: [w.name, w.slug].filter(Boolean).join(" · ") || w.id,
-        description: w.id,
+        label: w.name || w.id,
+        // description: w.id,
       })),
     [wsData],
   );
