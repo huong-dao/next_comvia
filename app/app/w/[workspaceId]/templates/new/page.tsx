@@ -211,14 +211,14 @@ export default function NewTemplatePage() {
               </div>
             ) : (
               <p className="mt-2 text-xs text-muted-foreground">
-                Thêm slug hợp lệ ở phần Placeholders bên dưới để hiện nút chèn vào nội dung.
+                Thêm các trường thông tin bên dưới để hiện nút chèn vào nội dung.
               </p>
             )}
           </div>
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Placeholders — trường trong mẫu
+                Các trường thông tin
               </label>
               <Button
                 type="button"
@@ -252,7 +252,7 @@ export default function NewTemplatePage() {
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                      Giá trị mặc định (preview)
+                      Giá trị mặc định (xem trước)
                     </label>
                     <Input
                       value={row.defaultValue}
@@ -294,7 +294,7 @@ export default function NewTemplatePage() {
         </Card>
 
         <Card className="flex flex-col gap-3">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Preview</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Xem trước</p>
           <p className="text-xs text-muted-foreground">
             Thử thay thế dạng <code className="rounded bg-surface-muted px-1">{"{{slug}}"}</code> theo các trường đã khai
             báo.
