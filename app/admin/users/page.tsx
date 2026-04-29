@@ -57,11 +57,11 @@ export default function AdminUsersPage() {
           <PageHeader
             title="Người dùng"
             // description="Danh sách user nội bộ theo `GET /admin/users`, hỗ trợ khóa hoặc mở khóa đăng nhập."
-            actions={
-              <Button variant="outline" size="sm" onClick={() => void refetch()} icon={<HiOutlineUsers className="size-4" />}>
-                Làm mới
-              </Button>
-            }
+            // actions={
+            //   <Button variant="outline" size="sm" onClick={() => void refetch()} icon={<HiOutlineUsers className="size-4" />}>
+            //     Làm mới
+            //   </Button>
+            // }
           />
           <div className="mb-6 grid gap-4 md:grid-cols-3">
             <Card className="space-y-2">
@@ -108,9 +108,10 @@ export default function AdminUsersPage() {
                 header: "",
                 cell: (r) => (
                   <Button
+                    className="bg-red-600 text-white"
                     type="button"
                     size="sm"
-                    variant="outline"
+                    variant="primary"
                     disabled={busy === r.id}
                     onClick={() => void toggleLock(r.id, !r.locked)}
                     icon={r.locked ? <HiLockOpen className="size-4" /> : <HiLockClosed className="size-4" />}

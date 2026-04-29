@@ -53,11 +53,11 @@ export default function AdminWorkspacesPage() {
           <PageHeader
             title="Workspaces"
             // description="Danh sách workspace toàn hệ thống theo `GET /admin/workspaces`, hỗ trợ disable nhanh."
-            actions={
-              <Button variant="outline" size="sm" onClick={() => void refetch()} icon={<HiOutlineRectangleStack className="size-4" />}>
-                Làm mới
-              </Button>
-            }
+            // actions={
+            //   <Button variant="outline" size="sm" onClick={() => void refetch()} icon={<HiOutlineRectangleStack className="size-4" />}>
+            //     Làm mới
+            //   </Button>
+            // }
           />
           <div className="mb-6 grid gap-4 md:grid-cols-3">
             <Card className="space-y-2">
