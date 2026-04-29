@@ -149,31 +149,12 @@ export default function AdminOrdersPage() {
             title="Đơn hàng"
             description="Danh sách đơn toàn hệ thống — GET /admin/orders."
           />
-          <div className="mb-6 grid gap-4 md:grid-cols-3">
-            <Card className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Tổng bản ghi</p>
-              <p className="text-3xl font-semibold text-foreground">{meta?.total ?? rows.length}</p>
-            </Card>
-            <Card className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Trang hiện tại</p>
-              <p className="text-3xl font-semibold text-foreground">
-                {meta?.page ?? page} / {meta?.totalPages && meta.totalPages > 0 ? meta.totalPages : 1}
-              </p>
-            </Card>
-            <Card className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Kích thước trang</p>
-              <p className="text-3xl font-semibold text-foreground">{PAGE_SIZE}</p>
-            </Card>
-          </div>
 
           <Card className="mb-6 space-y-4">
             <div className="flex items-center gap-2">
               <HiOutlineAdjustmentsHorizontal className="size-5 text-secondary" />
               <p className="text-sm font-semibold text-foreground">Bộ lọc</p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Chọn điều kiện rồi bấm «Áp dụng». Đổi số trang bên dưới bảng giữ nguyên bộ lọc đã áp dụng.
-            </p>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div>
                 <label className="mb-1 block text-xs text-muted-foreground" htmlFor="orders-filter-code">
@@ -230,8 +211,6 @@ export default function AdminOrdersPage() {
                   <option value="CANCELLED">Đã hủy</option>
                 </Select>
               </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
               <Button
                 type="button"
                 variant="outline"
