@@ -52,7 +52,7 @@ export default function AdminWorkspacesPage() {
         <div>
           <PageHeader
             title="Workspaces"
-            description="Danh sách workspace toàn hệ thống theo `GET /admin/workspaces`, hỗ trợ disable nhanh."
+            // description="Danh sách workspace toàn hệ thống theo `GET /admin/workspaces`, hỗ trợ disable nhanh."
             actions={
               <Button variant="outline" size="sm" onClick={() => void refetch()} icon={<HiOutlineRectangleStack className="size-4" />}>
                 Làm mới
@@ -65,11 +65,11 @@ export default function AdminWorkspacesPage() {
               <p className="text-3xl font-semibold text-foreground">{rows.length}</p>
             </Card>
             <Card className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Đang active</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Đang kích hoạt</p>
               <p className="text-3xl font-semibold text-foreground">{activeCount}</p>
             </Card>
             <Card className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Khác active</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Chưa kích hoạt</p>
               <p className="text-3xl font-semibold text-foreground">{rows.length - activeCount}</p>
             </Card>
           </div>
@@ -79,7 +79,7 @@ export default function AdminWorkspacesPage() {
             columns={[
               { key: "n", header: "Tên", cell: (r) => r.name ?? "—" },
               { key: "s", header: "Slug", cell: (r) => r.slug ?? "—" },
-              { key: "o", header: "Owner", cell: (r) => r.ownerUserId ?? "—" },
+              { key: "o", header: "Chủ Workspace", cell: (r) => r.ownerUserId ?? "—" },
               {
                 key: "st",
                 header: "Trạng thái",
@@ -102,7 +102,7 @@ export default function AdminWorkspacesPage() {
                     onClick={() => void disable(r.id)}
                     icon={<HiOutlineNoSymbol className="size-4" />}
                   >
-                    Disable
+                    Ngừng kích hoạt
                   </Button>
                 ),
               },

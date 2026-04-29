@@ -35,8 +35,8 @@ type HubData = {
 
 const adminLinks = [
   {
-    title: "Users",
-    description: "Danh sách user, khóa hoặc mở khóa đăng nhập.",
+    title: "Người dùng",
+    description: "Danh sách người dùng, khóa hoặc mở khóa đăng nhập.",
     href: "/admin/users",
     icon: HiOutlineUsers,
   },
@@ -123,11 +123,11 @@ export default function AdminOverviewPage() {
           />
           <div className="grid gap-4 md:grid-cols-3">
             <Card className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Users</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Người dùng</p>
               <p className="text-3xl font-semibold text-foreground">{data.userCount}</p>
               <p className="text-sm text-muted-foreground">Tổng số tài khoản nội bộ và người dùng hệ thống hiện có.</p>
               <Button variant="ghost" size="sm" asChild icon={<HiOutlineUsers className="size-4" />}>
-                <Link href="/admin/users">Quản lý users</Link>
+                <Link href="/admin/users">Quản lý người dùng</Link>
               </Button>
             </Card>
             <Card className="space-y-2">

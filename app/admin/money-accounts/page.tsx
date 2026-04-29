@@ -177,11 +177,11 @@ export default function AdminMoneyAccountPage() {
                   header: "Mã ngân hàng",
                   cell: (r) => (r as MoneyAccountRow).bankCode ?? "—",
                 },
-                {
-                  key: "pay2sBankId",
-                  header: "Pay2S Bank ID",
-                  cell: (r) => (r as MoneyAccountRow).pay2sBankId ?? "—",
-                },
+                // {
+                //   key: "pay2sBankId",
+                //   header: "Pay2S Bank ID",
+                //   cell: (r) => (r as MoneyAccountRow).pay2sBankId ?? "—",
+                // },
               ]}
             />
 

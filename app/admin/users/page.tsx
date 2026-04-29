@@ -55,8 +55,8 @@ export default function AdminUsersPage() {
       {data ? (
         <div>
           <PageHeader
-            title="Users"
-            description="Danh sách user nội bộ theo `GET /admin/users`, hỗ trợ khóa hoặc mở khóa đăng nhập."
+            title="Người dùng"
+            // description="Danh sách user nội bộ theo `GET /admin/users`, hỗ trợ khóa hoặc mở khóa đăng nhập."
             actions={
               <Button variant="outline" size="sm" onClick={() => void refetch()} icon={<HiOutlineUsers className="size-4" />}>
                 Làm mới
@@ -65,7 +65,7 @@ export default function AdminUsersPage() {
           />
           <div className="mb-6 grid gap-4 md:grid-cols-3">
             <Card className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Tổng users</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Tổng người dùng</p>
               <p className="text-3xl font-semibold text-foreground">{rows.length}</p>
             </Card>
             <Card className="space-y-2">
@@ -85,7 +85,7 @@ export default function AdminUsersPage() {
               { key: "f", header: "Tên", cell: (r) => r.fullName ?? "—" },
               {
                 key: "role",
-                header: "Role",
+                header: "Vai trò",
                 cell: (r) => (r.role ? <EntityStatusBadge value={r.role} /> : "—"),
               },
               {
@@ -115,7 +115,7 @@ export default function AdminUsersPage() {
                     onClick={() => void toggleLock(r.id, !r.locked)}
                     icon={r.locked ? <HiLockOpen className="size-4" /> : <HiLockClosed className="size-4" />}
                   >
-                    {r.locked ? "Unlock" : "Lock"}
+                    {r.locked ? "Mở khóa" : "Khóa"}
                   </Button>
                 ),
               },
