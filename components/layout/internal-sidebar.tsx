@@ -12,6 +12,7 @@ import {
   HiOutlineCreditCard,
   HiOutlineHome,
   HiOutlineRectangleStack,
+  HiOutlineShoppingCart,
   HiOutlineUsers,
   HiOutlineWrenchScrewdriver,
 } from "react-icons/hi2";
@@ -41,6 +42,12 @@ const adminNav: NavItem[] = [
     icon: HiOutlineCreditCard,
     href: "/admin/money-accounts",
     match: (p) => p.startsWith("/admin/money-accounts"),
+  },
+  {
+    label: "Đơn hàng",
+    icon: HiOutlineShoppingCart,
+    href: "/admin/orders",
+    match: (p) => p.startsWith("/admin/orders"),
   },
   {
     label: "Audit logs",

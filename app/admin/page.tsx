@@ -9,6 +9,7 @@ import {
   HiOutlineCog6Tooth,
   HiOutlineCreditCard,
   HiOutlineRectangleStack,
+  HiOutlineShoppingCart,
   HiOutlineUsers,
   HiOutlineWrenchScrewdriver,
 } from "react-icons/hi2";
@@ -82,6 +83,12 @@ const adminLinks = [
   //   href: "/staff/templates-review/submitted",
   //   icon: HiOutlineBolt,
   // },
+  {
+    title: "Đơn hàng",
+    description: "Danh sách đơn toàn hệ thống, phân trang và lọc theo admin API.",
+    href: "/admin/orders",
+    icon: HiOutlineShoppingCart,
+  },
   {
     title: "Tài khoản công ty",
     description: "Quản lý tài khoản ngân hàng công ty.",
