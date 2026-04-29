@@ -6,11 +6,11 @@ type ButtonSize = "sm" | "md" | "lg";
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-primary text-slate-800 hover:bg-primary-hover disabled:bg-surface-muted disabled:text-muted-foreground dark:text-slate-950",
+    "bg-primary hover:bg-primary-hover disabled:bg-surface-muted disabled:text-muted-foreground dark:text-slate-950",
   secondary:
-    "bg-secondary text-slate-800 hover:brightness-110 disabled:bg-surface-muted disabled:text-muted-foreground dark:text-slate-950",
+    "bg-secondary hover:brightness-110 disabled:bg-surface-muted disabled:text-muted-foreground dark:text-slate-950",
   accent:
-    "bg-accent text-slate-800 hover:brightness-105 disabled:bg-surface-muted disabled:text-muted-foreground dark:text-slate-900",
+    "bg-accent hover:brightness-105 disabled:bg-surface-muted disabled:text-muted-foreground dark:text-slate-900",
   ghost:
     "bg-transparent text-[var(--button-ghost-fg)] hover:bg-surface-muted disabled:text-muted-foreground",
   outline:
