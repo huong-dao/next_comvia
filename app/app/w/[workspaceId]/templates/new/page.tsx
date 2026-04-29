@@ -10,6 +10,13 @@ import { Input, Textarea } from "@/components/ui/input";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
 import { workspacePath } from "@/lib/paths";
+import {
+  newPlaceholderRow,
+  previewTemplateContent,
+  rowsToPlaceholders,
+  slugLooksValid,
+  type PlaceholderRow,
+} from "@/lib/template-placeholders";
 import { HiOutlineDocumentCheck, HiOutlineDocumentArrowUp, HiOutlinePlus, HiOutlineTrash, HiOutlineXMark } from "react-icons/hi2";
 
 type CreateTemplateResponse = {
@@ -18,71 +25,13 @@ type CreateTemplateResponse = {
   name?: string;
 };
 
-type PlaceholderRow = {
-  id: string;
-  slug: string;
-  defaultValue: string;
-};
-
-function newRow(): PlaceholderRow {
-  return { id: crypto.randomUUID(), slug: "", defaultValue: "" };
-}
-
-function slugLooksValid(slug: string): boolean {
-  return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(slug);
-}
-
-function rowsToPlaceholders(rows: PlaceholderRow[]):
-  | { ok: true; data: Record<string, string> }
-  | { ok: false; message: string } {
-  const data: Record<string, string> = {};
-  const seen = new Set<string>();
-
-  for (const row of rows) {
-    const slug = row.slug.trim();
-    if (!slug) {
-      if (row.defaultValue.trim()) {
-        return { ok: false, message: "Mỗi trường phải có slug (tên biến) khi đã có giá trị mặc định." };
-      }
-      continue;
-    }
-    if (!slugLooksValid(slug)) {
-      return {
-        ok: false,
-        message: `Slug "${slug}" không hợp lệ. Dùng chữ, số, gạch dưới; ký tự đầu không được là số.`,
-      };
-    }
-    if (seen.has(slug)) {
-      return { ok: false, message: `Trùng slug: "${slug}".` };
-    }
-    seen.add(slug);
-    data[slug] = row.defaultValue;
-  }
-
-  return { ok: true, data };
-}
-
-/** Preview đơn giản: thay {{key}} bằng giá trị mẫu từ object placeholders. */
-function previewContent(content: string, placeholders: Record<string, string>) {
-  let out = content;
-  for (const [key, sample] of Object.entries(placeholders)) {
-    const re = new RegExp(`\\{\\{\\s*${escapeRegExp(key)}\\s*\\}\\}`, "g");
-    out = out.replace(re, sample || `{{${key}}}`);
-  }
-  return out;
-}
-
-function escapeRegExp(s: string) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
 export default function NewTemplatePage() {
   const params = useParams();
   const router = useRouter();
   const workspaceId = params.workspaceId as string;
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
-  const [placeholderRows, setPlaceholderRows] = useState<PlaceholderRow[]>(() => [newRow()]);
+  const [placeholderRows, setPlaceholderRows] = useState<PlaceholderRow[]>(() => [newPlaceholderRow()]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const contentRef = useRef<HTMLTextAreaElement>(null);
@@ -91,7 +40,7 @@ export default function NewTemplatePage() {
   const placeholdersParsed = useMemo(() => rowsToPlaceholders(placeholderRows), [placeholderRows]);
   const preview = useMemo(() => {
     if (!placeholdersParsed.ok) return content;
-    return previewContent(content, placeholdersParsed.data);
+    return previewTemplateContent(content, placeholdersParsed.data);
   }, [content, placeholdersParsed]);
 
   const filledSlugs = useMemo(() => {
@@ -199,7 +148,7 @@ export default function NewTemplatePage() {
   function removeRow(id: string) {
     setPlaceholderRows((rows) => {
       const next = rows.filter((r) => r.id !== id);
-      return next.length > 0 ? next : [newRow()];
+      return next.length > 0 ? next : [newPlaceholderRow()];
     });
   }
 
@@ -276,7 +225,7 @@ export default function NewTemplatePage() {
                 variant="outline"
                 size="sm"
                 icon={<HiOutlinePlus className="size-4" />}
-                onClick={() => setPlaceholderRows((rows) => [...rows, newRow()])}
+                onClick={() => setPlaceholderRows((rows) => [...rows, newPlaceholderRow()])}
               >
                 Thêm trường
               </Button>
@@ -353,11 +302,6 @@ export default function NewTemplatePage() {
           <pre className="max-h-[min(480px,70vh)] flex-1 overflow-auto rounded-xl bg-surface-muted p-4 text-xs whitespace-pre-wrap text-foreground">
             {preview || "—"}
           </pre>
-          {placeholdersParsed.ok && Object.keys(placeholdersParsed.data).length > 0 ? (
-            <p className="text-xs text-muted-foreground">
-              Khóa: {Object.keys(placeholdersParsed.data).join(", ")}
-            </p>
-          ) : null}
         </Card>
       </div>
     </div>
