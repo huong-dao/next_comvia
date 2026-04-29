@@ -67,7 +67,7 @@ export default function WalletPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Wallet"
+        // eyebrow="Wallet"
         title="Ví tiền"
         description="Số dư và lịch sử giao dịch theo Workspace."
         actions={

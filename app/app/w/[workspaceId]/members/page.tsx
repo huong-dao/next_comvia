@@ -95,7 +95,7 @@ export default function MembersPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Workspace"
+        // eyebrow="Workspace"
         title="Thành viên"
         description="Danh sách thành viên của Workspace."
         actions={

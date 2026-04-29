@@ -118,7 +118,7 @@ export default function ApiKeysPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Integration"
+        eyebrow="Tích hợp"
         title="API Keys"
         // description="Tạo / vô hiệu / tái tạo key — raw key chỉ hiện một lần."
         actions={

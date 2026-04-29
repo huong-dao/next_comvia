@@ -97,7 +97,7 @@ export default function SendSinglePage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Messaging"
+        // eyebrow="Messaging"
         title="Gửi tin single"
         description="Chỉ được sử dụng các mẫu tin đã được duyệt."
       />

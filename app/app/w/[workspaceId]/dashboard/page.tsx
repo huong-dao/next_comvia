@@ -68,7 +68,7 @@ export default function DashboardPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Dashboard"
+        // eyebrow="Dashboard"
         title="Tổng quan workspace"
         // description="Số liệu lấy từ API ví, template và nhật ký tin nhắn."
         // actions={

@@ -55,7 +55,7 @@ export default function TemplatesListPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Templates"
+        // eyebrow="Templates"
         title="Danh sách mẫu tin nhắn"
         // description="Lọc theo trạng thái, xem chi tiết và thao tác submit (theo quyền backend)."
         actions={

@@ -80,13 +80,13 @@ const navItems: NavItem[] = [
     href: (w) => workspacePath(w, "api-keys"),
     isActive: (p, w) => p.startsWith(workspacePath(w, "api-keys")),
   },
-  {
-    label: "Cài đặt",
-    icon: HiOutlineCog6Tooth,
-    href: () => APP_PATHS.settingsSecurity,
-    isActive: (p) => p.startsWith("/app/settings"),
-    appLevel: true,
-  },
+  // {
+  //   label: "Cài đặt",
+  //   icon: HiOutlineCog6Tooth,
+  //   href: () => APP_PATHS.settingsSecurity,
+  //   isActive: (p) => p.startsWith("/app/settings"),
+  //   appLevel: true,
+  // },
 ];
 
 export function WorkspaceSidebar({

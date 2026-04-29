@@ -11,7 +11,7 @@ export default function SecuritySettingsPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Cài đặt"
+        // eyebrow="Cài đặt"
         title="Bảo mật"
         // description="Đổi mật khẩu và quản lý phiên — placeholder theo sitemap; kết nối API khi backend sẵn sàng."
         actions={

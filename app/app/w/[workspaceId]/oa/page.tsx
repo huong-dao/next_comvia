@@ -73,7 +73,7 @@ export default function OaPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Zalo OA"
+        // eyebrow="Zalo OA"
         title="Kết nối Official Account"
         // description="Trạng thái lấy từ API OA (mock). Chỉ Owner kết nối/ngắt."
       />
