@@ -249,7 +249,7 @@ export default function TemplateDetailPage() {
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  Thêm slug hợp lệ ở cột Metadata để hiện nút chèn.
+                  Thêm slug hợp lệ ở cột "Thông tin" để hiện nút chèn.
                 </p>
               )}
             </>
@@ -264,7 +264,7 @@ export default function TemplateDetailPage() {
         </Card>
 
         <Card className="flex min-h-0 flex-col gap-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Metadata</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Thông tin</p>
           {editable ? (
             <>
               <div>
@@ -274,8 +274,8 @@ export default function TemplateDetailPage() {
 
               <div className="min-h-0 flex-1 space-y-3 overflow-y-auto">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Placeholders
+                  <span className="text-xs font-semibold text-amber-600 tracking-wider">
+                    Các trường thông tin
                   </span>
                   <Button
                     type="button"
@@ -288,7 +288,7 @@ export default function TemplateDetailPage() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Slug (vd: <code className="rounded bg-surface-muted px-1">name</code>) và giá trị mẫu cho preview.
+                  Slug (vd: <code className="rounded bg-surface-muted px-1">name</code>) và giá trị mẫu cho xem trước.
                 </p>
                 <ul className="space-y-3">
                   {placeholderRows.map((row) => (
@@ -370,7 +370,7 @@ export default function TemplateDetailPage() {
             </Button>
             {owner ? (
               <Button icon={<HiLockClosed className="size-4" />} type="button" variant="outline" disabled={busy} onClick={() => void disableTemplate()}>
-                Disable (Owner)
+                Khóa (Chủ Workspace)
               </Button>
             ) : null}
           </div>
@@ -378,18 +378,13 @@ export default function TemplateDetailPage() {
         </Card>
 
         <Card className="flex min-h-0 flex-col gap-3">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Preview</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Xem trước</p>
           <p className="text-xs text-muted-foreground">
             Thay thế <code className="rounded bg-surface-muted px-1">{"{{slug}}"}</code> theo giá trị mẫu đã khai báo.
           </p>
           <pre className="max-h-[min(520px,70vh)] min-h-[280px] flex-1 overflow-auto rounded-xl bg-surface-muted p-4 text-xs whitespace-pre-wrap text-foreground">
             {preview || "—"}
           </pre>
-          {approved && readOnlyPlaceholders.length > 0 ? (
-            <p className="text-xs text-muted-foreground">Khóa: {readOnlyPlaceholders.map(([k]) => k).join(", ")}</p>
-          ) : !approved && placeholdersParsed.ok && Object.keys(placeholdersParsed.data).length > 0 ? (
-            <p className="text-xs text-muted-foreground">Khóa: {Object.keys(placeholdersParsed.data).join(", ")}</p>
-          ) : null}
         </Card>
       </div>
     </div>
