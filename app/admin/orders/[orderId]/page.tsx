@@ -132,11 +132,11 @@ export default function AdminOrderDetailPage() {
               <p className="font-semibold tabular-nums">{formatVND(Number(data.totalAmountInclVat))}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-muted-foreground">Paid at</p>
+              <p className="text-xs uppercase text-muted-foreground">Ngày thanh toán</p>
               <p className="text-sm">{data.paidAt ? new Date(data.paidAt).toLocaleString("vi-VN") : "—"}</p>
             </div>
             <div>
-              <p className="text-xs uppercase text-muted-foreground">Tạo lúc</p>
+              <p className="text-xs uppercase text-muted-foreground">Ngày tạo</p>
               <p className="text-sm">{data.createdAt ? new Date(data.createdAt).toLocaleString("vi-VN") : "—"}</p>
             </div>
           </Card>
