@@ -30,6 +30,14 @@ type OrderRow = {
   paidAt?: string | null;
   topupRequestId?: string | null;
   createdAt?: string;
+  workspace?: {
+    name?: string;
+    slug?: string;
+  };
+  owner?: {
+    fullName?: string;
+    email?: string;
+  };
 };
 
 type OrdersListResponse = {
@@ -239,8 +247,8 @@ export default function AdminOrdersPage() {
                   </Button>
                 ),
               },
-              { key: "ws", header: "Workspace", cell: (r) => <span className="font-mono text-xs">{r.workspaceId ?? "—"}</span> },
-              { key: "own", header: "Owner", cell: (r) => <span className="font-mono text-xs">{r.ownerUserId ?? "—"}</span> },
+              { key: "ws", header: "Workspace", cell: (r) => <span className="font-mono text-xs">{r.workspace?.name ?? "—"}</span> },
+              { key: "own", header: "Owner", cell: (r) => <span className="font-mono text-xs">{r.owner?.fullName ?? "—"}</span> },
               {
                 key: "st",
                 header: "Trạng thái",
