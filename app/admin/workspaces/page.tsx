@@ -98,7 +98,7 @@ export default function AdminWorkspacesPage() {
                     className="bg-red-600"
                     type="button"
                     size="sm"
-                    variant="outline"
+                    variant="primary"
                     disabled={busy === r.id}
                     onClick={() => void disable(r.id)}
                     icon={<HiOutlineNoSymbol className="size-4" />}
