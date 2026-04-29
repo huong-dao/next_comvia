@@ -151,7 +151,7 @@ export default function AdminMoneyAccountPage() {
         <div>
             <PageHeader
             title="Tài khoản ngân hàng"
-            description="Danh sách tài khoản ngân hàng công ty theo `GET /admin/money-accounts`, hỗ trợ tạo và quản lý tài khoản ngân hàng."
+            description="Danh sách tài khoản ngân hàng công ty."
             actions={
                 <Button variant="outline" size="sm" icon={<HiOutlinePlus className="size-4" />} onClick={() => handleOpenModal('Thêm tài khoản mới')}>
                 Thêm tài khoản mới

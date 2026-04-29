@@ -37,35 +37,41 @@ const adminNav: NavItem[] = [
     match: (p) => p.startsWith("/admin/workspaces"),
   },
   {
+    label: "Tài khoản công ty",
+    icon: HiOutlineRectangleStack,
+    href: "/admin/money-accounts",
+    match: (p) => p.startsWith("/admin/money-accounts"),
+  },
+  {
     label: "Audit logs",
     icon: HiOutlineClipboardDocumentList,
     href: "/admin/audit-logs",
     match: (p) => p.startsWith("/admin/audit-logs"),
   },
-  {
-    label: "QC — Agents",
-    icon: HiOutlineCog6Tooth,
-    href: "/admin/quick-chat/agents",
-    match: (p) => p.startsWith("/admin/quick-chat/agents"),
-  },
-  {
-    label: "QC — Tools",
-    icon: HiOutlineWrenchScrewdriver,
-    href: "/admin/quick-chat/tools",
-    match: (p) => p.startsWith("/admin/quick-chat/tools"),
-  },
-  {
-    label: "Internal Quick Chat",
-    icon: HiOutlineChatBubbleLeftRight,
-    href: "/admin/internal-quick-chat",
-    match: (p) => p.startsWith("/admin/internal-quick-chat"),
-  },
-  {
-    label: "Dev — Webhook nạp tiền",
-    icon: HiOutlineCreditCard,
-    href: "/admin/dev/payment-webhook",
-    match: (p) => p.startsWith("/admin/dev/payment-webhook"),
-  },
+  // {
+  //   label: "QC — Agents",
+  //   icon: HiOutlineCog6Tooth,
+  //   href: "/admin/quick-chat/agents",
+  //   match: (p) => p.startsWith("/admin/quick-chat/agents"),
+  // },
+  // {
+  //   label: "QC — Tools",
+  //   icon: HiOutlineWrenchScrewdriver,
+  //   href: "/admin/quick-chat/tools",
+  //   match: (p) => p.startsWith("/admin/quick-chat/tools"),
+  // },
+  // {
+  //   label: "Internal Quick Chat",
+  //   icon: HiOutlineChatBubbleLeftRight,
+  //   href: "/admin/internal-quick-chat",
+  //   match: (p) => p.startsWith("/admin/internal-quick-chat"),
+  // },
+  // {
+  //   label: "Dev — Webhook nạp tiền",
+  //   icon: HiOutlineCreditCard,
+  //   href: "/admin/dev/payment-webhook",
+  //   match: (p) => p.startsWith("/admin/dev/payment-webhook"),
+  // },
 ];
 
 const staffNav: NavItem[] = [

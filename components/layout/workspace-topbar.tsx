@@ -14,14 +14,14 @@ export function WorkspaceTopbar() {
           leadingIcon={<HiOutlineMagnifyingGlass className="size-4" />}
           className="max-w-md bg-surface-muted/80 border-none"
         />
-        <Button
+        {/* <Button
           type="button"
           variant="outline"
           icon={<HiOutlineChatBubbleLeftRight className="size-4" />}
           className="h-[34px] min-w-[160px] whitespace-nowrap border-none !bg-surface-muted"
         >
           Open Quick Chat
-        </Button>
+        </Button> */}
         <ThemeToggle iconOnly className="h-[34px] min-h-[34px] min-w-[34px] rounded-lg border-none !bg-surface-muted" />
       </div>
     </header>

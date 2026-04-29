@@ -52,41 +52,41 @@ const adminLinks = [
     href: "/admin/audit-logs",
     icon: HiOutlineClipboardDocumentList,
   },
+  // {
+  //   title: "Quick Chat Agents",
+  //   description: "Quản lý agent nội bộ dành cho quick chat admin.",
+  //   href: "/admin/quick-chat/agents",
+  //   icon: HiOutlineCog6Tooth,
+  // },
+  // {
+  //   title: "Quick Chat Tools",
+  //   description: "Tra cứu danh sách tool name và sao chép nhanh.",
+  //   href: "/admin/quick-chat/tools",
+  //   icon: HiOutlineWrenchScrewdriver,
+  // },
+  // {
+  //   title: "Internal Quick Chat",
+  //   description: "Playground nội bộ cho session, message và confirm action.",
+  //   href: "/admin/internal-quick-chat",
+  //   icon: HiOutlineChatBubbleLeftRight,
+  // },
+  // {
+  //   title: "Dev Payment Webhook",
+  //   description: "Form mock webhook nạp tiền cho dev/demo.",
+  //   href: "/admin/dev/payment-webhook",
+  //   icon: HiOutlineCreditCard,
+  // },
+  // {
+  //   title: "Staff Review Queue",
+  //   description: "Chức năng review template nội bộ nằm ở khu STAFF.",
+  //   href: "/staff/templates-review/submitted",
+  //   icon: HiOutlineBolt,
+  // },
   {
-    title: "Quick Chat Agents",
-    description: "Quản lý agent nội bộ dành cho quick chat admin.",
-    href: "/admin/quick-chat/agents",
-    icon: HiOutlineCog6Tooth,
-  },
-  {
-    title: "Quick Chat Tools",
-    description: "Tra cứu danh sách tool name và sao chép nhanh.",
-    href: "/admin/quick-chat/tools",
-    icon: HiOutlineWrenchScrewdriver,
-  },
-  {
-    title: "Internal Quick Chat",
-    description: "Playground nội bộ cho session, message và confirm action.",
-    href: "/admin/internal-quick-chat",
-    icon: HiOutlineChatBubbleLeftRight,
-  },
-  {
-    title: "Dev Payment Webhook",
-    description: "Form mock webhook nạp tiền cho dev/demo.",
-    href: "/admin/dev/payment-webhook",
-    icon: HiOutlineCreditCard,
-  },
-  {
-    title: "Staff Review Queue",
-    description: "Chức năng review template nội bộ nằm ở khu STAFF.",
-    href: "/staff/templates-review/submitted",
-    icon: HiOutlineBolt,
-  },
-  {
-    title: "Create Money Account",
-    description: "Chức năng tạo tài khoản ngân hàng công ty.",
+    title: "Tài khoản công ty",
+    description: "Quản lý tài khoản ngân hàng công ty.",
     href: "/admin/money-accounts",
-    icon: HiOutlineBolt,
+    icon: HiOutlineRectangleStack,
   },
 ] as const;
 
@@ -113,13 +113,13 @@ export default function AdminOverviewPage() {
       {data ? (
         <div>
           <PageHeader
-            title="Admin hub"
-            description="Trung tâm vận hành nội bộ cho ADMIN: users, workspaces, audit logs, quick chat agents, tools và webhook dev."
-            actions={
-              <Button asChild icon={<HiOutlineChatBubbleLeftRight className="size-4" />}>
-                <Link href="/admin/internal-quick-chat">Mở Internal Quick Chat</Link>
-              </Button>
-            }
+            title="Tổng quan quản lý nội bộ"
+            description="Trung tâm vận hành nội bộ."
+            // actions={
+            //   <Button asChild icon={<HiOutlineChatBubbleLeftRight className="size-4" />}>
+            //     <Link href="/admin/internal-quick-chat">Mở Internal Quick Chat</Link>
+            //   </Button>
+            // }
           />
           <div className="grid gap-4 md:grid-cols-3">
             <Card className="space-y-2">
@@ -172,7 +172,7 @@ export default function AdminOverviewPage() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-base font-semibold text-foreground">Audit preview</p>
-                <p className="text-sm text-muted-foreground">5 log gần nhất từ `GET /admin/audit-logs?limit=5`.</p>
+                {/* <p className="text-sm text-muted-foreground">5 log gần nhất từ `GET /admin/audit-logs?limit=5`.</p> */}
               </div>
               <Button variant="outline" size="sm" asChild icon={<HiOutlineClipboardDocumentList className="size-4" />}>
                 <Link href="/admin/audit-logs">Xem tất cả</Link>
