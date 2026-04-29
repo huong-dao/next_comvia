@@ -13,7 +13,7 @@ export default function SecuritySettingsPage() {
       <PageHeader
         eyebrow="Cài đặt"
         title="Bảo mật"
-        description="Đổi mật khẩu và quản lý phiên — placeholder theo sitemap; kết nối API khi backend sẵn sàng."
+        // description="Đổi mật khẩu và quản lý phiên — placeholder theo sitemap; kết nối API khi backend sẵn sàng."
         actions={
           <Button variant="outline" asChild>
             <Link href={APP_PATHS.profile}>Hồ sơ</Link>
@@ -33,13 +33,13 @@ export default function SecuritySettingsPage() {
           <p className="text-xs text-muted-foreground">Form tạm khóa — chờ endpoint đổi mật khẩu trong tài liệu API.</p>
         </Card>
 
-        <Card className="space-y-3">
+        {/* <Card className="space-y-3">
           <p className="text-sm font-semibold text-foreground">Phiên đăng nhập</p>
           <p className="text-sm text-muted-foreground">Quản lý thiết bị / đăng xuất mọi nơi — phase sau.</p>
           <Button type="button" variant="outline" disabled>
             Đăng xuất tất cả thiết bị
           </Button>
-        </Card>
+        </Card> */}
       </div>
     </div>
   );

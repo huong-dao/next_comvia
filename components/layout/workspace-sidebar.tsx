@@ -49,12 +49,12 @@ const navItems: NavItem[] = [
     href: (w) => workspacePath(w, "oa"),
     isActive: (p, w) => p.startsWith(workspacePath(w, "oa")),
   },
-  {
-    label: "Thống kê",
-    icon: HiOutlineChartBar,
-    href: (w) => workspacePath(w, "analytics"),
-    isActive: (p, w) => p.startsWith(workspacePath(w, "analytics")),
-  },
+  // {
+  //   label: "Thống kê",
+  //   icon: HiOutlineChartBar,
+  //   href: (w) => workspacePath(w, "analytics"),
+  //   isActive: (p, w) => p.startsWith(workspacePath(w, "analytics")),
+  // },
   {
     label: "Mẫu tin nhắn",
     icon: HiOutlineRectangleGroup,

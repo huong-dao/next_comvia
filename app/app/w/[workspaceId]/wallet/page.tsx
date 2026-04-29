@@ -68,7 +68,7 @@ export default function WalletPage() {
     <div>
       <PageHeader
         eyebrow="Wallet"
-        title="Ví credit"
+        title="Ví tiền"
         description="Số dư và lịch sử giao dịch theo workspace (credit owner)."
         actions={
           owner ? (

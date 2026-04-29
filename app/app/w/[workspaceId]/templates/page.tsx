@@ -56,7 +56,7 @@ export default function TemplatesListPage() {
     <div>
       <PageHeader
         eyebrow="Templates"
-        title="Danh sách template"
+        title="Danh sách mẫu tin nhắn"
         // description="Lọc theo trạng thái, xem chi tiết và thao tác submit (theo quyền backend)."
         actions={
           <Button icon={<HiMiniPlus className="size-4" />} asChild>

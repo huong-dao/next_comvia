@@ -120,7 +120,7 @@ export default function ApiKeysPage() {
       <PageHeader
         eyebrow="Integration"
         title="API Keys"
-        description="Tạo / vô hiệu / tái tạo key — raw key chỉ hiện một lần."
+        // description="Tạo / vô hiệu / tái tạo key — raw key chỉ hiện một lần."
         actions={
           <Button icon={<HiMiniPlus className="size-4" />} type="button" onClick={() => setCreateOpen(true)}>
             Tạo API key mới

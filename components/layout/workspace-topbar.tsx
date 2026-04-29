@@ -10,7 +10,7 @@ export function WorkspaceTopbar() {
     <header className="mb-5 flex items-center gap-3">
       <div className="flex w-full items-center gap-3">
         <Input
-          placeholder="Search conversations..."
+          placeholder="Tìm kiếm..."
           leadingIcon={<HiOutlineMagnifyingGlass className="size-4" />}
           className="max-w-md bg-surface-muted/80 border-none"
         />

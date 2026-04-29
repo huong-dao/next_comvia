@@ -31,7 +31,7 @@ export default function ProfilePage() {
       <PageHeader
         eyebrow="Tài khoản"
         title="Hồ sơ"
-        description="Thông tin tài khoản đăng nhập (theo API GET /auth/me)."
+        // description="Thông tin tài khoản đăng nhập (theo API GET /auth/me)."
       />
 
       <Card className="max-w-xl space-y-4">
@@ -59,9 +59,9 @@ export default function ProfilePage() {
             </div>
           ) : null}
         </div>
-        <p className="border-t border-border/60 pt-4 text-xs text-muted-foreground">
+        {/* <p className="border-t border-border/60 pt-4 text-xs text-muted-foreground">
           Cập nhật hồ sơ qua API riêng sẽ bổ sung khi backend có endpoint PATCH phù hợp tài liệu.
-        </p>
+        </p> */}
       </Card>
     </div>
   );

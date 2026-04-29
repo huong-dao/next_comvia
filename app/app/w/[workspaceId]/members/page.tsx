@@ -97,7 +97,7 @@ export default function MembersPage() {
       <PageHeader
         eyebrow="Workspace"
         title="Thành viên"
-        description="Danh sách thành viên và lời mời (Owner mời / xóa)."
+        description="Danh sách thành viên của Workspace."
         actions={
           owner ? (
             <Button type="button" onClick={() => setInviteOpen(true)}>
