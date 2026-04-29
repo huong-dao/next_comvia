@@ -57,18 +57,17 @@ export function Input({
   );
 }
 
-export function Textarea({
-  invalid = false,
-  errorMessage,
-  className,
-  ...props
-}: React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
-  invalid?: boolean;
-  errorMessage?: string;
-}) {
+export const Textarea = React.forwardRef<
+  HTMLTextAreaElement,
+  React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
+    invalid?: boolean;
+    errorMessage?: string;
+  }
+>(function Textarea({ invalid = false, errorMessage, className, ...props }, ref) {
   return (
     <div className="w-full">
       <textarea
+        ref={ref}
         aria-invalid={invalid || undefined}
         className={cn(
           "w-full rounded-xl border border-border bg-surface-muted px-4 py-3 text-sm text-foreground shadow-none outline-none transition focus:!border-primary dark:focus:!border-primary focus:shadow-none",
@@ -81,7 +80,7 @@ export function Textarea({
       {errorMessage ? <p className="mt-1 text-xs text-danger/90">{errorMessage}</p> : null}
     </div>
   );
-}
+});
 
 export function Select({
   invalid = false,
