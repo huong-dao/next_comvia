@@ -13,6 +13,7 @@ import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { SimpleTable } from "@/components/ui/simple-table";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { useComviaQuery } from "@/lib/use-comvia-query";
+import { formatVND } from "@/lib/utils";
 
 type OrderItemRow = {
   id?: string;
@@ -51,10 +52,12 @@ type AdminOrderDetail = {
   items?: OrderItemRow[];
   invoice?: {
     id?: string;
+    billingSnapshotJson?: string;
     invoiceCode?: string;
     status?: string;
     workspaceId?: string;
     orderId?: string;
+    updatedAt?: string;
   } | null;
 };
 
@@ -112,15 +115,15 @@ export default function AdminOrderDetailPage() {
             </div>
             <div>
               <p className="text-xs uppercase text-muted-foreground">Trước VAT</p>
-              <p className="font-medium tabular-nums">{fmt(data.totalAmountExclVat)}</p>
+              <p className="font-medium tabular-nums">{formatVND(Number(data.totalAmountExclVat))}</p>
             </div>
             <div>
               <p className="text-xs uppercase text-muted-foreground">VAT</p>
-              <p className="font-medium tabular-nums">{fmt(data.totalVatAmount)}</p>
+              <p className="font-medium tabular-nums">{formatVND(Number(data.totalVatAmount))}</p>
             </div>
             <div>
               <p className="text-xs uppercase text-muted-foreground">Tổng thanh toán</p>
-              <p className="font-semibold tabular-nums">{fmt(data.totalAmountInclVat)}</p>
+              <p className="font-semibold tabular-nums">{formatVND(Number(data.totalAmountInclVat))}</p>
             </div>
             <div>
               <p className="text-xs uppercase text-muted-foreground">Paid at</p>
@@ -132,29 +135,38 @@ export default function AdminOrderDetailPage() {
             </div>
           </Card>
 
-          {data.invoice?.id ? (
-            <Card className="mb-6 space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Hóa đơn liên kết</p>
-              <p className="text-sm">{data.invoice.invoiceCode ?? data.invoice.id}</p>
-              {data.invoice.status ? (
-                <p className="mt-1">
-                  <EntityStatusBadge value={data.invoice.status} />
-                </p>
-              ) : null}
-              <p className="text-xs text-muted-foreground">Chi tiết hóa đơn admin: GET /admin/invoices/:invoiceId (khi có trang tương ứng).</p>
-            </Card>
-          ) : null}
-
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dòng đơn</p>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Hóa đơn</p>
           <SimpleTable
-            rows={data.items ?? []}
+            rows={[data.invoice ?? {}]}
             getRowKey={(r, i) => r.id ?? String(i)}
             columns={[
-              { key: "n", header: "Tên", cell: (r) => r.name ?? "—" },
-              { key: "q", header: "SL", cell: (r) => String(r.quantity ?? "—") },
-              { key: "p", header: "Đơn giá", cell: (r) => fmt(r.unitPrice) },
-              { key: "v", header: "VAT%", cell: (r) => fmt(r.vatRate) },
-              { key: "t", header: "Tổng", cell: (r) => fmt(r.totalAmountInclVat) },
+              { key: "n", header: "Mã hóa đơn", cell: (r) => r.invoiceCode ?? "—" },
+              {
+                key: "id",
+                header: "Thông tin xuất HĐ",
+                cell: (r) => {
+                  let billingInfo: any = null;
+                  try {
+                    billingInfo = r.billingSnapshotJson ? JSON.parse(r.billingSnapshotJson) : null;
+                  } catch {
+                    billingInfo = null;
+                  }
+                  return billingInfo && (billingInfo.companyName || billingInfo.fullName) ? (
+                    <div>
+                      <div className="font-medium">{billingInfo.companyName ?? billingInfo.fullName}</div>
+                      {billingInfo.address ? <div className="text-xs text-muted-foreground">Địa chỉ: {billingInfo.address}</div> : null}
+                      {billingInfo.taxCode ? <div className="text-xs text-muted-foreground">Mã số thuế: {billingInfo.taxCode}</div> : null}
+                      {billingInfo.invoiceEmail ? <div className="text-xs text-muted-foreground">Email: {billingInfo.invoiceEmail}</div> : null}
+                    </div>
+                  ) : (
+                    "—"
+                  );
+                },
+              },
+         
+         
+              { key: "p", header: "Tình trạng", cell: (r) => r.status ? <EntityStatusBadge value={r.status} /> : "—" },
+              { key: "t", header: "Ngày tạo", cell: (r) => r.updatedAt ? new Date(r.updatedAt).toLocaleString("vi-VN") : "—" },
             ]}
           />
         </div>
