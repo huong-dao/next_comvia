@@ -211,15 +211,18 @@ export default function AdminOrdersPage() {
                   <option value="CANCELLED">Đã hủy</option>
                 </Select>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => void applyFilters()}
-                icon={<HiOutlineClipboardDocumentList className="size-4" />}
-              >
-                Áp dụng
-              </Button>
+              <div>
+                <label className="mb-1 block text-xs text-muted-foreground" htmlFor="orders-filter-user">&ensp;</label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void applyFilters()}
+                  icon={<HiOutlineClipboardDocumentList className="size-4" />}
+                >
+                  Áp dụng
+                </Button>
+              </div>
             </div>
           </Card>
 
