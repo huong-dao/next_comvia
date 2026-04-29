@@ -147,7 +147,7 @@ export default function AdminOrdersPage() {
         <div>
           <PageHeader
             title="Đơn hàng"
-            description="Danh sách đơn toàn hệ thống — GET /admin/orders."
+            // description="Danh sách đơn toàn hệ thống — GET /admin/orders."
           />
 
           <Card className="mb-6 space-y-4">
