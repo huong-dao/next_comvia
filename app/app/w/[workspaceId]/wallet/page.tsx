@@ -69,7 +69,7 @@ export default function WalletPage() {
       <PageHeader
         eyebrow="Wallet"
         title="Ví tiền"
-        description="Số dư và lịch sử giao dịch theo workspace (credit owner)."
+        description="Số dư và lịch sử giao dịch theo Workspace."
         actions={
           owner ? (
             <Button icon={<HiOutlineCreditCard className="size-4" />} variant="secondary" asChild>
@@ -101,14 +101,14 @@ export default function WalletPage() {
       </div>
 
       <div className="mb-4 flex justify-between items-center gap-3">
-        <Select value={type} onChange={(e) => setType(e.target.value)} className="max-w-sm">
+        {/* <Select value={type} onChange={(e) => setType(e.target.value)} className="max-w-sm">
           <option value="">Mọi loại giao dịch</option>
           <option value="TOPUP_CREDIT">TOPUP_CREDIT</option>
           <option value="MESSAGE_DEBIT">MESSAGE_DEBIT</option>
           <option value="CAMPAIGN_HOLD">CAMPAIGN_HOLD</option>
           <option value="CAMPAIGN_REFUND">CAMPAIGN_REFUND</option>
           <option value="MANUAL_ADJUSTMENT">MANUAL_ADJUSTMENT</option>
-        </Select>
+        </Select> */}
         <Button className="w-40" type="button" variant="outline" size="sm" onClick={() => void rt()}>
           Làm mới lịch sử
         </Button>
