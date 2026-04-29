@@ -242,13 +242,13 @@ export default function AdminOrdersPage() {
                 key: "code",
                 header: "Mã đơn",
                 cell: (r) => (
-                  <Button variant="ghost" size="sm" className="h-auto px-2 font-mono text-xs" asChild>
+                  <Button variant="ghost" size="sm" className="h-auto px-2 text-sm" asChild>
                     <Link href={`/admin/orders/${r.id}`}>{r.orderCode ?? r.id}</Link>
                   </Button>
                 ),
               },
-              { key: "ws", header: "Workspace", cell: (r) => <span className="font-mono text-xs">{r.workspace?.name ?? "—"}</span> },
-              { key: "own", header: "Owner", cell: (r) => <span className="font-mono text-xs">{r.owner?.fullName ?? "—"}</span> },
+              { key: "ws", header: "Workspace", cell: (r) => r.workspace?.name ?? "—" },
+              { key: "own", header: "Người dùng", cell: (r) => r.owner?.fullName ?? "—" },
               {
                 key: "st",
                 header: "Trạng thái",
@@ -256,12 +256,12 @@ export default function AdminOrdersPage() {
               },
               {
                 key: "tot",
-                header: "Tổng (gồm VAT)",
+                header: "Tổng cộng",
                 cell: (r) => <span className="tabular-nums">{fmtAmount(r.totalAmountInclVat)}</span>,
               },
               {
                 key: "paid",
-                header: "Paid at",
+                header: "Thanh toán lúc",
                 cell: (r) => (r.paidAt ? new Date(r.paidAt).toLocaleString("vi-VN") : "—"),
               },
               {
