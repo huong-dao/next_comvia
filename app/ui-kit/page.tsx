@@ -8,6 +8,8 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { Switch, Checkbox, Radio } from "@/components/ui/controls";
 import { DataTable } from "@/components/ui/data-table";
 import { Input, Select, Textarea } from "@/components/ui/input";
+import { PaginationBar } from "@/components/ui/pagination-bar";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { PageHeader } from "@/components/app/page-header";
 import { PageEmpty, PageError, PageLoading } from "@/components/app/page-state";
 import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
@@ -23,6 +25,8 @@ export default function UiKitPage() {
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
   const [checked, setChecked] = useState(true);
   const [radio, setRadio] = useState<"active" | "inactive">("active");
+  const [comboValue, setComboValue] = useState("");
+  const [kitPage, setKitPage] = useState(3);
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-7xl space-y-6 px-4 py-6 md:px-6 md:py-10">
@@ -183,6 +187,27 @@ export default function UiKitPage() {
               <option value="high">Priority: High</option>
             </Select>
             <Textarea placeholder="Describe your issue..." rows={3} />
+          </div>
+        </Card>
+
+        <Card>
+          <CardTitle>Searchable select &amp; pagination</CardTitle>
+          <div className="mt-5 max-w-md space-y-4">
+            <SearchableSelect
+              aria-label="Demo combo"
+              options={[
+                { value: "a", label: "Alpha", description: "Mô tả phụ" },
+                { value: "b", label: "Bravo" },
+                { value: "c", label: "Charlie" },
+              ]}
+              value={comboValue}
+              onValueChange={setComboValue}
+              placeholder="Chọn mục (gõ để lọc)"
+            />
+            <div>
+              <p className="mb-2 text-xs text-muted-foreground">PaginationBar — ví dụ 11 trang, đang ở trang {kitPage}</p>
+              <PaginationBar currentPage={kitPage} totalPages={11} onPageChange={setKitPage} />
+            </div>
           </div>
         </Card>
 

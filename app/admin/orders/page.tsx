@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
-import { HiChevronLeft, HiChevronRight, HiOutlineAdjustmentsHorizontal, HiOutlineClipboardDocumentList } from "react-icons/hi2";
+import { HiOutlineAdjustmentsHorizontal, HiOutlineClipboardDocumentList } from "react-icons/hi2";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { AdminRoleGate } from "@/components/admin/role-gate";
@@ -10,9 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input, Select } from "@/components/ui/input";
+import { PaginationBar } from "@/components/ui/pagination-bar";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { SimpleTable } from "@/components/ui/simple-table";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { useComviaQuery } from "@/lib/use-comvia-query";
+
+const PAGE_SIZE = 30;
 
 type OrderRow = {
   id: string;
@@ -38,31 +42,37 @@ type OrdersListResponse = {
   };
 };
 
+type WsRow = {
+  id: string;
+  name?: string;
+  slug?: string;
+};
+
+type UserRow = {
+  id: string;
+  email?: string;
+  fullName?: string;
+  role?: string;
+};
+
 type AppliedFilters = {
-  limit: number;
   workspaceId: string;
   ownerUserId: string;
   status: string;
   orderCode: string;
-  topupRequestId: string;
-  paidAtFrom: string;
-  paidAtTo: string;
-  createdAtFrom: string;
-  createdAtTo: string;
 };
 
 const initialFilters = (): AppliedFilters => ({
-  limit: 30,
   workspaceId: "",
   ownerUserId: "",
   status: "",
   orderCode: "",
-  topupRequestId: "",
-  paidAtFrom: "",
-  paidAtTo: "",
-  createdAtFrom: "",
-  createdAtTo: "",
 });
+
+function isEndUserRole(role?: string) {
+  const r = (role ?? "").toUpperCase();
+  return r !== "ADMIN" && r !== "STAFF";
+}
 
 function fmtAmount(v: number | string | undefined) {
   if (v === undefined || v === null || v === "") return "—";
@@ -74,29 +84,49 @@ export default function AdminOrdersPage() {
   const [applied, setApplied] = useState<AppliedFilters>(initialFilters);
   const [draft, setDraft] = useState<AppliedFilters>(initialFilters);
 
+  const wsFetcher = useCallback((token: string) => comviaFetch<WsRow[]>("/admin/workspaces", { token }), []);
+  const usersFetcher = useCallback((token: string) => comviaFetch<UserRow[]>("/admin/users", { token }), []);
+
+  const { data: wsData, loading: wsLoading } = useComviaQuery(true, wsFetcher);
+  const { data: usersData, loading: usersLoading } = useComviaQuery(true, usersFetcher);
+
+  const workspaceOptions = useMemo(
+    () =>
+      (wsData ?? []).map((w) => ({
+        value: w.id,
+        label: [w.name, w.slug].filter(Boolean).join(" · ") || w.id,
+        description: w.id,
+      })),
+    [wsData],
+  );
+
+  const endUserOptions = useMemo(() => {
+    return (usersData ?? [])
+      .filter((u) => isEndUserRole(u.role))
+      .map((u) => ({
+        value: u.id,
+        label: u.fullName || u.email || u.id,
+        description: u.email && u.fullName ? u.email : u.email ? undefined : u.id,
+      }));
+  }, [usersData]);
+
   const qs = useMemo(() => {
     const p = new URLSearchParams();
     p.set("page", String(page));
-    const lim = Math.min(100, Math.max(1, applied.limit));
-    p.set("limit", String(lim));
+    p.set("limit", String(PAGE_SIZE));
     if (applied.workspaceId.trim()) p.set("workspaceId", applied.workspaceId.trim());
     if (applied.ownerUserId.trim()) p.set("ownerUserId", applied.ownerUserId.trim());
     if (applied.status) p.set("status", applied.status);
     if (applied.orderCode.trim()) p.set("orderCode", applied.orderCode.trim());
-    if (applied.topupRequestId.trim()) p.set("topupRequestId", applied.topupRequestId.trim());
-    if (applied.paidAtFrom.trim()) p.set("paidAtFrom", applied.paidAtFrom.trim());
-    if (applied.paidAtTo.trim()) p.set("paidAtTo", applied.paidAtTo.trim());
-    if (applied.createdAtFrom.trim()) p.set("createdAtFrom", applied.createdAtFrom.trim());
-    if (applied.createdAtTo.trim()) p.set("createdAtTo", applied.createdAtTo.trim());
     return p.toString();
   }, [page, applied]);
 
-  const fetcher = useCallback(
+  const ordersFetcher = useCallback(
     (token: string) => comviaFetch<OrdersListResponse>(`/admin/orders?${qs}`, { token }),
     [qs],
   );
 
-  const { data, loading, error, refetch } = useComviaQuery(true, fetcher);
+  const { data, loading, error, refetch } = useComviaQuery(true, ordersFetcher);
   const rows = data?.data ?? [];
   const meta = data?.meta;
 
@@ -105,20 +135,19 @@ export default function AdminOrdersPage() {
   }
 
   function applyFilters() {
-    const lim = Math.min(100, Math.max(1, draft.limit || 30));
-    setApplied({ ...draft, limit: lim });
+    setApplied({ ...draft });
     setPage(1);
   }
 
   return (
     <AdminRoleGate>
-      {loading ? <PageLoading /> : null}
+      {loading && !data ? <PageLoading /> : null}
       {error && !data ? <PageError message={error} onRetry={() => void refetch()} /> : null}
       {data ? (
         <div>
           <PageHeader
             title="Đơn hàng"
-            description="Danh sách đơn toàn hệ thống — GET /admin/orders (phân trang và lọc theo tài liệu API admin)."
+            description="Danh sách đơn toàn hệ thống — GET /admin/orders."
           />
           <div className="mb-6 grid gap-4 md:grid-cols-3">
             <Card className="space-y-2">
@@ -132,8 +161,8 @@ export default function AdminOrdersPage() {
               </p>
             </Card>
             <Card className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Số dòng / trang</p>
-              <p className="text-3xl font-semibold text-foreground">{meta?.limit ?? applied.limit}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Kích thước trang</p>
+              <p className="text-3xl font-semibold text-foreground">{PAGE_SIZE}</p>
             </Card>
           </div>
 
@@ -142,69 +171,64 @@ export default function AdminOrdersPage() {
               <HiOutlineAdjustmentsHorizontal className="size-5 text-secondary" />
               <p className="text-sm font-semibold text-foreground">Bộ lọc</p>
             </div>
-            <p className="text-xs text-muted-foreground">Chỉnh giá trị rồi bấm «Áp dụng» để tải dữ liệu; phân trang «Trước/Sau» giữ nguyên bộ lọc đã áp dụng.</p>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <p className="text-xs text-muted-foreground">
+              Chọn điều kiện rồi bấm «Áp dụng». Đổi số trang bên dưới bảng giữ nguyên bộ lọc đã áp dụng.
+            </p>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <div>
-                <label className="mb-1 block text-xs text-muted-foreground">workspaceId</label>
+                <label className="mb-1 block text-xs text-muted-foreground" htmlFor="orders-filter-code">
+                  Mã đơn
+                </label>
                 <Input
-                  value={draft.workspaceId}
-                  onChange={(e) => patchDraft({ workspaceId: e.target.value })}
-                  placeholder="UUID workspace"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-muted-foreground">ownerUserId</label>
-                <Input
-                  value={draft.ownerUserId}
-                  onChange={(e) => patchDraft({ ownerUserId: e.target.value })}
-                  placeholder="User sở hữu đơn"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-muted-foreground">status</label>
-                <Select value={draft.status} onChange={(e) => patchDraft({ status: e.target.value })}>
-                  <option value="">Tất cả</option>
-                  <option value="PAID">PAID</option>
-                  <option value="CANCELLED">CANCELLED</option>
-                </Select>
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-muted-foreground">orderCode</label>
-                <Input
+                  id="orders-filter-code"
                   value={draft.orderCode}
                   onChange={(e) => patchDraft({ orderCode: e.target.value })}
-                  placeholder="Mã đơn chính xác"
+                  placeholder="Nhập mã đơn"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-muted-foreground">topupRequestId</label>
-                <Input value={draft.topupRequestId} onChange={(e) => patchDraft({ topupRequestId: e.target.value })} />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-muted-foreground">paidAtFrom (ISO)</label>
-                <Input value={draft.paidAtFrom} onChange={(e) => patchDraft({ paidAtFrom: e.target.value })} />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-muted-foreground">paidAtTo (ISO)</label>
-                <Input value={draft.paidAtTo} onChange={(e) => patchDraft({ paidAtTo: e.target.value })} />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-muted-foreground">createdAtFrom (ISO)</label>
-                <Input value={draft.createdAtFrom} onChange={(e) => patchDraft({ createdAtFrom: e.target.value })} />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-muted-foreground">createdAtTo (ISO)</label>
-                <Input value={draft.createdAtTo} onChange={(e) => patchDraft({ createdAtTo: e.target.value })} />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-muted-foreground">limit (1–100)</label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={draft.limit}
-                  onChange={(e) => patchDraft({ limit: Number(e.target.value) || 30 })}
+                <label className="mb-1 block text-xs text-muted-foreground" htmlFor="orders-filter-ws">
+                  Workspace
+                </label>
+                <SearchableSelect
+                  id="orders-filter-ws"
+                  aria-label="Lọc workspace"
+                  options={workspaceOptions}
+                  value={draft.workspaceId}
+                  onValueChange={(v) => patchDraft({ workspaceId: v })}
+                  placeholder="Tất cả workspace"
+                  emptyText="Không có workspace."
+                  disabled={wsLoading}
                 />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-muted-foreground" htmlFor="orders-filter-user">
+                  Người dùng
+                </label>
+                <SearchableSelect
+                  id="orders-filter-user"
+                  aria-label="Lọc người dùng (không gồm admin/staff)"
+                  options={endUserOptions}
+                  value={draft.ownerUserId}
+                  onValueChange={(v) => patchDraft({ ownerUserId: v })}
+                  placeholder="Tất cả người dùng"
+                  emptyText="Không có người dùng phù hợp."
+                  disabled={usersLoading}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-muted-foreground" htmlFor="orders-filter-status">
+                  Trạng thái
+                </label>
+                <Select
+                  id="orders-filter-status"
+                  value={draft.status}
+                  onChange={(e) => patchDraft({ status: e.target.value })}
+                >
+                  <option value="">Tất cả</option>
+                  <option value="PAID">Đã thanh toán</option>
+                  <option value="CANCELLED">Đã hủy</option>
+                </Select>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -258,40 +282,21 @@ export default function AdminOrdersPage() {
             ]}
           />
 
-          {meta && meta.totalPages > 1 ? (
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/60 pt-4">
-              <p className="text-sm text-muted-foreground">
-                Hiển thị {(meta.page - 1) * meta.limit + 1}–{Math.min(meta.page * meta.limit, meta.total)} trong {meta.total} đơn
-              </p>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={meta.page <= 1}
-                  icon={<HiChevronLeft className="size-4" />}
-                  onClick={() => {
-                    setPage((p) => Math.max(1, p - 1));
-                  }}
-                >
-                  Trước
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={meta.page >= meta.totalPages}
-                  icon={<HiChevronRight className="size-4" />}
-                  iconPosition="right"
-                  onClick={() => {
-                    setPage((p) => p + 1);
-                  }}
-                >
-                  Sau
-                </Button>
-              </div>
-            </div>
-          ) : null}
+          <div className="mt-4 space-y-4 border-t border-border/60 pt-4">
+            <p className="text-center text-sm text-muted-foreground">
+              Hiển thị{" "}
+              {meta && meta.total > 0
+                ? `${(meta.page - 1) * meta.limit + 1}–${Math.min(meta.page * meta.limit, meta.total)}`
+                : "0"}{" "}
+              trong {meta?.total ?? 0} đơn
+            </p>
+            <PaginationBar
+              currentPage={page}
+              totalPages={meta?.totalPages ?? 0}
+              onPageChange={setPage}
+              ariaLabel="Phân trang danh sách đơn"
+            />
+          </div>
         </div>
       ) : null}
     </AdminRoleGate>
