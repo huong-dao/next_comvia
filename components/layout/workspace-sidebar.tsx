@@ -38,7 +38,7 @@ const navItems: NavItem[] = [
     isActive: (p, w) => p === workspacePath(w, "dashboard"),
   },
   {
-    label: "Tin nhắn",
+    label: "Gửi tin",
     icon: HiOutlineChatBubbleLeftRight,
     href: (w) => workspacePath(w, "messages", "send-single"),
     isActive: (p, w) => p.startsWith(workspacePath(w, "messages")),

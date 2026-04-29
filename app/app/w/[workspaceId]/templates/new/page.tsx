@@ -140,15 +140,15 @@ export default function NewTemplatePage() {
     <div>
       <PageHeader
         eyebrow="Templates"
-        title="Tạo template mới"
-        description="Backend tự sinh mã template (code) khi tạo — không nhập code ở đây."
+        title="Tạo mẫu tin nhắn mới"
+        // description="Backend tự sinh mã template (code) khi tạo — không nhập code ở đây."
       />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card className="space-y-4">
           <div>
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Tên template
+              Tên mẫu
             </label>
             <Input value={name} onChange={(e) => setName(e.target.value)} required />
           </div>
