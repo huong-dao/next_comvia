@@ -52,7 +52,13 @@ type AdminOrderDetail = {
   items?: OrderItemRow[];
   invoice?: {
     id?: string;
-    billingSnapshotJson?: string;
+    billingSnapshotJson?: {
+      companyName?: string;
+      fullName?: string;
+      address?: string;
+      taxCode?: string;
+      invoiceEmail?: string;
+    };
     invoiceCode?: string;
     status?: string;
     workspaceId?: string;
@@ -145,12 +151,7 @@ export default function AdminOrderDetailPage() {
                 key: "id",
                 header: "Thông tin xuất HĐ",
                 cell: (r) => {
-                  let billingInfo: any = null;
-                  try {
-                    billingInfo = r.billingSnapshotJson ? JSON.parse(r.billingSnapshotJson) : null;
-                  } catch {
-                    billingInfo = null;
-                  }
+                  const billingInfo = r.billingSnapshotJson ?? null;
                   return billingInfo && (billingInfo.companyName || billingInfo.fullName) ? (
                     <div>
                       <div className="font-medium">{billingInfo.companyName ?? billingInfo.fullName}</div>
@@ -163,8 +164,6 @@ export default function AdminOrderDetailPage() {
                   );
                 },
               },
-         
-         
               { key: "p", header: "Tình trạng", cell: (r) => r.status ? <EntityStatusBadge value={r.status} /> : "—" },
               { key: "t", header: "Ngày tạo", cell: (r) => r.updatedAt ? new Date(r.updatedAt).toLocaleString("vi-VN") : "—" },
             ]}
