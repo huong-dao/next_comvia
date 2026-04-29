@@ -22,7 +22,7 @@ export function rowsToPlaceholders(rows: PlaceholderRow[]):
     const slug = row.slug.trim();
     if (!slug) {
       if (row.defaultValue.trim()) {
-        return { ok: false, message: "Mỗi trường phải có slug (tên biến) khi đã có giá trị mặc định." };
+        return { ok: false, message: "Mỗi trường phải có slug (tên biến) khi đã có giá trị mẫu." };
       }
       continue;
     }

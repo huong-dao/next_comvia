@@ -308,7 +308,7 @@ export default function TemplateDetailPage() {
                       </div>
                       <div>
                         <label className="mb-1 block text-xs font-medium text-muted-foreground">
-                          Giá trị mặc định
+                          Giá trị mẫu
                         </label>
                         <Input
                           value={row.defaultValue}
