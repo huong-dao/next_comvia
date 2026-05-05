@@ -177,12 +177,12 @@ export default function LoginPage() {
             <Image
               src="/images/comvia_light_logo.png"
               alt="COMVIA"
-              className="cv-light-logo h-[36px] block dark:hidden"
+              className="cv-light-logo h-[46px] block dark:hidden"
             />
             <Image
               src="/images/comvia_dark_logo.png"
               alt="COMVIA"
-              className="cv-dark-logo h-[36px] hidden dark:block"
+              className="cv-dark-logo h-[46px] hidden dark:block"
             />
           </Link>
           <div className="flex items-center gap-3">

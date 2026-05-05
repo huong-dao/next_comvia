@@ -17,6 +17,11 @@ const appMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Comvia Frontend",
   description: "Comvia frontend UI system",
+  icons: {
+    icon: '/images/comvia_fav.png',
+    shortcut: '/images/comvia_fav.png',
+    apple: '/images/comvia_fav.png',
+  },
 };
 
 export default function RootLayout({
