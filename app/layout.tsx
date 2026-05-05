@@ -15,8 +15,11 @@ const appMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Comvia Frontend",
-  description: "Comvia frontend UI system",
+  title: {
+    default: 'comvia.cloud',
+    template: '%s - comvia.cloud',
+  },
+  description: "Business Messaging Platform",
   icons: {
     icon: '/images/comvia_fav.png',
     shortcut: '/images/comvia_fav.png',

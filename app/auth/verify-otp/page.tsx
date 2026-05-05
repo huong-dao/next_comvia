@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { HiMiniClock, HiOutlinePencil } from "react-icons/hi2";
@@ -13,6 +14,11 @@ import {
   getPendingOtpContext,
   updatePendingOtpDemoCode,
 } from "@/lib/otp-context";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Xác thực OTP",
+};
 
 type VerifyOtpResponse = {
   accessToken: string;
@@ -198,7 +204,16 @@ function VerifyOtpContent() {
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 pb-7 pt-6 sm:px-6">
         <header className="flex items-center justify-between">
           <Link href="/" className="text-3xl font-bold tracking-tight text-secondary">
-            COMVIA
+          <Image
+              src="/images/comvia_light_logo.png"
+              alt="COMVIA"
+              className="cv-light-logo h-[46px] block dark:hidden"
+            />
+            <Image
+              src="/images/comvia_dark_logo.png"
+              alt="COMVIA"
+              className="cv-dark-logo h-[46px] hidden dark:block"
+            />
           </Link>
           <div className="flex items-center gap-3">
             <ThemeToggle />

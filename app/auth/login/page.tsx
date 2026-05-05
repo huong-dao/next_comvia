@@ -13,6 +13,11 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cn } from "@/lib/cn";
 import { getAccessToken, getStoredUser, postLoginPathForRole, saveAuthSession } from "@/lib/auth";
 import { createOtpRequestId, savePendingOtpContext } from "@/lib/otp-context";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Đăng nhập",
+};
 
 type LoginErrors = {
   email?: string;
