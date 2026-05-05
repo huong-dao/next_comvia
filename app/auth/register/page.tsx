@@ -142,10 +142,8 @@ export default function RegisterPage() {
           </Link>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <Link href="/auth/login">
-              <Button variant="ghost">Đăng nhập</Button>
-            </Link>
-            <Button>Đăng ký</Button>
+            <Button variant="ghost" onClick={() => router.push("/auth/login")}>Đăng nhập</Button>
+            <Button variant="ghost" onClick={() => router.push("/auth/register")}>Đăng ký</Button>
           </div>
         </header>
 

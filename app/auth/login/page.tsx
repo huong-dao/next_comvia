@@ -187,10 +187,8 @@ export default function LoginPage() {
           </Link>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <Button variant="ghost">
-              Đăng nhập
-            </Button>
-            <Button>Đăng ký</Button>
+            <Button variant="ghost" onClick={() => router.push("/auth/login")}>Đăng nhập</Button>
+            <Button variant="ghost" onClick={() => router.push("/auth/register")}>Đăng ký</Button>
           </div>
         </header>
 

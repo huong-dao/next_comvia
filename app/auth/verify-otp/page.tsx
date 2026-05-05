@@ -212,12 +212,8 @@ function VerifyOtpContent() {
           </Link>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <Link href="/auth/login">
-              <Button variant="ghost">Đăng nhập</Button>
-            </Link>
-            <Link href="/auth/register">
-              <Button>Đăng ký</Button>
-            </Link>
+            <Button variant="ghost" onClick={() => router.push("/auth/login")}>Đăng nhập</Button>
+            <Button variant="ghost" onClick={() => router.push("/auth/register")}>Đăng ký</Button>
           </div>
         </header>
 
