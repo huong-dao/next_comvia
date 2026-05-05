@@ -123,7 +123,7 @@ export function InternalSidebar({
     >
       <div className={cn("mb-4", isCompact ? "flex justify-center" : "")}>
         {!isCompact ? (
-          <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center justify-between gap-2">
             <div>
             <Image
                 src="/images/comvia_light_logo.png"
