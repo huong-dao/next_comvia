@@ -14,11 +14,6 @@ import {
   getPendingOtpContext,
   updatePendingOtpDemoCode,
 } from "@/lib/otp-context";
-import { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Xác thực OTP",
-};
 
 type VerifyOtpResponse = {
   accessToken: string;

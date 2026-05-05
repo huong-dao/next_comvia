@@ -10,11 +10,6 @@ import { Checkbox } from "@/components/ui/controls";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { createOtpRequestId, savePendingOtpContext } from "@/lib/otp-context";
-import { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Đăng ký",
-};
 
 type RegisterErrors = {
   fullName?: string;
