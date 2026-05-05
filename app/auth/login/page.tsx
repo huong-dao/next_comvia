@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FcGoogle } from "react-icons/fc";
@@ -173,7 +174,8 @@ export default function LoginPage() {
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 pb-7 pt-6 sm:px-6">
         <header className="flex items-center justify-between">
           <Link href="/" className="text-3xl font-bold tracking-tight text-secondary">
-            COMVIA
+            <Image src="/images/comvia_light_logo.png" alt="COMVIA" height={36} className="cv-light-logo" />
+            <Image src="/images/comvia_dark_logo.png" alt="COMVIA" height={36} className="cv-dark-logo" />
           </Link>
           <div className="flex items-center gap-3">
             <ThemeToggle />
