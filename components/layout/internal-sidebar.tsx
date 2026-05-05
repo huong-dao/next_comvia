@@ -18,6 +18,7 @@ import {
 } from "react-icons/hi2";
 import { cn } from "@/lib/cn";
 import { SidebarUserCard } from "@/components/layout/sidebar-user-card";
+import Image from "next/image";
 
 type InternalVariant = "admin" | "staff";
 
@@ -124,10 +125,16 @@ export function InternalSidebar({
         {!isCompact ? (
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-2xl font-bold tracking-tight text-secondary/90">Comvia.cloud</p>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground whitespace-nowrap">
-                Business Messaging
-              </p>
+            <Image
+                src="/images/comvia_light_logo.png"
+                alt="COMVIA"
+                className="cv-light-logo h-[46px] block dark:hidden"
+              />
+              <Image
+                src="/images/comvia_dark_logo.png"
+                alt="COMVIA"
+                className="cv-dark-logo h-[46px] hidden dark:block"
+              />
             </div>
             <button
               type="button"
