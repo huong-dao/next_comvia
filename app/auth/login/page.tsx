@@ -174,8 +174,16 @@ export default function LoginPage() {
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 pb-7 pt-6 sm:px-6">
         <header className="flex items-center justify-between">
           <Link href="/" className="text-3xl font-bold tracking-tight text-secondary">
-            <Image src="/images/comvia_light_logo.png" alt="COMVIA" height={36} className="cv-light-logo" />
-            <Image src="/images/comvia_dark_logo.png" alt="COMVIA" height={36} className="cv-dark-logo" />
+            <Image
+              src="/images/comvia_light_logo.png"
+              alt="COMVIA"
+              className="cv-light-logo h-[36px] block dark:hidden"
+            />
+            <Image
+              src="/images/comvia_dark_logo.png"
+              alt="COMVIA"
+              className="cv-dark-logo h-[36px] hidden dark:block"
+            />
           </Link>
           <div className="flex items-center gap-3">
             <ThemeToggle />
