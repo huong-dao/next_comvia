@@ -48,8 +48,8 @@ const adminLinks = [
     icon: HiOutlineRectangleStack,
   },
   {
-    title: "Audit Logs",
-    description: "Lọc log theo workspace, action và giới hạn bản ghi.",
+    title: "Lịch sử hoạt động",
+    description: "Audit log — lọc theo workspace, action và giới hạn bản ghi.",
     href: "/admin/audit-logs",
     icon: HiOutlineClipboardDocumentList,
   },
@@ -146,11 +146,11 @@ export default function AdminOverviewPage() {
               </Button>
             </Card>
             <Card className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Recent Audit</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Lịch sử gần đây</p>
               <p className="text-3xl font-semibold text-foreground">{data.recentLogs.length}</p>
-              <p className="text-sm text-muted-foreground">Số log gần nhất đang hiển thị để theo dõi hoạt động vận hành.</p>
+              <p className="text-sm text-muted-foreground">Số bản log gần nhất trong preview để theo dõi vận hành.</p>
               <Button variant="ghost" size="sm" asChild icon={<HiOutlineClipboardDocumentList className="size-4" />}>
-                <Link href="/admin/audit-logs">Xem audit logs</Link>
+                <Link href="/admin/audit-logs">Mở lịch sử hoạt động</Link>
               </Button>
             </Card>
           </div>
@@ -178,7 +178,7 @@ export default function AdminOverviewPage() {
           <Card className="mt-6 space-y-4">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-base font-semibold text-foreground">Audit preview</p>
+                <p className="text-base font-semibold text-foreground">Preview lịch sử</p>
                 {/* <p className="text-sm text-muted-foreground">5 log gần nhất từ `GET /admin/audit-logs?limit=5`.</p> */}
               </div>
               <Button variant="outline" size="sm" asChild icon={<HiOutlineClipboardDocumentList className="size-4" />}>
@@ -188,7 +188,7 @@ export default function AdminOverviewPage() {
             <div className="space-y-2">
               {data.recentLogs.length === 0 ? (
                 <p className="rounded-xl border border-border/70 bg-surface-muted/40 px-4 py-6 text-sm text-muted-foreground">
-                  Chưa có audit log để preview.
+                  Chưa có log để preview.
                 </p>
               ) : (
                 data.recentLogs.map((log, index) => (

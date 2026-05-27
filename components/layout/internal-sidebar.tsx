@@ -58,7 +58,7 @@ const adminNav: NavItem[] = [
     match: (p) => p.startsWith("/admin/invoices"),
   },
   {
-    label: "Audit logs",
+    label: "Lịch sử hoạt động",
     icon: HiOutlineClipboardDocumentList,
     href: "/admin/audit-logs",
     match: (p) => p.startsWith("/admin/audit-logs"),

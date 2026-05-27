@@ -5,9 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   HiBars3BottomLeft,
-  HiOutlineChartBar,
   HiOutlineChatBubbleLeftRight,
-  HiOutlineCog6Tooth,
+  HiOutlineClipboardDocumentList,
   HiOutlineCreditCard,
   HiOutlineDocumentText,
   HiOutlineHome,
@@ -67,6 +66,12 @@ const navItems: NavItem[] = [
     icon: HiOutlineUserGroup,
     href: (w) => workspacePath(w, "members"),
     isActive: (p, w) => p.startsWith(workspacePath(w, "members")),
+  },
+  {
+    label: "Lịch sử hoạt động",
+    icon: HiOutlineClipboardDocumentList,
+    href: (w) => workspacePath(w, "activity-history"),
+    isActive: (p, w) => p.startsWith(workspacePath(w, "activity-history")),
   },
   {
     label: "Ví tiền",
