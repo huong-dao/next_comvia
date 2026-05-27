@@ -146,7 +146,18 @@ export default function AdminOrderDetailPage() {
             rows={[data.invoice ?? {}]}
             getRowKey={(r, i) => r.id ?? String(i)}
             columns={[
-              { key: "n", header: "Mã hóa đơn", cell: (r) => r.invoiceCode ?? "—" },
+              {
+                key: "n",
+                header: "Mã hóa đơn",
+                cell: (r) =>
+                  r.id ? (
+                    <Button variant="ghost" size="sm" className="h-auto px-2 text-sm" asChild>
+                      <Link href={`/admin/invoices/${r.id}`}>{r.invoiceCode ?? r.id}</Link>
+                    </Button>
+                  ) : (
+                    (r.invoiceCode ?? "—")
+                  ),
+              },
               {
                 key: "id",
                 header: "Thông tin xuất HĐ",

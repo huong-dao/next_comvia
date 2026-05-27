@@ -7,12 +7,15 @@ export type ComviaApiErrorBody = {
 export class ComviaApiError extends Error {
   readonly statusCode: number;
   readonly body: ComviaApiErrorBody | null;
+  /** Payload JSON đầy đủ khi có (vd. body lỗi verify PDF 422 với mismatches). */
+  readonly details: unknown | null;
 
-  constructor(message: string, statusCode: number, body: ComviaApiErrorBody | null) {
+  constructor(message: string, statusCode: number, body: ComviaApiErrorBody | null, details: unknown | null = null) {
     super(message);
     this.name = "ComviaApiError";
     this.statusCode = statusCode;
     this.body = body;
+    this.details = details ?? body;
   }
 }
 
@@ -59,7 +62,7 @@ export async function comviaFetch<T>(
   if (!res.ok) {
     const data = await readJsonSafe<ComviaApiErrorBody>(res);
     const message = parseErrorMessage(data, `HTTP ${res.status}`);
-    throw new ComviaApiError(message, res.status, data);
+    throw new ComviaApiError(message, res.status, data, data as unknown);
   }
 
   if (res.status === 204) return undefined as T;
@@ -68,4 +71,43 @@ export async function comviaFetch<T>(
   if (!ct.includes("application/json")) return undefined as T;
 
   return (await res.json()) as T;
+}
+
+/**
+ * POST FormData — không được set `Content-Type` thủ công để boundary được set đúng.
+ * @see `docs/FRONTEND_ADMIN_ROUTER_API_MAP.mdc` Issue hóa đơn qua PDF.
+ */
+export async function comviaMultipartFetch<T>(
+  path: string,
+  init: Omit<RequestInit, "body"> & { token: string; formData: FormData },
+): Promise<T> {
+  const { token, formData, headers: hdrs, ...rest } = init;
+  const baseUrl = getComviaApiBaseUrl();
+  const url = `${baseUrl.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
+  const headers = new Headers(hdrs);
+  if (headers.has("Content-Type")) {
+    headers.delete("Content-Type");
+  }
+  headers.set("Authorization", `Bearer ${token}`);
+
+  const res = await fetch(url, {
+    ...rest,
+    method: init.method ?? "POST",
+    body: formData,
+    headers,
+  });
+
+  const parsed = await readJsonSafe<T>(res);
+
+  if (!res.ok) {
+    const asBody =
+      parsed && typeof parsed === "object" ? (parsed as ComviaApiErrorBody) : null;
+    const message = parseErrorMessage(asBody, `HTTP ${res.status}`);
+    throw new ComviaApiError(message, res.status, asBody, parsed);
+  }
+
+  if (res.status === 204) return undefined as T;
+  const ct = res.headers.get("content-type") ?? "";
+  if (!ct.includes("application/json")) return undefined as T;
+  return parsed as T;
 }

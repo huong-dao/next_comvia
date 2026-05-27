@@ -10,6 +10,7 @@ import {
   HiOutlineClipboardDocumentList,
   HiOutlineCog6Tooth,
   HiOutlineCreditCard,
+  HiOutlineDocumentText,
   HiOutlineHome,
   HiOutlineRectangleStack,
   HiOutlineShoppingCart,
@@ -51,6 +52,12 @@ const adminNav: NavItem[] = [
     match: (p) => p.startsWith("/admin/orders"),
   },
   {
+    label: "Hóa đơn",
+    icon: HiOutlineDocumentText,
+    href: "/admin/invoices",
+    match: (p) => p.startsWith("/admin/invoices"),
+  },
+  {
     label: "Audit logs",
     icon: HiOutlineClipboardDocumentList,
     href: "/admin/audit-logs",
@@ -84,6 +91,12 @@ const adminNav: NavItem[] = [
 
 const staffNav: NavItem[] = [
   { label: "Staff hub", icon: HiOutlineHome, href: "/staff", match: (p) => p === "/staff" },
+  {
+    label: "Hóa đơn",
+    icon: HiOutlineDocumentText,
+    href: "/admin/invoices",
+    match: (p) => p.startsWith("/admin/invoices"),
+  },
   {
     label: "Duyệt template",
     icon: HiOutlineClipboardDocumentList,

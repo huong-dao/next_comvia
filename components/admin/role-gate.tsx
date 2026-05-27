@@ -53,6 +53,11 @@ export function AdminRoleGate({ children }: { children: React.ReactNode }) {
   return <RoleGate allowRoles={["ADMIN"]}>{children}</RoleGate>;
 }
 
+/** Orders / invoices admin theo MAP: JWT + ADMIN hoặc STAFF. */
+export function AdminStaffRoleGate({ children }: { children: React.ReactNode }) {
+  return <RoleGate allowRoles={["ADMIN", "STAFF"]}>{children}</RoleGate>;
+}
+
 /** Khu `/staff/*` theo `FRONTEND_SITEMAP_ADMIN_STAFF.mdc` — duyệt template chỉ STAFF. */
 export function StaffRoleGate({ children }: { children: React.ReactNode }) {
   return <RoleGate allowRoles={["STAFF"]}>{children}</RoleGate>;
