@@ -1,17 +1,25 @@
 # Frontend API Guide (Next.js + fetch) - comvia
 
+> Bắt đầu tại [`docs/README.md`](./README.md). File này là tài liệu API chính cho app Next.js (user/workspace/staff).
+
 Tài liệu này hướng dẫn FE Next.js gọi backend NestJS theo các API hiện có trong dự án `e-Nest-comvia`.
 
 ## 1) Base URL & Environments
 
 ### 1.1 Biến môi trường gợi ý
-- `NEXT_PUBLIC_API_BASE_URL` (vd: `http://localhost:3000`)
+- `NEXT_PUBLIC_API_BASE_URL`: **gốc API đầy đủ, gồm cả global prefix** `api/v1` (backend gọi `app.setGlobalPrefix('api/v1')` trong `main.ts`).
 - `NEXT_PUBLIC_DEMO_MODE` (tùy bạn; backend đọc `DEMO_MODE` ở server)
 
 Ví dụ `.env.local` (Next.js):
 ```env
-NEXT_PUBLIC_API_BASE_URL="http://localhost:3000"
+# Local Nest (port mặc định 3000)
+NEXT_PUBLIC_API_BASE_URL="http://localhost:3000/api/v1"
+
+# Deploy (ví dụ server của bạn — đổi host/port nếu khác)
+NEXT_PUBLIC_API_BASE_URL="http://103.200.20.197:3000/api/v1"
 ```
+
+Các đoạn `comviaFetch("/auth/login", …)` bên dưới nối `path` vào **sau** base URL trên (tức thành `…/api/v1/auth/login`).
 
 ## 2) Chuẩn hóa cách gọi API bằng fetch
 
@@ -345,6 +353,9 @@ Response:
 { "ok": true }
 ```
 
+Ghi chú audit log:
+- Backend tự ghi `member.invited` / `member.removed` khi invite / xóa member.
+
 ## 6) OA Connection (mock)
 
 Endpoint:
@@ -353,6 +364,9 @@ Endpoint:
 - `POST /workspaces/:workspaceId/oa/disconnect` (OWNER)
 
 Các API này hiện dùng mock OA. Frontend chỉ cần gọi connect trước khi làm Template/Messaging (vì backend check `oa.status === CONNECTED`).
+
+Ghi chú audit log:
+- Backend tự ghi audit log khi connect/disconnect OA.
 
 ## 7) Templates (CRUD + submit + staff approve/reject)
 
@@ -598,19 +612,43 @@ Response:
 
 ### 10.2 Regenerate api key
 Endpoint:
-- `POST /workspaces/:workspaceId/api-keys/:apiKeyId/regenerate`
+- `PATCH /workspaces/:workspaceId/api-keys/:apiKeyId/disable` (OWNER)
+- `POST /workspaces/:workspaceId/api-keys/:apiKeyId/regenerate` (OWNER)
 
-Response:
+Response regenerate:
 ```json
 { "apiKey": "NEW_RAW_API_KEY" }
 ```
 
-## 11) Public API (gọi bằng API key)
+Ghi chú audit log:
+- Backend tự ghi audit log khi `create` / `disable` / `regenerate` API key (không cần FE gọi endpoint riêng).
+
+## 11) Audit Log (server-side only)
+
+Audit log **không có API public**. Backend tự ghi vào bảng `AuditLog` sau khi các API nghiệp vụ thành công — frontend **không gọi** endpoint ghi/đọc log.
+
+| Action | API trigger | Role |
+|--------|-------------|------|
+| `workspace.created` | `POST /workspaces` | user tạo workspace |
+| `workspace.updated` | `PATCH /workspaces/:workspaceId` (đổi name/slug) | OWNER |
+| `billing_info.updated` | `PATCH /workspaces/:workspaceId` (đổi billing) | OWNER |
+| `member.invited` | `POST /workspaces/:workspaceId/invitations` | OWNER |
+| `member.removed` | `DELETE /workspaces/:workspaceId/members/:memberUserId` | OWNER |
+| `oa.connected` | `POST /workspaces/:workspaceId/oa/connect` | OWNER |
+| `oa.disconnected` | `POST /workspaces/:workspaceId/oa/disconnect` | OWNER |
+| `template.submitted` | `POST /workspaces/:workspaceId/templates/:templateId/submit` | OWNER hoặc MEMBER |
+| `template.approved` | `POST /internal/templates/:templateId/approve` | STAFF |
+| `template.rejected` | `POST /internal/templates/:templateId/reject` | STAFF (bắt buộc `reason`) |
+| `api_key.created` | `POST /workspaces/:workspaceId/api-keys` | OWNER |
+| `api_key.disabled` | `PATCH /workspaces/:workspaceId/api-keys/:apiKeyId/disable` | OWNER |
+| `api_key.regenerated` | `POST /workspaces/:workspaceId/api-keys/:apiKeyId/regenerate` | OWNER |
+
+## 12) Public API (gọi bằng API key)
 
 Base:
 - `/public/...`
 
-### 11.1 Auth bằng `api_key`
+### 12.1 Auth bằng `api_key`
 - Backend Public API dùng `ApiKeyGuard` và hiện đọc:
   - header `x-api-key`
   - hoặc body/query `api_key`
@@ -619,7 +657,7 @@ Base:
 - header `x-api-key: <api_key>`
 - field `api_key` trong body.
 
-### 11.2 List approved templates
+### 12.2 List approved templates
 - `GET /public/templates`
 
 Response:
@@ -635,10 +673,10 @@ Response:
 ]
 ```
 
-### 11.3 Get template detail
+### 12.3 Get template detail
 - `GET /public/templates/:templateId`
 
-### 11.4 Send public message
+### 12.4 Send public message
 - `POST /public/messages/send`
 
 Request:
@@ -660,7 +698,7 @@ Response (mock):
 }
 ```
 
-## 12) Admin APIs (nếu FE có màn admin)
+## 13) Admin APIs (nếu FE có màn admin)
 
 Base:
 - `/admin/...`
@@ -672,9 +710,8 @@ Endpoint ví dụ:
 - `PATCH /admin/users/:userId/lock` body `{ "locked": true }`
 - `GET /admin/workspaces`
 - `PATCH /admin/workspaces/:workspaceId/disable`
-- `GET /admin/audit-logs?workspaceId=...&action=...&limit=50`
 
-## 13) Common error handling (frontend)
+## 14) Common error handling (frontend)
 
 Backend NestJS thường trả lỗi theo dạng (tùy middleware/exceptions):
 ```json
@@ -689,7 +726,7 @@ Frontend nên:
 - bắt error từ `comviaFetch`
 - hiển thị thông điệp `error.message`
 
-## 14) Demo scenario gợi ý để test UI nhanh
+## 15) Demo scenario gợi ý để test UI nhanh
 
 Kịch bản 1 (user -> verify OTP -> workspace -> oa -> template -> staff approve -> send):
 1. `POST /auth/register` (lấy `demoOtpCode`)
@@ -704,4 +741,30 @@ Kịch bản 1 (user -> verify OTP -> workspace -> oa -> template -> staff appro
 Kịch bản 2 (API key -> public send):
 1. tạo api key (owner)
 2. gọi `POST /public/messages/send` với `x-api-key` + `api_key` trong body
+
+## Phụ lục A) Enum / status (API response)
+
+Backend trả enum **UPPER_SNAKE_CASE** (theo Prisma). FE nên map label hiển thị ở client, không đổi giá trị gửi/nhận.
+
+| Nhóm | Giá trị |
+|------|---------|
+| `UserRole` | `USER`, `ADMIN`, `STAFF` |
+| `UserStatus` | `ACTIVE`, `PENDING_VERIFICATION`, `LOCKED` |
+| `WorkspaceStatus` | `ACTIVE`, `DISABLED`, `SUSPENDED`, `DELETED` |
+| `MemberRole` | `OWNER`, `MEMBER` |
+| `InvitationStatus` | `PENDING`, `ACCEPTED`, `EXPIRED`, `REVOKED`, `RESENT` |
+| `BillingType` | `ORGANIZATION`, `INDIVIDUAL` |
+| `OaConnectionStatus` | `NOT_CONNECTED`, `CONNECTED`, `TOKEN_EXPIRED`, `CONNECTION_ERROR`, `RECONNECT_REQUIRED`, `DISCONNECTED` |
+| `TemplateStatus` | `DRAFT`, `SUBMITTED`, `PENDING_ZALO_APPROVAL`, `APPROVED`, `REJECTED`, `DISABLED` |
+| `TopupStatus` | `PENDING`, `PAID`, `FAILED`, `EXPIRED` |
+| `OrderStatus` | `PAID`, `CANCELLED` |
+| `InvoiceStatus` | `POSTED`, `ISSUED`, `CANCELLED` |
+| `WalletTransactionType` | `TOPUP_CREDIT`, `MESSAGE_DEBIT`, `CAMPAIGN_HOLD`, `CAMPAIGN_REFUND`, `MANUAL_ADJUSTMENT`, `REVERSAL` |
+| `SendType` | `TEST`, `SINGLE`, `CAMPAIGN` |
+| `MessageStatus` | `PENDING`, `SUCCESS`, `FAILED` |
+| `CampaignStatus` | `DRAFT`, `READY`, `RUNNING`, `PAUSED`, `COMPLETED`, `FAILED`, `CANCELLED` |
+| `CampaignRowStatus` | `PENDING`, `SUCCESS`, `FAILED`, `SKIPPED` |
+| `ApiKeyStatus` | `ACTIVE`, `DISABLED`, `REVOKED` |
+
+Nguồn sự thật: `prisma/schema.prisma`.
 
