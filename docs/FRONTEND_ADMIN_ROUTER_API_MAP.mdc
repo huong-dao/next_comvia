@@ -92,8 +92,6 @@ Auth/Role: `UserRole.ADMIN`
 - `createdAt`, `action`, `workspaceId`, `resourceType`, `resourceId`, `metadataJson`
 - `actor.email`, `actor.fullName`
 
-**FE workspace (Owner):** trang `Lịch sử hoạt động` tại **`/app/w/:workspaceId/activity-history`** — gọi `GET /workspaces/:workspaceId/audit-logs` với header `x-workspace-id` và query `action`, `limit` (giới hạn và response giống mục 11 trong `docs/FRONTEND_API_GUIDE_NEXTJS.mdc`).
-
 ---
 
 ## 5) `/admin/quick-chat/agents`
