@@ -10,6 +10,7 @@ import {
   HiOutlineClipboardDocumentList,
   HiOutlineCog6Tooth,
   HiOutlineCreditCard,
+  HiOutlineCurrencyDollar,
   HiOutlineDocumentText,
   HiOutlineHome,
   HiOutlineRectangleStack,
@@ -62,6 +63,12 @@ const adminNav: NavItem[] = [
     icon: HiOutlineClipboardDocumentList,
     href: "/admin/audit-logs",
     match: (p) => p.startsWith("/admin/audit-logs"),
+  },
+  {
+    label: "Giá tin nhắn",
+    icon: HiOutlineCurrencyDollar,
+    href: "/admin/config/message-pricing",
+    match: (p) => p.startsWith("/admin/config/message-pricing"),
   },
   // {
   //   label: "QC — Agents",

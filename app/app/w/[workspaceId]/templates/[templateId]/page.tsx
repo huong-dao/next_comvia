@@ -11,7 +11,8 @@ import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input, Textarea } from "@/components/ui/input";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
-import { getAccessToken } from "@/lib/auth";
+import { getAccessToken, getStoredUser } from "@/lib/auth";
+import { formatVND } from "@/lib/utils";
 import { workspacePath } from "@/lib/paths";
 import {
   newPlaceholderRow,
@@ -31,6 +32,7 @@ type TemplateDetail = {
   content?: string;
   status?: string;
   placeholdersJson?: Record<string, string>;
+  unitPricePerMessage?: number | string | null;
   updatedAt?: string;
 };
 
@@ -40,6 +42,7 @@ export default function TemplateDetailPage() {
   const templateId = params.templateId as string;
   const { role } = useWorkspaceContext();
   const owner = isWorkspaceOwner(role);
+  const isAppAdmin = (getStoredUser()?.role ?? "").toUpperCase() === "ADMIN";
 
   const fetcher = useCallback(
     (token: string) =>
@@ -55,6 +58,7 @@ export default function TemplateDetailPage() {
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
   const [placeholderRows, setPlaceholderRows] = useState<PlaceholderRow[]>(() => [newPlaceholderRow()]);
+  const [unitPrice, setUnitPrice] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const contentRef = useRef<HTMLTextAreaElement>(null);
@@ -65,6 +69,11 @@ export default function TemplateDetailPage() {
     setName(data.name ?? "");
     setContent(data.content ?? "");
     setPlaceholderRows(recordToPlaceholderRows(data.placeholdersJson));
+    setUnitPrice(
+      data.unitPricePerMessage != null && data.unitPricePerMessage !== ""
+        ? String(data.unitPricePerMessage)
+        : "",
+    );
   }, [data]);
 
   const placeholdersParsed = useMemo(() => rowsToPlaceholders(placeholderRows), [placeholderRows]);
@@ -147,6 +156,36 @@ export default function TemplateDetailPage() {
       void refetch();
     } catch (e) {
       setMsg(e instanceof ComviaApiError ? e.message : "Không submit được.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveUnitPrice() {
+    if (!isAppAdmin || !data) return;
+    const token = getAccessToken();
+    if (!token) return;
+    const raw = unitPrice.trim();
+    const payload =
+      raw === ""
+        ? { unitPricePerMessage: null }
+        : { unitPricePerMessage: Math.round(Number(raw)) };
+    if (raw !== "" && (!Number.isFinite(payload.unitPricePerMessage as number) || (payload.unitPricePerMessage as number) < 0)) {
+      setMsg("Nhập đơn giá hợp lệ (VND/tin).");
+      return;
+    }
+    setBusy(true);
+    setMsg(null);
+    try {
+      await comviaFetch(`/workspaces/${workspaceId}/templates/${templateId}`, {
+        method: "PATCH",
+        token,
+        body: JSON.stringify(payload),
+      });
+      setMsg("Đã cập nhật đơn giá tin.");
+      void refetch();
+    } catch (e) {
+      setMsg(e instanceof ComviaApiError ? e.message : "Không lưu đơn giá.");
     } finally {
       setBusy(false);
     }
@@ -363,6 +402,31 @@ export default function TemplateDetailPage() {
               )}
             </>
           )}
+
+          {isAppAdmin ? (
+            <div className="space-y-2 border-t border-border/60 pt-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Đơn giá tin (ADMIN)
+              </p>
+              <p className="text-xs text-muted-foreground">
+                VND cho mỗi tin ZNS. Để trống = dùng giá mặc định hệ thống.
+                {data.unitPricePerMessage != null
+                  ? ` Hiện tại: ${formatVND(Number(data.unitPricePerMessage))}.`
+                  : ""}
+              </p>
+              <Input
+                type="number"
+                min={0}
+                step={1}
+                value={unitPrice}
+                onChange={(e) => setUnitPrice(e.target.value)}
+                placeholder="VD: 400"
+              />
+              <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => void saveUnitPrice()}>
+                Lưu đơn giá
+              </Button>
+            </div>
+          ) : null}
 
           <div className="mt-auto flex flex-col gap-2 border-t border-border/60 pt-4">
             <Button icon={<HiOutlineDocumentArrowUp className="size-4" />} type="button" variant="accent" disabled={busy || approved} onClick={() => void submitTemplate()}>

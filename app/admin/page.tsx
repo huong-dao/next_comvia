@@ -8,6 +8,7 @@ import {
   HiOutlineClipboardDocumentList,
   HiOutlineCog6Tooth,
   HiOutlineCreditCard,
+  HiOutlineCurrencyDollar,
   HiOutlineRectangleStack,
   HiOutlineShoppingCart,
   HiOutlineUsers,
@@ -94,6 +95,12 @@ const adminLinks = [
     description: "Quản lý tài khoản ngân hàng công ty.",
     href: "/admin/money-accounts",
     icon: HiOutlineCreditCard,
+  },
+  {
+    title: "Giá tin nhắn",
+    description: "Cấu hình giá mặc định VND cho mỗi tin ZNS.",
+    href: "/admin/config/message-pricing",
+    icon: HiOutlineCurrencyDollar,
   },
 ] as const;
 

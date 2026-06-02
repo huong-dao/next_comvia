@@ -9,6 +9,7 @@ import {
   HiOutlineClipboardDocumentList,
   HiOutlineCreditCard,
   HiOutlineDocumentText,
+  HiOutlineMegaphone,
   HiOutlineHome,
   HiOutlineKey,
   HiOutlineRectangleGroup,
@@ -60,6 +61,12 @@ const navItems: NavItem[] = [
     icon: HiOutlineRectangleGroup,
     href: (w) => workspacePath(w, "templates"),
     isActive: (p, w) => p.startsWith(workspacePath(w, "templates")),
+  },
+  {
+    label: "Chiến dịch Zalo",
+    icon: HiOutlineMegaphone,
+    href: (w) => workspacePath(w, "campaigns"),
+    isActive: (p, w) => p.startsWith(workspacePath(w, "campaigns")),
   },
   {
     label: "Thành viên",
