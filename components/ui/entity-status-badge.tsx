@@ -29,6 +29,9 @@ const TONE_MAP: Record<string, "active" | "pending" | "error" | "neutral"> = {
   CANCELLED: "error",
   UNKNOWN: "neutral",
   NOT_CONNECTED: "neutral",
+  TOKEN_EXPIRED: "error",
+  CONNECTION_ERROR: "error",
+  RECONNECT_REQUIRED: "pending",
 };
 
 export function EntityStatusBadge({ value }: { value: string }) {
