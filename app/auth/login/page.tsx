@@ -197,7 +197,7 @@ export default function LoginPage() {
 
         <section className="mx-auto flex w-full max-w-[400px] flex-1 flex-col justify-center py-10">
           <div className="mb-7 text-center">
-            <h1 className="text-[24px] font-semibold tracking-tight text-foreground sm:text-[32px]">Đăng nhập tài khoản để tiếp tục</h1>
+            <h1 className="text-[24px] font-semibold tracking-tight text-foreground sm:text-[26px]">Đăng nhập tài khoản để tiếp tục</h1>
           </div>
 
           <div className="rounded-[20px] border border-border bg-card/90 p-7 shadow-[var(--shadow-soft)] backdrop-blur-xl dark:border-[#233256] dark:bg-[#0f1a33]/92 dark:shadow-[0_22px_50px_rgba(4,10,27,0.6)]">
