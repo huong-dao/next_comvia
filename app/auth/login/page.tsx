@@ -278,7 +278,7 @@ export default function LoginPage() {
                 {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
               </Button>
 
-              <div className="pt-2">
+              {/* <div className="pt-2">
                 <p className="text-center text-[11px] uppercase tracking-[0.25em] text-muted-foreground/70 dark:text-[#4c5f85]">Hoặc tiếp tục với</p>
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   <Button
@@ -300,7 +300,7 @@ export default function LoginPage() {
                     SSO
                   </Button>
                 </div>
-              </div>
+              </div> */}
             </form>
           </div>
 
