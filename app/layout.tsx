@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import { Be_Vietnam_Pro, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 
-const appSans = Be_Vietnam_Pro({
+const appSans = Inter({
   variable: "--font-app-sans",
   subsets: ["latin", "vietnamese"],
   weight: ["400", "500", "600", "700"],

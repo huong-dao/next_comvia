@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cn } from "@/lib/cn";
 import { getAccessToken, getStoredUser, postLoginPathForRole, saveAuthSession } from "@/lib/auth";
-import { createOtpRequestId, savePendingOtpContext } from "@/lib/otp-context";
+import { createDefaultOtpExpiredAt, createOtpRequestId, savePendingOtpContext } from "@/lib/otp-context";
 
 type LoginErrors = {
   email?: string;
@@ -120,6 +120,7 @@ export default function LoginPage() {
             otpRequestId,
             email: email.trim(),
             purpose: "REGISTER",
+            expiredAt: createDefaultOtpExpiredAt(),
           });
 
           router.push(`/auth/verify-otp?otpRequestId=${encodeURIComponent(otpRequestId)}`);
@@ -164,6 +165,10 @@ export default function LoginPage() {
     setErrors((prev) => ({ ...prev, ...validate(email, password) }));
   }
 
+  const isFormComplete =
+    EMAIL_REGEX.test(email.trim()) &&
+    password.length >= 8;
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
       <div className="pointer-events-none absolute inset-0">
@@ -187,14 +192,12 @@ export default function LoginPage() {
           </Link>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <Button variant="ghost" onClick={() => router.push("/auth/login")}>Đăng nhập</Button>
-            <Button variant="ghost" onClick={() => router.push("/auth/register")}>Đăng ký</Button>
           </div>
         </header>
 
         <section className="mx-auto flex w-full max-w-[400px] flex-1 flex-col justify-center py-10">
           <div className="mb-7 text-center">
-            <h1 className="text-[24px] font-semibold tracking-tight text-foreground sm:text-[32px]">Chào mừng trở lại</h1>
+            <h1 className="text-[24px] font-semibold tracking-tight text-foreground sm:text-[32px]">Đăng nhập tài khoản để tiếp tục</h1>
           </div>
 
           <div className="rounded-[20px] border border-border bg-card/90 p-7 shadow-[var(--shadow-soft)] backdrop-blur-xl dark:border-[#233256] dark:bg-[#0f1a33]/92 dark:shadow-[0_22px_50px_rgba(4,10,27,0.6)]">
@@ -274,7 +277,7 @@ export default function LoginPage() {
                 <p className="rounded-lg border border-danger/50 bg-danger/10 px-3 py-2 text-sm text-red-200">{errors.form}</p>
               ) : null}
 
-              <Button type="submit" size="lg" disabled={isSubmitting} className="w-full">
+              <Button type="submit" size="lg" disabled={isSubmitting || !isFormComplete} className="w-full">
                 {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
               </Button>
 
@@ -327,6 +330,9 @@ export default function LoginPage() {
           </div>
           <span>© 2026 COMVIA. Tất cả quyền được bảo lưu.</span>
         </footer>
+        <div className="flex items-center justify-center text-center shadow-[var(--shadow-soft)] bg-card/90 p-5">
+        COMVIA một sản phẩm công nghệ của SoftX.asia
+        </div>
       </div>
     </main>
   );

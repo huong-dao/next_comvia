@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/controls";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { createOtpRequestId, savePendingOtpContext } from "@/lib/otp-context";
+import { createDefaultOtpExpiredAt, createOtpRequestId, savePendingOtpContext } from "@/lib/otp-context";
 
 type RegisterErrors = {
   fullName?: string;
@@ -105,6 +105,7 @@ export default function RegisterPage() {
         email: email.trim(),
         purpose: "REGISTER",
         demoOtpCode: registerData?.demoOtpCode,
+        expiredAt: registerData?.expiredAt || createDefaultOtpExpiredAt(),
       });
 
       router.push(`/auth/verify-otp?otpRequestId=${encodeURIComponent(otpRequestId)}`);
@@ -118,6 +119,13 @@ export default function RegisterPage() {
       setIsSubmitting(false);
     }
   }
+
+  const isFormComplete =
+    fullName.trim().length > 0 &&
+    EMAIL_REGEX.test(email.trim()) &&
+    password.length >= 8 &&
+    confirmPassword === password &&
+    acceptedTerms;
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
@@ -142,8 +150,6 @@ export default function RegisterPage() {
           </Link>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <Button variant="ghost" onClick={() => router.push("/auth/login")}>Đăng nhập</Button>
-            <Button variant="ghost" onClick={() => router.push("/auth/register")}>Đăng ký</Button>
           </div>
         </header>
 
@@ -243,7 +249,7 @@ export default function RegisterPage() {
                 </p>
               ) : null}
 
-              <Button type="submit" size="lg" disabled={isSubmitting} className="w-full">
+              <Button type="submit" size="lg" disabled={isSubmitting || !isFormComplete} className="w-full">
                 {isSubmitting ? "Đang tạo tài khoản..." : "Tạo tài khoản"}
               </Button>
             </form>

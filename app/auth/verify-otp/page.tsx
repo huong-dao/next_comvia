@@ -11,8 +11,12 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { postLoginPathForRole, saveAuthSession } from "@/lib/auth";
 import {
   clearPendingOtpContext,
+  createDefaultOtpExpiredAt,
+  formatOtpCountdown,
+  getOtpRemainingSeconds,
   getPendingOtpContext,
-  updatePendingOtpDemoCode,
+  resolveOtpExpiredAtMs,
+  updatePendingOtpContext,
 } from "@/lib/otp-context";
 
 type VerifyOtpResponse = {
@@ -39,6 +43,8 @@ function VerifyOtpContent() {
   const [isResending, setIsResending] = useState(false);
   const [cooldown, setCooldown] = useState(60);
   const [demoOtpCode, setDemoOtpCode] = useState("");
+  const [otpExpiredAtMs, setOtpExpiredAtMs] = useState<number | null>(null);
+  const [remainingSeconds, setRemainingSeconds] = useState(0);
 
   useEffect(() => {
     if (!otpRequestId) {
@@ -55,7 +61,27 @@ function VerifyOtpContent() {
     setEmail(context.email);
     setPurpose(context.purpose);
     setDemoOtpCode(context.demoOtpCode || "");
+
+    const expiredAtMs = resolveOtpExpiredAtMs(context.expiredAt);
+    setOtpExpiredAtMs(expiredAtMs);
+    setRemainingSeconds(getOtpRemainingSeconds(expiredAtMs));
+
+    if (!context.expiredAt) {
+      updatePendingOtpContext(otpRequestId, {
+        expiredAt: new Date(expiredAtMs).toISOString(),
+      });
+    }
   }, [otpRequestId]);
+
+  useEffect(() => {
+    if (otpExpiredAtMs === null) return;
+
+    const timer = setInterval(() => {
+      setRemainingSeconds(getOtpRemainingSeconds(otpExpiredAtMs));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [otpExpiredAtMs]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -82,6 +108,11 @@ function VerifyOtpContent() {
 
     if (otpCode.length !== 6) {
       setError("Mã OTP phải đủ 6 ký tự.");
+      return;
+    }
+
+    if (remainingSeconds <= 0) {
+      setError("Mã OTP đã hết hạn. Vui lòng gửi lại mã.");
       return;
     }
 
@@ -164,7 +195,7 @@ function VerifyOtpContent() {
       });
 
       const payload = (await response.json().catch(() => null)) as
-        | { message?: string | string[]; error?: string; demoOtpCode?: string }
+        | { message?: string | string[]; error?: string; demoOtpCode?: string; expiredAt?: string }
         | null;
 
       if (!response.ok) {
@@ -177,10 +208,19 @@ function VerifyOtpContent() {
         return;
       }
 
+      const nextExpiredAt = payload?.expiredAt || createDefaultOtpExpiredAt();
+      const nextExpiredAtMs = resolveOtpExpiredAtMs(nextExpiredAt);
+
       setCooldown(60);
+      setOtpCode("");
+      setOtpExpiredAtMs(nextExpiredAtMs);
+      setRemainingSeconds(getOtpRemainingSeconds(nextExpiredAtMs));
+      updatePendingOtpContext(otpRequestId, {
+        demoOtpCode: payload?.demoOtpCode,
+        expiredAt: nextExpiredAt,
+      });
       if (payload?.demoOtpCode) {
         setDemoOtpCode(payload.demoOtpCode);
-        updatePendingOtpDemoCode(otpRequestId, payload.demoOtpCode);
       }
     } catch {
       setError("Không thể gửi lại OTP.");
@@ -188,6 +228,9 @@ function VerifyOtpContent() {
       setIsResending(false);
     }
   }
+
+  const isOtpComplete = otpCode.length === 6;
+  const isOtpExpired = remainingSeconds <= 0;
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
@@ -212,17 +255,14 @@ function VerifyOtpContent() {
           </Link>
           <div className="flex items-center gap-3">
             <ThemeToggle />
-            <Button variant="ghost" onClick={() => router.push("/auth/login")}>Đăng nhập</Button>
-            <Button variant="ghost" onClick={() => router.push("/auth/register")}>Đăng ký</Button>
           </div>
         </header>
 
         <section className="mx-auto my-auto w-full max-w-[400px] py-8 text-center">
           <h1 className="text-[24px] font-semibold tracking-tight text-foreground sm:text-[32px]">Xác thực OTP</h1>
           <p className="mt-2 text-sm text-muted-foreground sm:text-lg">
-            Chúng tôi đã gửi mã xác thực đến email
-          </p>
-          <p className="text-md font-semibold text-primary sm:text-lg">{email || "user.contact@example.com"}</p>
+          Vui lòng kiểm tra email <span className="text-md font-semibold text-primary sm:text-lg">{email || "user.contact@example.com"}</span> để lấy OTP và xác thực để kích hoạt tài khoản.
+          </p>          
 
           <div className="mt-8 rounded-[20px] border border-border bg-card/90 p-7 shadow-[var(--shadow-soft)] backdrop-blur-xl dark:border-[#233256] dark:bg-[#0f1a33]/92">
             <form onSubmit={handleVerify} className="space-y-5">
@@ -259,6 +299,20 @@ function VerifyOtpContent() {
                 ))}
               </div>
 
+              <p className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
+                <HiMiniClock className="size-4 shrink-0" aria-hidden="true" />
+                {isOtpExpired ? (
+                  <span className="text-danger">Mã OTP đã hết hạn. Vui lòng gửi lại mã.</span>
+                ) : (
+                  <>
+                    Mã OTP còn hiệu lực:{" "}
+                    <span className="font-semibold tabular-nums text-foreground">
+                      {formatOtpCountdown(remainingSeconds)}
+                    </span>
+                  </>
+                )}
+              </p>
+
               {error ? (
                 <p className="text-left text-base text-danger">
                   {error}
@@ -271,7 +325,12 @@ function VerifyOtpContent() {
                 </p>
               ) : null}
 
-              <Button type="submit" size="lg" disabled={isSubmitting} className="w-full">
+              <Button
+                type="submit"
+                size="lg"
+                disabled={isSubmitting || !isOtpComplete || isOtpExpired}
+                className="w-full"
+              >
                 {isSubmitting ? "Đang xác thực..." : "Xác thực OTP"}
               </Button>
             </form>
