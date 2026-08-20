@@ -330,7 +330,7 @@ export default function LoginPage() {
           </div>
           <span>© 2026 COMVIA. Tất cả quyền được bảo lưu.</span>
         </footer>
-        <div className="flex items-center justify-center text-center shadow-[var(--shadow-soft)] bg-card/90 p-2 text-sm mt-3 rounded-\[10px\]">COMVIA một sản phẩm công nghệ của SoftX.asia</div>
+        <div className="flex items-center justify-center text-center shadow-[var(--shadow-soft)] bg-card/90 p-2 text-sm mt-3 rounded-[10px]">COMVIA một sản phẩm công nghệ của SoftX.asia</div>
       </div>
     </main>
   );
