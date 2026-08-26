@@ -7,7 +7,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export function WorkspaceTopbar() {
   return (
-    <header className="mb-5 flex items-center gap-3 absolute right-3">
+    <header className="mb-5 flex items-center gap-3">
       <div className="flex w-full items-center gap-3">
         {/* <Input
           placeholder="Tìm kiếm..."
