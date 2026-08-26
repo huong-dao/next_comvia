@@ -116,16 +116,11 @@ export default function NewWorkspacePage() {
         eyebrow="Workspace"
         title="Tạo workspace mới"
         description="Tạo workspace và khai báo billing info ngay từ đầu để sẵn sàng topup và xuất hóa đơn."
-        actions={
-          <Button variant="outline" asChild icon={<HiOutlineArrowLeft className="size-4" />}>
-            <Link href={APP_PATHS.workspaces}>Hủy</Link>
-          </Button>
-        }
       />
 
       <Card className="max-w-3xl">
         <form className="space-y-4" onSubmit={handleSubmit}>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4">
             <div>
               <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Tên workspace
@@ -136,12 +131,6 @@ export default function NewWorkspacePage() {
                 onChange={(ev) => setName(ev.target.value)}
                 required
               />
-            </div>
-            <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Slug (tùy chọn)
-              </label>
-              <Input placeholder="cong-ty-abc" value={slug} onChange={(ev) => setSlug(ev.target.value)} />
             </div>
           </div>
 

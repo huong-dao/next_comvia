@@ -7,13 +7,13 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 export function WorkspaceTopbar() {
   return (
-    <header className="mb-5 flex items-center gap-3">
+    <header className="mb-5 flex items-center gap-3 absolute right-3">
       <div className="flex w-full items-center gap-3">
-        <Input
+        {/* <Input
           placeholder="Tìm kiếm..."
           leadingIcon={<HiOutlineMagnifyingGlass className="size-4" />}
           className="max-w-md bg-surface-muted/80 border-none"
-        />
+        /> */}
         {/* <Button
           type="button"
           variant="outline"
