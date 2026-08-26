@@ -18,6 +18,7 @@ import { Radio } from "@/components/ui/controls";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
 import { APP_PATHS, workspacePath } from "@/lib/paths";
+import { notifyWorkspacesListChanged, setActiveWorkspace } from "@/lib/workspace-session";
 
 type BillingType = "ORGANIZATION" | "INDIVIDUAL";
 
@@ -101,6 +102,15 @@ export default function NewWorkspacePage() {
                 },
         }),
       });
+
+      try {
+        await comviaFetch(`/workspaces/${created.id}/switch`, { method: "POST", token });
+      } catch {
+        /* vẫn điều hướng nếu switch lỗi */
+      }
+
+      setActiveWorkspace(created.id, name.trim());
+      notifyWorkspacesListChanged();
       router.push(workspacePath(created.id, "dashboard"));
     } catch (err) {
       const msg = err instanceof ComviaApiError ? err.message : "Không tạo được workspace.";

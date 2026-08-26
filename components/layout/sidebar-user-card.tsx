@@ -7,6 +7,7 @@ import { HiArrowRightOnRectangle, HiOutlineShieldCheck } from "react-icons/hi2";
 import { Button } from "@/components/ui/button";
 import { clearAuthSession, getStoredUser, type StoredUser } from "@/lib/auth";
 import { APP_PATHS } from "@/lib/paths";
+import { clearActiveWorkspace } from "@/lib/workspace-session";
 
 function initials(fullName?: string, email?: string) {
   const s = (fullName ?? email ?? "?").trim();
@@ -32,6 +33,7 @@ export function SidebarUserCard({
   }, []);
 
   function logout() {
+    clearActiveWorkspace();
     clearAuthSession();
     router.replace("/auth/login");
   }

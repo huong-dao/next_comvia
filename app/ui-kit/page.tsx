@@ -243,7 +243,7 @@ export default function UiKitPage() {
         <Card>
           <CardTitle>Workspace Switcher</CardTitle>
           <div className="mt-5 max-w-sm">
-            <WorkspaceSwitcher activeWorkspaceId="workspace-sample" />
+            <WorkspaceSwitcher />
           </div>
         </Card>
 

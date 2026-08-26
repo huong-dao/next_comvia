@@ -17,6 +17,8 @@ import {
 } from "react-icons/hi2";
 import { cn } from "@/lib/cn";
 import { APP_PATHS, workspacePath } from "@/lib/paths";
+import { useActiveWorkspace } from "@/lib/use-active-workspace";
+import { resolveWorkspaceIdFromPath } from "@/lib/workspace-session";
 import { SidebarUserCard } from "@/components/layout/sidebar-user-card";
 import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
 import Image from "next/image";
@@ -110,7 +112,9 @@ export function WorkspaceSidebar({
   onToggleCollapsed?: () => void;
 }) {
   const pathname = usePathname();
-  const currentWorkspaceId = pathname.match(/\/app\/w\/([^/]+)/)?.[1] ?? "";
+  const { activeWorkspaceId } = useActiveWorkspace();
+  const workspaceFromUrl = resolveWorkspaceIdFromPath(pathname);
+  const currentWorkspaceId = workspaceFromUrl || activeWorkspaceId;
   const isCompact = collapsed;
 
   return (
@@ -159,7 +163,6 @@ export function WorkspaceSidebar({
       <div className="flex-1">
         <WorkspaceSwitcher
           className="mb-6"
-          activeWorkspaceId={currentWorkspaceId}
           compact={isCompact}
         />
 

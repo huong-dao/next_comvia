@@ -8,6 +8,13 @@ import { cn } from "@/lib/cn";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
 import { APP_PATHS, workspacePath } from "@/lib/paths";
+import { useActiveWorkspace } from "@/lib/use-active-workspace";
+import {
+  notifyWorkspacesListChanged,
+  resolveWorkspaceIdFromPath,
+  setActiveWorkspace,
+  WORKSPACES_LIST_CHANGED_EVENT,
+} from "@/lib/workspace-session";
 
 type WorkspaceRow = {
   id: string;
@@ -32,19 +39,17 @@ function shortName(name: string) {
 }
 
 export function WorkspaceSwitcher({
-  activeWorkspaceId = "",
-  activeWorkspaceName = "",
   compact = false,
   className,
 }: {
-  /** Rỗng khi đang ở /app/workspaces (chưa chọn workspace). */
-  activeWorkspaceId?: string;
-  activeWorkspaceName?: string;
   compact?: boolean;
   className?: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { activeWorkspaceId, activeWorkspaceName } = useActiveWorkspace();
+  const workspaceFromUrl = resolveWorkspaceIdFromPath(pathname);
+  const effectiveWorkspaceId = workspaceFromUrl || activeWorkspaceId;
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
   const [list, setList] = useState<WorkspaceRow[]>([]);
@@ -67,17 +72,37 @@ export function WorkspaceSwitcher({
     void loadList();
   }, [loadList]);
 
+  useEffect(() => {
+    function handleWorkspacesListChanged() {
+      void loadList();
+    }
+
+    window.addEventListener(WORKSPACES_LIST_CHANGED_EVENT, handleWorkspacesListChanged);
+    return () => {
+      window.removeEventListener(WORKSPACES_LIST_CHANGED_EVENT, handleWorkspacesListChanged);
+    };
+  }, [loadList]);
+
+  useEffect(() => {
+    if (!workspaceFromUrl || list.length === 0) return;
+
+    const workspace = list.find((item) => item.id === workspaceFromUrl);
+    if (workspace) {
+      setActiveWorkspace(workspace.id, workspace.name);
+    }
+  }, [workspaceFromUrl, list]);
+
   const selected = useMemo(() => {
-    if (!activeWorkspaceId) {
+    if (!effectiveWorkspaceId) {
       return { id: "", name: "Chọn workspace" };
     }
     return (
-      list.find((item) => item.id === activeWorkspaceId) ?? {
-        id: activeWorkspaceId,
-        name: activeWorkspaceName,
+      list.find((item) => item.id === effectiveWorkspaceId) ?? {
+        id: effectiveWorkspaceId,
+        name: activeWorkspaceName || "Workspace",
       }
     );
-  }, [list, activeWorkspaceId, activeWorkspaceName]);
+  }, [list, effectiveWorkspaceId, activeWorkspaceName]);
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -104,6 +129,10 @@ export function WorkspaceSwitcher({
     } catch {
       /* vẫn điều hướng local nếu switch lỗi — backend có thể đã cập nhật session */
     }
+
+    const nextWorkspace = list.find((item) => item.id === nextId);
+    setActiveWorkspace(nextId, nextWorkspace?.name);
+    notifyWorkspacesListChanged();
 
     const inWorkspaceShell = /^\/app\/w\/[^/]+/.test(pathname);
     const nextPath = inWorkspaceShell
@@ -153,7 +182,7 @@ export function WorkspaceSwitcher({
               <p className="px-2 py-2 text-sm text-muted-foreground">Chưa có workspace.</p>
             ) : (
               list.map((workspace, index) => {
-                const isActive = workspace.id === activeWorkspaceId;
+                const isActive = workspace.id === effectiveWorkspaceId;
 
                 return (
                   <button

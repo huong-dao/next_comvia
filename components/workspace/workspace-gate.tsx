@@ -1,12 +1,13 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { PageForbidden, PageLoading } from "@/components/app/page-state";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { APP_PATHS } from "@/lib/paths";
 import { useComviaQuery } from "@/lib/use-comvia-query";
+import { setActiveWorkspace } from "@/lib/workspace-session";
 
 type WorkspaceRow = {
   id: string;
@@ -53,6 +54,11 @@ export function WorkspaceGate({ children }: { children: ReactNode }) {
     () => data?.find((w) => w.id === workspaceId) ?? null,
     [data, workspaceId],
   );
+
+  useEffect(() => {
+    if (!member) return;
+    setActiveWorkspace(member.id, member.name);
+  }, [member]);
 
   if (!workspaceId) {
     return <PageForbidden message="Thiếu workspace." backHref={APP_PATHS.workspaces} />;
