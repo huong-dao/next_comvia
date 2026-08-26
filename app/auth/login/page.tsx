@@ -31,6 +31,14 @@ type LoginResponse = {
   };
 };
 
+type OtpResendResponse = {
+  message?: string | string[];
+  error?: string;
+  otpRequestId?: string;
+  expiredAt?: string;
+  demoOtpCode?: string;
+};
+
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function LoginPage() {
@@ -66,6 +74,45 @@ export default function LoginPage() {
     }
 
     return nextErrors;
+  }
+
+  async function redirectUnverifiedToOtp(trimmedEmail: string, baseUrl: string) {
+    const resendResponse = await fetch(`${baseUrl}/auth/otp/resend`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        targetType: "EMAIL",
+        targetValue: trimmedEmail,
+        purpose: "REGISTER",
+      }),
+    });
+
+    const resendPayload = (await resendResponse.json().catch(() => null)) as OtpResendResponse | null;
+
+    if (!resendResponse.ok) {
+      const resendMessage =
+        (typeof resendPayload?.message === "string" && resendPayload.message) ||
+        (Array.isArray(resendPayload?.message) && resendPayload.message.join(", ")) ||
+        resendPayload?.error ||
+        "Không thể gửi mã OTP. Vui lòng thử lại.";
+      setErrors({ form: resendMessage });
+      return;
+    }
+
+    const otpRequestId = resendPayload?.otpRequestId || createOtpRequestId();
+    const expiredAt = resendPayload?.expiredAt || createDefaultOtpExpiredAt();
+
+    savePendingOtpContext({
+      otpRequestId,
+      email: trimmedEmail,
+      purpose: "REGISTER",
+      demoOtpCode: resendPayload?.demoOtpCode,
+      expiredAt,
+    });
+
+    router.push(`/auth/verify-otp?otpRequestId=${encodeURIComponent(otpRequestId)}`);
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -115,15 +162,7 @@ export default function LoginPage() {
           normalizedMessage.includes("pending_verification");
 
         if (isUnverifiedError) {
-          const otpRequestId = createOtpRequestId();
-          savePendingOtpContext({
-            otpRequestId,
-            email: email.trim(),
-            purpose: "REGISTER",
-            expiredAt: createDefaultOtpExpiredAt(),
-          });
-
-          router.push(`/auth/verify-otp?otpRequestId=${encodeURIComponent(otpRequestId)}`);
+          await redirectUnverifiedToOtp(email.trim(), baseUrl);
           return;
         }
 
