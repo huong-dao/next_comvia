@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Claude Code agent workspace (local only, not part of the app)
 /.claude/
+
+# Internal reference docs (local only, not part of the app)
+/docs/
