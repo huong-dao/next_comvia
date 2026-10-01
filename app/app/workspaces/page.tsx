@@ -80,8 +80,7 @@ export default function WorkspacesListPage() {
   return (
     <div>
       <PageHeader
-        eyebrow="Workspace"
-        title="Workspace của bạn"
+        title="Workspace"
         description="Chọn workspace để làm việc hoặc tạo workspace mới."
         actions={
           <Button asChild>

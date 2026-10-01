@@ -69,8 +69,8 @@ export default function DashboardPage() {
     <div>
       <PageHeader
         // eyebrow="Dashboard"
-        title="Tổng quan workspace"
-        // description="Số liệu lấy từ API ví, template và nhật ký tin nhắn."
+        title="Chào mừng bạn đến với Comvia!"
+        description="Quản lý OA, mẫu tin Zalo và kết nối khách hàng dễ dàng hơn mỗi ngày."
         // actions={
         //   owner ? (
         //     <EntityStatusBadge value="OWNER" />
