@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
+import { ToastProvider } from "@/components/ui/toast";
 import "./globals.css";
 
 const appSans = Inter({
@@ -40,7 +41,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <Script id="theme-init" src="/theme-init.js" strategy="beforeInteractive" />
-        {children}
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   );

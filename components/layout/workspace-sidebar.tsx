@@ -7,12 +7,9 @@ import {
   HiBars3BottomLeft,
   HiOutlineChatBubbleLeftRight,
   HiOutlineClipboardDocumentList,
-  HiOutlineCreditCard,
-  HiOutlineDocumentText,
   HiOutlineMegaphone,
   HiOutlineHome,
   HiOutlineKey,
-  HiOutlineRectangleGroup,
   HiOutlineUserGroup,
 } from "react-icons/hi2";
 import { cn } from "@/lib/cn";
@@ -47,26 +44,26 @@ const navItems: NavItem[] = [
     href: (w) => workspacePath(w, "messages", "send-single"),
     isActive: (p, w) => p.startsWith(workspacePath(w, "messages")),
   },
-  {
-    label: "Zalo OA",
-    icon: HiOutlineDocumentText,
-    href: (w) => workspacePath(w, "oa"),
-    isActive: (p, w) => p.startsWith(workspacePath(w, "oa")),
-  },
+  // {
+  //   label: "Zalo OA",
+  //   icon: HiOutlineDocumentText,
+  //   href: (w) => workspacePath(w, "oa"),
+  //   isActive: (p, w) => p.startsWith(workspacePath(w, "oa")),
+  // },
   // {
   //   label: "Thống kê",
   //   icon: HiOutlineChartBar,
   //   href: (w) => workspacePath(w, "analytics"),
   //   isActive: (p, w) => p.startsWith(workspacePath(w, "analytics")),
   // },
+  // {
+  //   label: "Mẫu tin nhắn",
+  //   icon: HiOutlineRectangleGroup,
+  //   href: (w) => workspacePath(w, "templates"),
+  //   isActive: (p, w) => p.startsWith(workspacePath(w, "templates")),
+  // },
   {
-    label: "Mẫu tin nhắn",
-    icon: HiOutlineRectangleGroup,
-    href: (w) => workspacePath(w, "templates"),
-    isActive: (p, w) => p.startsWith(workspacePath(w, "templates")),
-  },
-  {
-    label: "Chiến dịch Zalo",
+    label: "Chiến dịch",
     icon: HiOutlineMegaphone,
     href: (w) => workspacePath(w, "campaigns"),
     isActive: (p, w) => p.startsWith(workspacePath(w, "campaigns")),
@@ -83,13 +80,13 @@ const navItems: NavItem[] = [
     href: (w) => workspacePath(w, "activity-history"),
     isActive: (p, w) => p.startsWith(workspacePath(w, "activity-history")),
   },
-  {
-    label: "Ví tiền",
-    icon: HiOutlineCreditCard,
-    href: (w) => workspacePath(w, "wallet"),
-    isActive: (p, w) =>
-      p.startsWith(workspacePath(w, "wallet")) || p.startsWith(workspacePath(w, "topup")),
-  },
+  // {
+  //   label: "Ví tiền",
+  //   icon: HiOutlineCreditCard,
+  //   href: (w) => workspacePath(w, "wallet"),
+  //   isActive: (p, w) =>
+  //     p.startsWith(workspacePath(w, "wallet")) || p.startsWith(workspacePath(w, "topup")),
+  // },
   {
     label: "API Keys",
     icon: HiOutlineKey,
