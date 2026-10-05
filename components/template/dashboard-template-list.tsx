@@ -132,7 +132,7 @@ export function DashboardTemplateList({ className }: { className?: string }) {
         )}
       </div>
 
-      <Modal open={createOpen} title="Tạo mẫu tin" onClose={() => setCreateOpen(false)}>
+      <Modal size="lg" open={createOpen} title="Tạo mẫu tin" onClose={() => setCreateOpen(false)}>
         <TemplateForm workspaceId={workspaceId} onCreated={handleCreated} />
       </Modal>
     </Card>
