@@ -13,7 +13,7 @@ import {
 } from "react-icons/hi2";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input, Textarea } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
 import { ImageUploadField } from "@/components/oa/image-upload-field";
@@ -75,6 +75,8 @@ export type OaRecordModalProps = {
 
 const NAME_MAX = 100;
 const CODE_MAX = 50;
+// Mô tả không bắt buộc. Giới hạn tạm 500 ký tự (an toàn) — chờ BR-12 chốt max length thật.
+const DESCRIPTION_MAX = 500;
 const LOGO_WIDTH = 400;
 const LOGO_HEIGHT = 96;
 const CODE_PATTERN = /^[A-Za-z0-9_-]+$/;
@@ -112,6 +114,7 @@ export function OaRecordModal({
 
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
+  const [description, setDescription] = useState("");
   const [avatar, setAvatar] = useState<File | null>(null);
   const [logoLight, setLogoLight] = useState<File | null>(null);
   const [logoDark, setLogoDark] = useState<File | null>(null);
@@ -132,6 +135,7 @@ export function OaRecordModal({
     if (open && !prevOpenRef.current) {
       setName(record?.name ?? "");
       setCode(record?.code ?? "");
+      setDescription(record?.description ?? "");
       setAvatar(null);
       setLogoLight(null);
       setLogoDark(null);
@@ -148,6 +152,7 @@ export function OaRecordModal({
 
   const trimmedName = name.trim();
   const trimmedCode = code.trim();
+  const trimmedDescription = description.trim();
 
   const nameValid = trimmedName.length > 0 && trimmedName.length <= NAME_MAX;
   const codeValid =
@@ -244,7 +249,12 @@ export function OaRecordModal({
 
       // Bước 1 — tạo hoặc sửa phần text của record.
       if (!current) {
-        const body: OaRecordInput = { name: trimmedName, code: trimmedCode };
+        // Mô tả không bắt buộc: gửi chuỗi đã trim (rỗng nếu user bỏ trống).
+        const body: OaRecordInput = {
+          name: trimmedName,
+          code: trimmedCode,
+          description: trimmedDescription,
+        };
         current = await comviaFetch<OaRecord>(`/workspaces/${workspaceId}/oa`, {
           method: "POST",
           token,
@@ -256,6 +266,13 @@ export function OaRecordModal({
         const body: Partial<OaRecordInput> = {};
         if (trimmedName !== current.name) body.name = trimmedName;
         if (trimmedCode !== current.code) body.code = trimmedCode;
+        // Chỉ gửi description khi đổi so với record hiện tại (giống name/code).
+        // Cho xoá mô tả bằng chuỗi rỗng "".
+        // TODO BR-12: backend chưa chốt clear bằng "" hay null. Tạm dùng "";
+        // nếu BR-12 chốt null thì đổi giá trị gửi khi trimmedDescription rỗng.
+        if (trimmedDescription !== (current.description ?? "")) {
+          body.description = trimmedDescription;
+        }
         if (Object.keys(body).length > 0) {
           current = await comviaFetch<OaRecord>(`/workspaces/${workspaceId}/oa`, {
             method: "PATCH",
@@ -354,7 +371,7 @@ export function OaRecordModal({
       </p>
 
       <div className="grid gap-5 md:grid-cols-[1.6fr_1fr]">
-        {/* Cột trái: form 5 mục */}
+        {/* Cột trái: form các mục nhập liệu */}
         <div className="space-y-5">
           <FieldSection index={1} title="Tên OA" hint="Nhập tên hiển thị của Zalo OA (tối đa 100 ký tự)">
             <CountedInput
@@ -388,7 +405,21 @@ export function OaRecordModal({
             <FieldError message={errors.code} />
           </FieldSection>
 
-          <FieldSection index={3} title="Hình đại diện" hint="Tải lên hình đại diện (avatar) cho Zalo OA">
+          <FieldSection
+            index={3}
+            title="Mô tả"
+            hint="Nhập mô tả ngắn cho Zalo OA (không bắt buộc)"
+            optional
+          >
+            <CountedTextarea
+              value={description}
+              max={DESCRIPTION_MAX}
+              placeholder="Nhập mô tả..."
+              onChange={setDescription}
+            />
+          </FieldSection>
+
+          <FieldSection index={4} title="Hình đại diện" hint="Tải lên hình đại diện (avatar) cho Zalo OA">
             <ImageUploadField
               label="Định dạng: JPG, PNG. Dung lượng tối đa 2MB."
               value={avatar}
@@ -402,7 +433,7 @@ export function OaRecordModal({
           </FieldSection>
 
           <FieldSection
-            index={4}
+            index={5}
             title="Logo sáng"
             hint="Tải lên logo phiên bản nền sáng để hiển thị trên giao diện sáng của Zalo"
           >
@@ -421,7 +452,7 @@ export function OaRecordModal({
           </FieldSection>
 
           <FieldSection
-            index={5}
+            index={6}
             title="Logo tối"
             hint="Tải lên logo phiên bản nền tối để hiển thị trên giao diện tối của Zalo"
           >
@@ -523,11 +554,14 @@ function FieldSection({
   index,
   title,
   hint,
+  optional = false,
   children,
 }: {
   index: number;
   title: string;
   hint: string;
+  /** Mục không bắt buộc → ẩn dấu `*`. Mặc định false (giữ hành vi mục bắt buộc cũ). */
+  optional?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -538,7 +572,8 @@ function FieldSection({
         </span>
         <div>
           <p className="text-sm font-semibold text-foreground">
-            {title} <span className="text-danger">*</span>
+            {title}
+            {optional ? null : <span className="text-danger"> *</span>}
           </p>
           <p className="text-xs text-muted-foreground">{hint}</p>
         </div>
@@ -572,6 +607,34 @@ function CountedInput({
         onChange={(e) => onChange(e.target.value)}
       />
       <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+        {value.length}/{max}
+      </span>
+    </div>
+  );
+}
+
+function CountedTextarea({
+  value,
+  max,
+  placeholder,
+  onChange,
+}: {
+  value: string;
+  max: number;
+  placeholder?: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="relative">
+      <Textarea
+        value={value}
+        maxLength={max}
+        placeholder={placeholder}
+        rows={3}
+        className="resize-none pr-16"
+        onChange={(e) => onChange(e.target.value)}
+      />
+      <span className="pointer-events-none absolute bottom-3 right-3 text-xs text-muted-foreground">
         {value.length}/{max}
       </span>
     </div>

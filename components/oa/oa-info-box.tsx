@@ -242,9 +242,9 @@ export function OaInfoBox({ className }: { className?: string }) {
             </div>
             <div className="min-w-0 pt-1">
               <p className="truncate text-lg font-semibold text-foreground">{record.name}</p>
-              <p className="mt-0.5 text-sm text-muted-foreground">
-                Official Account trên hệ thống Comvia
-              </p>
+              {record.description?.trim() ? (
+                <p className="mt-0.5 text-sm text-muted-foreground">{record.description}</p>
+              ) : null}
             </div>
           </div>
 
