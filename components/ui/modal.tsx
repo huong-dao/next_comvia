@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/button";
 
@@ -28,9 +29,20 @@ export function Modal({
   /** Chiều rộng tối đa của popup. Mặc định `md` (= `max-w-2xl`, giữ hành vi cũ). */
   size?: "md" | "lg" | "xl";
 }) {
-  if (!open) return null;
+  // Guard SSR: `document` chưa tồn tại khi render trên server. Chỉ portal sau khi
+  // mount client (cùng pattern mounted-guard với components/ui/toast.tsx).
+  const [mounted, setMounted] = React.useState(false);
 
-  return (
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!open || !mounted) return null;
+
+  // Portal thẳng ra <body> để overlay `fixed inset-0` neo theo viewport, thoát
+  // mọi containing block do tổ tiên tạo ra (vd Card có backdrop-blur). Giữ z-40
+  // thấp hơn toast (z-50) để toast luôn nổi trên modal.
+  return createPortal(
     <div className="fixed inset-0 z-40 grid place-items-center bg-black/55 p-4">
       <div className={cn("w-full rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]", SIZE_MAX_WIDTH[size])}>
         <div className="mb-5 flex items-center justify-between">
@@ -52,6 +64,7 @@ export function Modal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
