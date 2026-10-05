@@ -12,6 +12,11 @@ const SIZE_MAX_WIDTH: Record<"md" | "lg" | "xl", string> = {
   xl: "max-w-6xl",
 };
 
+// Đếm số modal đang mở để khoá cuộn nền (body) đúng cách khi nhiều modal chồng
+// nhau: chỉ modal đầu tiên khoá, modal cuối cùng đóng mới khôi phục giá trị cũ.
+let openModalCount = 0;
+let previousBodyOverflow = "";
+
 export function Modal({
   open,
   title,
@@ -37,6 +42,23 @@ export function Modal({
     setMounted(true);
   }, []);
 
+  // Khoá cuộn nền khi modal mở; khôi phục khi đóng/unmount. Dùng bộ đếm module
+  // để nhiều modal chồng nhau không khôi phục sớm (chỉ modal cuối cùng khôi phục).
+  React.useEffect(() => {
+    if (!open) return;
+    if (openModalCount === 0) {
+      previousBodyOverflow = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+    }
+    openModalCount += 1;
+    return () => {
+      openModalCount -= 1;
+      if (openModalCount === 0) {
+        document.body.style.overflow = previousBodyOverflow;
+      }
+    };
+  }, [open]);
+
   if (!open || !mounted) return null;
 
   // Portal thẳng ra <body> để overlay `fixed inset-0` neo theo viewport, thoát
@@ -44,8 +66,15 @@ export function Modal({
   // thấp hơn toast (z-50) để toast luôn nổi trên modal.
   return createPortal(
     <div className="fixed inset-0 z-40 grid place-items-center bg-black/55 p-4">
-      <div className={cn("w-full rounded-2xl border border-border bg-card p-6 shadow-[var(--shadow-soft)]", SIZE_MAX_WIDTH[size])}>
-        <div className="mb-5 flex items-center justify-between">
+      {/* Hộp popup: flex column, giới hạn chiều cao theo viewport (chừa lề p-4
+          trên+dưới = 2rem). Header/footer cố định, chỉ phần body cuộn. */}
+      <div
+        className={cn(
+          "flex max-h-[calc(100dvh-2rem)] w-full flex-col rounded-2xl border border-border bg-card shadow-[var(--shadow-soft)]",
+          SIZE_MAX_WIDTH[size],
+        )}
+      >
+        <div className="flex shrink-0 items-center justify-between px-6 pb-5 pt-6">
           <h2 className="text-2xl font-semibold text-foreground">{title}</h2>
           <button
             type="button"
@@ -55,8 +84,9 @@ export function Modal({
             ✕
           </button>
         </div>
-        <div className="space-y-4">{children}</div>
-        <div className="mt-6 flex justify-end gap-3">
+        {/* min-h-0 để vùng cuộn co lại được trong flex column; px chừa lề 2 bên. */}
+        <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-6">{children}</div>
+        <div className="flex shrink-0 justify-end gap-3 px-6 pb-6 pt-6">
           {footer ?? (
             <Button variant="ghost" onClick={onClose}>
               Đóng
