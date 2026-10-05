@@ -365,7 +365,7 @@ export function OaRecordModal({
       footer={footer}
       size="xl"
     >
-      <p className="-mt-2 text-sm text-muted-foreground">
+      <p className="text-sm text-muted-foreground">
         Vui lòng nhập đầy đủ thông tin bắt buộc để{" "}
         {isEditMode ? "cập nhật" : "tạo mới"} Zalo Official Account trên hệ thống.
       </p>
