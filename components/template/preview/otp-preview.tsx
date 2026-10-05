@@ -14,7 +14,7 @@ export function OtpPreview({ title, minutes }: OtpPreviewProps) {
 
   return (
     <PreviewFrame>
-      <p className="mb-3 text-sm font-bold text-zinc-900">{title || "Mã xác thực của bạn là"}</p>
+      <p className="mb-3 text-sm font-bold text-zinc-900">Nội dung này sẽ do Zalo quyết định.</p>
       <div className="mb-3 flex items-center gap-2">
         <span className="text-3xl font-bold tracking-wider text-zinc-900">123456</span>
         <HiOutlineSquare2Stack className="size-5 text-zinc-400" />

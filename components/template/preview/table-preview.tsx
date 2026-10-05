@@ -17,7 +17,6 @@ export function TablePreview({ title, content, placeholders, secondaryContent }:
 
   return (
     <PreviewFrame>
-      {title ? <p className="mb-2 text-sm font-bold text-zinc-900">{title}</p> : null}
       {rendered ? (
         <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-600">{rendered}</p>
       ) : null}
