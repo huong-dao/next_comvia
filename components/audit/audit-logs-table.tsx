@@ -61,15 +61,7 @@ export function AuditLogsTable({ rows, showWorkspaceColumn }: { rows: AuditLogRo
         key: "rid",
         header: "Resource ID",
         cell: (r) => <span className="font-mono text-xs">{r.resourceId ?? "—"}</span>,
-      },
-      {
-        key: "meta",
-        header: "Metadata",
-        cell: (r) => {
-          const m = metaPayload(r);
-          return <span className="line-clamp-2 font-mono text-xs">{m != null ? JSON.stringify(m) : "—"}</span>;
-        },
-      },
+      }
     ];
 
     return showWorkspaceColumn ? [...base, workspaceCol, ...rest] : [...base, ...rest];
