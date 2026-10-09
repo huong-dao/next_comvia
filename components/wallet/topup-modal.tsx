@@ -95,7 +95,8 @@ export function TopupModal({ open, onClose, workspaceId, onPaid }: TopupModalPro
       showAlert({
         type: "success",
         title: "Nạp tiền thành công",
-        message: `Bạn đã nạp thành công ${formatVND(res.amountInclVat)} vào ví. Số dư và danh sách giao dịch đã được cập nhật.`,
+        // amountExclVat mới là phần cộng vào ví — VAT được giữ lại để nộp thuế, KHÔNG cộng vào ví.
+        message: `Số tiền nạp vào ví: ${formatVND(res.amountExclVat)}\nVAT (10%): ${formatVND(res.vatAmount)}\nTổng đã thanh toán: ${formatVND(res.amountInclVat)}`,
       });
     },
     [close, onPaid, showAlert],

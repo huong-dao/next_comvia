@@ -104,7 +104,7 @@ function AlertCard({ item, onDismiss }: { item: AlertItem; onDismiss: () => void
         <Icon className="mt-0.5 size-5 shrink-0" aria-hidden />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold leading-5">{item.title ?? defaultTitle}</p>
-          <p className="mt-0.5 text-sm leading-5 opacity-90">{item.message}</p>
+          <p className="mt-0.5 whitespace-pre-line text-sm leading-5 opacity-90">{item.message}</p>
         </div>
         <button
           type="button"
