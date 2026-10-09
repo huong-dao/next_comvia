@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/controls";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useAlertModal } from "@/components/ui/alert-modal";
 import { cn } from "@/lib/cn";
 import { getAccessToken, getStoredUser, postLoginPathForRole, saveAuthSession } from "@/lib/auth";
 import { createDefaultOtpExpiredAt, createOtpRequestId, savePendingOtpContext } from "@/lib/otp-context";
@@ -17,7 +18,6 @@ import { createDefaultOtpExpiredAt, createOtpRequestId, savePendingOtpContext } 
 type LoginErrors = {
   email?: string;
   password?: string;
-  form?: string;
 };
 
 type LoginResponse = {
@@ -43,6 +43,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function LoginPage() {
   const router = useRouter();
+  const { showAlert } = useAlertModal();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
@@ -97,7 +98,7 @@ export default function LoginPage() {
         (Array.isArray(resendPayload?.message) && resendPayload.message.join(", ")) ||
         resendPayload?.error ||
         "Không thể gửi mã OTP. Vui lòng thử lại.";
-      setErrors({ form: resendMessage });
+      showAlert({ type: "error", message: resendMessage });
       return;
     }
 
@@ -166,13 +167,13 @@ export default function LoginPage() {
           return;
         }
 
-        setErrors({ form: message });
+        showAlert({ type: "error", message });
         return;
       }
 
       const data = payload as LoginResponse | null;
       if (!data?.accessToken) {
-        setErrors({ form: "API không trả về access token hợp lệ." });
+        showAlert({ type: "error", message: "API không trả về access token hợp lệ." });
         return;
       }
 
@@ -188,7 +189,7 @@ export default function LoginPage() {
         error instanceof Error
           ? error.message
           : "Không thể kết nối server. Kiểm tra backend ở localhost:3000.";
-      setErrors({ form: message });
+      showAlert({ type: "error", message });
     } finally {
       setIsSubmitting(false);
     }
@@ -311,10 +312,6 @@ export default function LoginPage() {
                   label="Ghi nhớ đăng nhập"
                 />
               </div>
-
-              {errors.form ? (
-                <p className="rounded-lg border border-danger/50 bg-danger/10 px-3 py-2 text-sm text-red-200">{errors.form}</p>
-              ) : null}
 
               <Button type="submit" size="lg" disabled={isSubmitting || !isFormComplete} className="w-full">
                 {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}

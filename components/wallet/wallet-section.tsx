@@ -113,7 +113,7 @@ const toDelta = (changePercent: number | null | undefined): StatBlockDelta | und
 
 /**
  * Section "Thông tin Ví" trên dashboard (ISSUE-005, TICKET-011 + tích hợp TICKET-017):
- * - Box trái: số dư + nút Nạp tiền (mở popup, `onPaid` refetch số dư không reload) + Xem lịch sử
+ * - Box trái: số dư + nút Nạp tiền (mở popup, `onPaid` refetch số dư + danh sách giao dịch, không reload) + Xem lịch sử
  *   + "Tổng quan tháng này" (2 stat block từ `monthly` thật, BR-06; BỎ "Sắp hết hạn").
  * - Box phải: danh sách giao dịch thật (đủ 6 enum loại + cột Trạng thái map nhãn tiếng Việt) + filter
  *   loại/trạng thái/ngày server-side (BR-07/BR-11: `type`/`status`/`fromDate`/`toDate`)
@@ -406,7 +406,10 @@ export function WalletSection() {
         open={topupOpen}
         onClose={() => setTopupOpen(false)}
         workspaceId={workspaceId}
-        onPaid={() => void refetchBalance()}
+        onPaid={() => {
+          void refetchBalance();
+          void refetchTx();
+        }}
       />
     </section>
   );

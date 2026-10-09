@@ -28,8 +28,8 @@ export type TopupStatusResponse = {
 
 export type UseTopupStatusPollingOptions = {
   workspaceId: string;
-  /** Gọi một lần khi topup chuyển `PAID`; polling tự dừng ngay trước đó. */
-  onPaid: () => void;
+  /** Gọi một lần khi topup chuyển `PAID`; polling tự dừng ngay trước đó. Kèm response để nơi gọi hiển thị số tiền đã nạp. */
+  onPaid: (res: TopupStatusResponse) => void;
   /** Gọi một lần khi topup chuyển trạng thái thất bại dứt điểm (`FAILED`/`EXPIRED`); polling tự dừng ngay trước đó. */
   onFailed?: (status: TopupFailedStatus) => void;
   /** Gọi một lần khi quá 5 phút mà chưa kết thúc; polling tự dừng ngay trước đó. */
@@ -99,7 +99,7 @@ export function useTopupStatusPolling(
         if (stopped) return; // Response về sau khi đã dọn: không gọi callback.
         if (res.status === "PAID") {
           stop();
-          onPaidRef.current();
+          onPaidRef.current(res);
           return;
         }
         if (FAILED_STATUSES.includes(res.status as TopupFailedStatus)) {

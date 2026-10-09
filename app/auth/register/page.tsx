@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/controls";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useAlertModal } from "@/components/ui/alert-modal";
 import { createDefaultOtpExpiredAt, createOtpRequestId, savePendingOtpContext } from "@/lib/otp-context";
 
 type RegisterErrors = {
@@ -17,7 +18,6 @@ type RegisterErrors = {
   password?: string;
   confirmPassword?: string;
   terms?: string;
-  form?: string;
 };
 
 type RegisterResponse = {
@@ -30,6 +30,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { showAlert } = useAlertModal();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -93,7 +94,7 @@ export default function RegisterPage() {
           (Array.isArray(apiError?.message) && apiError.message.join(", ")) ||
           apiError?.error ||
           "Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.";
-        setErrors({ form: message });
+        showAlert({ type: "error", message });
         return;
       }
 
@@ -114,7 +115,7 @@ export default function RegisterPage() {
         error instanceof Error
           ? error.message
           : "Không thể kết nối server. Kiểm tra backend ở localhost:3000.";
-      setErrors({ form: message });
+      showAlert({ type: "error", message });
     } finally {
       setIsSubmitting(false);
     }
@@ -242,12 +243,6 @@ export default function RegisterPage() {
                 />
                 {errors.terms ? <p className="mt-1 text-xs text-danger/90">{errors.terms}</p> : null}
               </div>
-
-              {errors.form ? (
-                <p className="rounded-lg border border-danger/50 bg-danger/10 px-3 py-2 text-sm text-danger">
-                  {errors.form}
-                </p>
-              ) : null}
 
               <Button type="submit" size="lg" disabled={isSubmitting || !isFormComplete} className="w-full">
                 {isSubmitting ? "Đang tạo tài khoản..." : "Tạo tài khoản"}

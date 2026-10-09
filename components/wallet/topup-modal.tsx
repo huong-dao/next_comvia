@@ -5,10 +5,11 @@ import { HiQrCode } from "react-icons/hi2";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/input";
-import { useToast } from "@/components/ui/toast";
+import { useAlertModal } from "@/components/ui/alert-modal";
 import {
   useTopupStatusPolling,
   type TopupFailedStatus,
+  type TopupStatusResponse,
 } from "@/lib/use-topup-status";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
@@ -45,19 +46,21 @@ export type TopupModalProps = {
   open: boolean;
   onClose: () => void;
   workspaceId: string;
-  /** Gọi sau khi topup `PAID` — nơi cha refetch số dư (không reload trang). */
+  /** Gọi ngay sau khi popup tự đóng vì topup `PAID` — nơi cha refetch số dư + danh sách giao dịch (không reload trang). */
   onPaid: () => void;
 };
 
 /**
  * Popup nạp tiền 2 bước: bước 1 chọn mốc tiền (500k–5tr) → bước 2 hiện QR + poll trạng thái.
- * Khi `PAID`: đóng popup, gọi `onPaid`, bắn toast success. `FAILED`/`EXPIRED` → toast error;
- * timeout 5 phút → toast warning. Đóng popup làm `topupCode` về null nên polling tự dừng.
+ * Khi `PAID`: đóng popup ngay, gọi `onPaid` (nơi cha refetch số dư/danh sách giao dịch), rồi hiện
+ * modal alert dùng chung (`useAlertModal`) báo thành công kèm số tiền thực nhận.
+ * `FAILED`/`EXPIRED` → modal alert lỗi; timeout 5 phút → modal alert cảnh báo.
+ * Đóng popup làm `topupCode` về null nên polling tự dừng.
  *
  * @see docs/tickets/TICKET-010.md, coding-convention.md mục "Toast/Alert", "Polling trạng thái".
  */
 export function TopupModal({ open, onClose, workspaceId, onPaid }: TopupModalProps) {
-  const { showToast } = useToast();
+  const { showAlert } = useAlertModal();
 
   const [step, setStep] = useState<"select" | "qr">("select");
   const [amount, setAmount] = useState<number>(DEFAULT_AMOUNT);
@@ -83,31 +86,44 @@ export function TopupModal({ open, onClose, workspaceId, onPaid }: TopupModalPro
     onClose();
   }, [onClose]);
 
-  const handlePaid = useCallback(() => {
-    showToast({ type: "success", message: "Nạp tiền thành công" });
-    onPaid();
-    close();
-  }, [showToast, onPaid, close]);
+  // PAID: đóng popup ngay, gọi onPaid (parent refetch số dư/danh sách giao dịch), rồi hiện
+  // modal alert báo thành công kèm số tiền thực nhận từ BE.
+  const handlePaid = useCallback(
+    (res: TopupStatusResponse) => {
+      close();
+      onPaid();
+      showAlert({
+        type: "success",
+        title: "Nạp tiền thành công",
+        message: `Bạn đã nạp thành công ${formatVND(res.amountInclVat)} vào ví. Số dư và danh sách giao dịch đã được cập nhật.`,
+      });
+    },
+    [close, onPaid, showAlert],
+  );
 
   const handleFailed = useCallback(
     (status: TopupFailedStatus) => {
-      showToast({
+      close();
+      showAlert({
         type: "error",
+        title: "Giao dịch không thành công",
         message:
           status === "EXPIRED"
             ? "Mã QR đã hết hạn. Vui lòng tạo lại yêu cầu nạp tiền."
             : "Giao dịch nạp tiền thất bại. Vui lòng thử lại.",
       });
     },
-    [showToast],
+    [close, showAlert],
   );
 
   const handleTimeout = useCallback(() => {
-    showToast({
+    close();
+    showAlert({
       type: "warning",
+      title: "Chưa nhận được thanh toán",
       message: "Chưa nhận được thanh toán sau 5 phút. Vui lòng kiểm tra lại giao dịch.",
     });
-  }, [showToast]);
+  }, [close, showAlert]);
 
   useTopupStatusPolling(topupCode, {
     workspaceId,
