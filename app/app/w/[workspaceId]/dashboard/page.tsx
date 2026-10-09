@@ -40,18 +40,6 @@ export default function DashboardPage() {
       </section>
 
       <WalletSection />
-
-      <div className="flex flex-wrap gap-3">
-        <Button icon={<HiMiniPlus className="size-4" />} variant="accent" asChild>
-          <Link href={workspacePath(workspaceId, "templates", "new")}>Tạo template</Link>
-        </Button>
-        <Button icon={<HiOutlinePaperAirplane className="size-4" />} variant="outline" asChild>
-          <Link href={workspacePath(workspaceId, "messages", "send-single")}>Gửi tin</Link>
-        </Button>
-        <Button icon={<HiOutlineDocumentText className="size-4" />} variant="outline" asChild>
-          <Link href={workspacePath(workspaceId, "messages", "logs")}>Nhật ký tin</Link>
-        </Button>
-      </div>
     </div>
   );
 }
