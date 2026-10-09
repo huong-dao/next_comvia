@@ -3,24 +3,12 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { HiOutlinePhoto, HiOutlineXMark } from "react-icons/hi2";
 import { cn } from "@/lib/cn";
-import { getComviaApiBaseUrl } from "@/lib/comviaFetch";
+import { resolvePublicAssetUrl } from "@/lib/comviaFetch";
 
 /** Định dạng ảnh được chấp nhận (khớp ràng buộc backend BR-03/04). */
 const ACCEPTED_IMAGE_TYPES = ["image/png", "image/jpeg"];
 /** Dung lượng tối đa cho một ảnh (2MB). */
 const MAX_IMAGE_BYTES = 2 * 1024 * 1024;
-
-/**
- * Ghép base URL khi `existingUrl` là path tương đối backend trả về
- * (vd `/public/oa/<wsId>/<file>`). URL tuyệt đối giữ nguyên.
- */
-function resolveExistingImageUrl(url?: string | null): string | null {
-  const u = url?.trim();
-  if (!u) return null;
-  if (u.startsWith("http://") || u.startsWith("https://")) return u;
-  const base = getComviaApiBaseUrl().replace(/\/$/, "");
-  return `${base}${u.startsWith("/") ? u : `/${u}`}`;
-}
 
 export type ImageUploadFieldProps = {
   /** Nhãn hiển thị phía trên field. */
@@ -78,7 +66,7 @@ export function ImageUploadField({
   }, [previewUrl]);
 
   // Khi chưa chọn file mới mà có ảnh cũ (mode edit) → hiện ảnh cũ làm preview.
-  const existingPreviewUrl = useMemo(() => resolveExistingImageUrl(existingUrl), [existingUrl]);
+  const existingPreviewUrl = useMemo(() => resolvePublicAssetUrl(existingUrl), [existingUrl]);
   const displayUrl = previewUrl ?? existingPreviewUrl;
 
   function handleFile(file: File | null) {

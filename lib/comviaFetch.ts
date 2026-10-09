@@ -39,6 +39,27 @@ export function getComviaApiBaseUrl() {
   return process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || "http://localhost:3000";
 }
 
+/**
+ * Domain gốc của backend (KHÔNG gồm global prefix `/api/v1`) — dùng để ghép với các path
+ * tĩnh backend trả về dạng tương đối (vd `/public/oa/<wsId>/<file>`), vì các path này được
+ * serve ở gốc domain, không nằm dưới `/api/v1` như các endpoint API.
+ */
+export function getComviaOriginUrl() {
+  return getComviaApiBaseUrl().replace(/\/$/, "").replace(/\/api\/v\d+$/, "");
+}
+
+/**
+ * Ghép domain gốc (không phải base URL của API) với path tĩnh tương đối backend trả về
+ * (vd `avatarUrl`/`logoLightUrl`/`invoicePdfUrl` dạng `/public/...`). URL tuyệt đối giữ nguyên.
+ */
+export function resolvePublicAssetUrl(url?: string | null): string | null {
+  const u = url?.trim();
+  if (!u) return null;
+  if (u.startsWith("http://") || u.startsWith("https://")) return u;
+  const origin = getComviaOriginUrl();
+  return `${origin}${u.startsWith("/") ? u : `/${u}`}`;
+}
+
 export async function comviaFetch<T>(
   path: string,
   init?: RequestInit & { apiKey?: string; token?: string },

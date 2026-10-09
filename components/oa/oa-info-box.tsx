@@ -18,7 +18,7 @@ import { cn } from "@/lib/cn";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ComviaApiError, comviaFetch, getComviaApiBaseUrl } from "@/lib/comviaFetch";
+import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
 import { formatComviaError } from "@/lib/api-message";
 import { getAccessToken } from "@/lib/auth";
 import { useComviaQuery } from "@/lib/use-comvia-query";
@@ -33,15 +33,6 @@ import { OaRecordModal, type OaRecord } from "@/components/oa/oa-record-modal";
 function needsReconnect(status: string) {
   const s = status.toUpperCase();
   return s === "TOKEN_EXPIRED" || s === "RECONNECT_REQUIRED" || s === "CONNECTION_ERROR";
-}
-
-/** Ghép base URL cho path ảnh public backend (`/public/oa/<wsId>/<file>`). URL tuyệt đối giữ nguyên. */
-function resolveOaImageUrl(url?: string | null): string | null {
-  const u = url?.trim();
-  if (!u) return null;
-  if (u.startsWith("http://") || u.startsWith("https://")) return u;
-  const base = getComviaApiBaseUrl().replace(/\/$/, "");
-  return `${base}${u.startsWith("/") ? u : `/${u}`}`;
 }
 
 export function OaInfoBox({ className }: { className?: string }) {
@@ -70,7 +61,7 @@ export function OaInfoBox({ className }: { className?: string }) {
   const statusUpper = (connection?.status ?? "NOT_CONNECTED").toUpperCase();
   const connected = statusUpper === "CONNECTED";
 
-  const avatarUrl = useMemo(() => resolveOaImageUrl(record?.avatarUrl), [record?.avatarUrl]);
+  const avatarUrl = useMemo(() => resolvePublicAssetUrl(record?.avatarUrl), [record?.avatarUrl]);
 
   // Popup tạo/sửa record (TICKET-012/019).
   const [modalOpen, setModalOpen] = useState(false);
