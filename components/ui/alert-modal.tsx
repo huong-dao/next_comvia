@@ -1,38 +1,43 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import {
   HiCheckCircle,
   HiExclamationTriangle,
   HiInformationCircle,
   HiXCircle,
+  HiXMark,
 } from "react-icons/hi2";
-import { Modal } from "@/components/ui/modal";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 
 export type AlertModalType = "success" | "error" | "warning" | "info";
 
 export type AlertModalOptions = {
   type: AlertModalType;
-  /** Tiêu đề popup. Mặc định suy ra từ `type` (vd "Thành công", "Có lỗi xảy ra"). */
+  /** Dòng tiêu đề in đậm. Mặc định suy ra từ `type` (vd "Thành công", "Có lỗi xảy ra"). */
   title?: string;
   message: string;
-  /** Nhãn nút đóng. Mặc định "Đóng". */
-  closeLabel?: string;
-  /** Gọi khi người dùng đóng popup (nút đóng, nút X, click nền). */
+  /** Gọi khi đóng (bấm X hoặc tự hết giờ). */
   onClose?: () => void;
+  /** Thời gian tự ẩn (ms). Mặc định 5000ms. Truyền <= 0 để không tự ẩn. */
+  duration?: number;
 };
+
+type AlertItem = Required<Pick<AlertModalOptions, "type" | "message" | "duration">> &
+  Pick<AlertModalOptions, "title" | "onClose"> & { id: number };
 
 type AlertModalContextValue = {
   showAlert: (options: AlertModalOptions) => void;
 };
 
+const DEFAULT_DURATION = 5000;
+
 const AlertModalContext = React.createContext<AlertModalContextValue | null>(null);
 
 /**
- * Lấy hàm hiển thị modal alert (popup giữa màn hình, chặn thao tác tới khi đóng) dùng chung
- * toàn app — thay cho banner lỗi/thành công nằm lẻ tẻ trong từng form.
+ * Lấy hàm hiển thị thông báo nổi góc phải màn hình (trượt vào từ bên phải, tự tắt sau 5s hoặc
+ * bấm X) dùng chung toàn app — thay cho banner lỗi/thành công nằm lẻ tẻ trong từng form.
  * Phải được gọi bên trong <AlertModalProvider> (đã mount ở root layout).
  */
 export function useAlertModal(): AlertModalContextValue {
@@ -45,48 +50,135 @@ export function useAlertModal(): AlertModalContextValue {
 
 const TYPE_CONFIG: Record<
   AlertModalType,
-  { Icon: React.ComponentType<{ className?: string }>; iconClass: string; defaultTitle: string }
+  {
+    Icon: React.ComponentType<{ className?: string }>;
+    defaultTitle: string;
+    /** Nền + chữ pastel theo type — cùng tông với `--color-success`/`--color-danger` sẵn có. */
+    className: string;
+  }
 > = {
-  success: { Icon: HiCheckCircle, iconClass: "text-success", defaultTitle: "Thành công" },
-  error: { Icon: HiXCircle, iconClass: "text-danger", defaultTitle: "Có lỗi xảy ra" },
+  success: {
+    Icon: HiCheckCircle,
+    defaultTitle: "Thành công",
+    className: "bg-success/15 text-success",
+  },
+  error: {
+    Icon: HiXCircle,
+    defaultTitle: "Có lỗi xảy ra",
+    className: "bg-danger/15 text-danger",
+  },
   warning: {
     Icon: HiExclamationTriangle,
-    iconClass: "text-amber-500",
     defaultTitle: "Lưu ý",
+    className: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
   },
-  info: { Icon: HiInformationCircle, iconClass: "text-primary", defaultTitle: "Thông báo" },
+  info: {
+    Icon: HiInformationCircle,
+    defaultTitle: "Thông báo",
+    className: "bg-primary/15 text-primary",
+  },
 };
 
-export function AlertModalProvider({ children }: { children: React.ReactNode }) {
-  const [alert, setAlert] = React.useState<AlertModalOptions | null>(null);
+function AlertCard({ item, onDismiss }: { item: AlertItem; onDismiss: () => void }) {
+  const { Icon, defaultTitle, className } = TYPE_CONFIG[item.type];
 
-  const showAlert = React.useCallback((options: AlertModalOptions) => {
-    setAlert(options);
+  // Mount ở translate-x dương (ngoài màn hình bên phải) rồi trượt vào ngay sau đó.
+  // Dùng setTimeout thay vì requestAnimationFrame: rAF không chạy khi tab/pane không
+  // compositing (vd preview ẩn), khiến card đứng yên ở trạng thái "chưa vào".
+  const [entered, setEntered] = React.useState(false);
+  React.useEffect(() => {
+    const timer = setTimeout(() => setEntered(true), 10);
+    return () => clearTimeout(timer);
   }, []);
 
-  const handleClose = React.useCallback(() => {
-    alert?.onClose?.();
-    setAlert(null);
-  }, [alert]);
+  return (
+    <div
+      role="alert"
+      className={cn(
+        "pointer-events-auto w-full max-w-sm rounded-xl p-4 shadow-[var(--shadow-soft)] transition-all duration-300 ease-out",
+        className,
+        entered ? "translate-x-0 opacity-100" : "translate-x-8 opacity-0",
+      )}
+    >
+      <div className="flex items-start gap-2.5">
+        <Icon className="mt-0.5 size-5 shrink-0" aria-hidden />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold leading-5">{item.title ?? defaultTitle}</p>
+          <p className="mt-0.5 text-sm leading-5 opacity-90">{item.message}</p>
+        </div>
+        <button
+          type="button"
+          onClick={onDismiss}
+          aria-label="Đóng thông báo"
+          className="shrink-0 rounded-md p-0.5 opacity-70 transition hover:opacity-100"
+        >
+          <HiXMark className="size-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function AlertModalProvider({ children }: { children: React.ReactNode }) {
+  const [items, setItems] = React.useState<AlertItem[]>([]);
+  const [mounted, setMounted] = React.useState(false);
+  const itemsRef = React.useRef<AlertItem[]>([]);
+  const timers = React.useRef(new Map<number, ReturnType<typeof setTimeout>>());
+  const idRef = React.useRef(0);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  React.useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
+  const dismiss = React.useCallback((id: number) => {
+    const timer = timers.current.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      timers.current.delete(id);
+    }
+    itemsRef.current.find((item) => item.id === id)?.onClose?.();
+    setItems((prev) => prev.filter((item) => item.id !== id));
+  }, []);
+
+  const showAlert = React.useCallback(
+    ({ type, title, message, onClose, duration = DEFAULT_DURATION }: AlertModalOptions) => {
+      const id = (idRef.current += 1);
+      setItems((prev) => [...prev, { id, type, title, message, onClose, duration }]);
+      if (duration > 0) {
+        const timer = setTimeout(() => dismiss(id), duration);
+        timers.current.set(id, timer);
+      }
+    },
+    [dismiss],
+  );
+
+  // Dọn sạch mọi timer còn treo khi provider unmount.
+  React.useEffect(() => {
+    const map = timers.current;
+    return () => {
+      map.forEach((timer) => clearTimeout(timer));
+      map.clear();
+    };
+  }, []);
 
   const value = React.useMemo<AlertModalContextValue>(() => ({ showAlert }), [showAlert]);
-
-  const { Icon, iconClass, defaultTitle } = alert ? TYPE_CONFIG[alert.type] : TYPE_CONFIG.info;
 
   return (
     <AlertModalContext.Provider value={value}>
       {children}
-      <Modal
-        open={alert !== null}
-        onClose={handleClose}
-        title={alert?.title ?? defaultTitle}
-        footer={<Button onClick={handleClose}>{alert?.closeLabel ?? "Đóng"}</Button>}
-      >
-        <div className="flex flex-col items-center space-y-3 py-2 text-center">
-          <Icon className={cn("size-14", iconClass)} aria-hidden />
-          <p className="text-sm text-foreground">{alert?.message}</p>
-        </div>
-      </Modal>
+      {mounted &&
+        createPortal(
+          <div className="pointer-events-none fixed top-4 right-4 z-50 flex w-full max-w-sm flex-col gap-3">
+            {items.map((item) => (
+              <AlertCard key={item.id} item={item} onDismiss={() => dismiss(item.id)} />
+            ))}
+          </div>,
+          document.body,
+        )}
     </AlertModalContext.Provider>
   );
 }
