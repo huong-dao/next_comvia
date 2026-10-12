@@ -55,7 +55,7 @@ function OaPageContent() {
         </p>
       ) : null}
 
-      <OaInfoBox className="max-w-xl" />
+      <OaInfoBox className="max-w-xl" refreshAfterOAuth={msg !== null && !msgError} />
     </div>
   );
 }

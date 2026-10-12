@@ -35,7 +35,13 @@ function needsReconnect(status: string) {
   return s === "TOKEN_EXPIRED" || s === "RECONNECT_REQUIRED" || s === "CONNECTION_ERROR";
 }
 
-export function OaInfoBox({ className }: { className?: string }) {
+export function OaInfoBox({
+  className,
+  refreshAfterOAuth = false,
+}: {
+  className?: string;
+  refreshAfterOAuth?: boolean;
+}) {
   const params = useParams();
   const workspaceId = params.workspaceId as string;
   const { role } = useWorkspaceContext();
@@ -60,6 +66,29 @@ export function OaInfoBox({ className }: { className?: string }) {
   const connection = record?.connection;
   const statusUpper = (connection?.status ?? "NOT_CONNECTED").toUpperCase();
   const connected = statusUpper === "CONNECTED";
+
+  useEffect(() => {
+    if (!refreshAfterOAuth || connected) return;
+
+    let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    let attempts = 0;
+
+    const poll = () => {
+      void refetch().finally(() => {
+        attempts += 1;
+        if (!cancelled && attempts < 5) {
+          retryTimer = setTimeout(poll, 1500);
+        }
+      });
+    };
+
+    poll();
+    return () => {
+      cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
+    };
+  }, [connected, refetch, refreshAfterOAuth]);
 
   const avatarUrl = useMemo(() => resolvePublicAssetUrl(record?.avatarUrl), [record?.avatarUrl]);
 
@@ -120,6 +149,7 @@ export function OaInfoBox({ className }: { className?: string }) {
       const res = await comviaFetch<OaConnectResponse>(`/workspaces/${workspaceId}/oa/connect`, {
         method: "POST",
         token,
+        headers: { "x-workspace-id": workspaceId },
       });
       if (!res.authorizationUrl) {
         setMsg("API không trả authorizationUrl — kiểm tra cấu hình Zalo OAuth trên backend.");
@@ -127,7 +157,7 @@ export function OaInfoBox({ className }: { className?: string }) {
         return;
       }
       rememberOaOAuthWorkspace(workspaceId);
-      window.location.href = res.authorizationUrl;
+      window.location.assign(res.authorizationUrl);
     } catch (e) {
       setMsg(formatComviaError(e, "Không bắt đầu được luồng kết nối Zalo."));
       setBusy(false);
@@ -265,7 +295,7 @@ export function OaInfoBox({ className }: { className?: string }) {
                   aria-hidden
                 />
                 <span className={connected ? "text-success" : "text-muted-foreground"}>
-                  {connected ? "Đang kết nối" : "Chưa kết nối"}
+                  {connected ? "Đã kết nối" : "Chưa kết nối"}
                 </span>
               </span>
             </InfoRow>
@@ -307,7 +337,7 @@ export function OaInfoBox({ className }: { className?: string }) {
                   disabled={busy}
                   onClick={() => void connect()}
                 >
-                  {connectLabel}
+                  {busy ? "Đang chuyển đến Zalo…" : connectLabel}
                 </Button>
               )}
             </div>
