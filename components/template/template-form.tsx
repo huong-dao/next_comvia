@@ -47,6 +47,9 @@ const TYPE_TO_BACKEND: Record<TemplateMessageType, BackendTemplateType> = {
   otp: "OTP",
 };
 
+// OTP có đúng hai biến hệ thống. Người tạo template không cần cấu hình chúng.
+const OTP_PLACEHOLDERS: Record<string, string> = { otp: "", phut: "" };
+
 /** Body gửi lên `POST /workspaces/:workspaceId/templates` theo tên field chuẩn backend (BR-05). */
 type CreateTemplateBody = {
   name: string;
@@ -138,7 +141,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
 
   /**
    * Chỉ dựng payload theo loại tin đang chọn để không rò dữ liệu của loại khác.
-   * OTP: gửi `otpExpiryMinutes`, không gửi content/placeholders (backend lưu null).
+   * OTP: gửi `otpExpiryMinutes` và hai placeholder hệ thống `otp`/`phut`, không gửi content.
    * TABLE: gửi thêm `secondaryContent`. TEXT: content + placeholders.
    */
   function buildSubmit(): { ok: true; body: CreateTemplateBody } | { ok: false; message: string } {
@@ -159,6 +162,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
         return { ok: false, message: "Số phút hết hạn phải là số nguyên ≥ 1." };
       }
       body.otpExpiryMinutes = mins;
+      body.placeholdersJson = OTP_PLACEHOLDERS;
       return { ok: true, body };
     }
 
