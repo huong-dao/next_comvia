@@ -199,7 +199,7 @@ export function WorkspaceSidebar({
           })}
         </nav>
       </div>
-      <ThemeToggle iconOnly className="h-[34px] min-h-[34px] min-w-[34px] rounded-lg border-none !bg-surface-muted" />
+      <ThemeToggle variant="switch" className="mb-3 self-center" />
       <SidebarUserCard compact={isCompact} />
     </aside>
   );
