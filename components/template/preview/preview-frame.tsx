@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { HiOutlineEllipsisHorizontal } from "react-icons/hi2";
+import { ctaTypeLabel, type TemplateCtaDraft } from "@/lib/template-cta";
 
 /**
  * Khung điện thoại dùng chung cho 3 preview mẫu tin (bảng/văn bản/OTP).
@@ -34,4 +35,14 @@ export function PreviewCta({ label }: { label: string }) {
       {label}
     </div>
   );
+}
+
+export function PreviewCtas({ buttons }: { buttons: TemplateCtaDraft[] }) {
+  return buttons.length > 0 ? (
+    <div className="mt-4 space-y-2">
+      {buttons.map((button, index) => (
+        <PreviewCta key={button.id ?? index} label={button.label.trim() || ctaTypeLabel(button.type)} />
+      ))}
+    </div>
+  ) : null;
 }

@@ -23,6 +23,8 @@ import {
   type PlaceholderRow,
 } from "@/lib/template-placeholders";
 import { useComviaQuery } from "@/lib/use-comvia-query";
+import { TemplateCtaFields } from "@/components/template/template-cta-fields";
+import { ctaTypeLabel, normalizeCtaButtons, validateCtaButtons, type TemplateCtaButton, type TemplateCtaDraft } from "@/lib/template-cta";
 import { HiOutlineDocumentArrowUp, HiOutlineDocumentCheck, HiArrowLeft, HiLockClosed, HiOutlinePlus, HiOutlineTrash } from "react-icons/hi2";
 
 type TemplateDetail = {
@@ -33,6 +35,7 @@ type TemplateDetail = {
   status?: string;
   placeholdersJson?: Record<string, string>;
   unitPricePerMessage?: number | string | null;
+  ctaButtons?: TemplateCtaButton[];
   updatedAt?: string;
 };
 
@@ -59,6 +62,8 @@ export default function TemplateDetailPage() {
   const [content, setContent] = useState("");
   const [placeholderRows, setPlaceholderRows] = useState<PlaceholderRow[]>(() => [newPlaceholderRow()]);
   const [unitPrice, setUnitPrice] = useState("");
+  const [ctaButtons, setCtaButtons] = useState<TemplateCtaDraft[]>([]);
+  const [ctaUnitPrices, setCtaUnitPrices] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const contentRef = useRef<HTMLTextAreaElement>(null);
@@ -74,7 +79,17 @@ export default function TemplateDetailPage() {
         ? String(data.unitPricePerMessage)
         : "",
     );
-  }, [data]);
+    setCtaButtons(
+      (data.ctaButtons ?? []).map(({ id, type, label, target, position }) => ({ id, type, label: label ?? "", target: target ?? "", position })),
+    );
+    if (isAppAdmin) {
+      setCtaUnitPrices(
+        Object.fromEntries((data.ctaButtons ?? []).map((button) => [button.id, button.unitPrice == null ? "" : String(button.unitPrice)])),
+      );
+    } else {
+      setCtaUnitPrices({});
+    }
+  }, [data, isAppAdmin]);
 
   const placeholdersParsed = useMemo(() => rowsToPlaceholders(placeholderRows), [placeholderRows]);
   /** Khi đã duyệt chỉ xem — preview lấy từ dữ liệu server, không phụ thuộc state form có thể chỉnh. */
@@ -119,6 +134,11 @@ export default function TemplateDetailPage() {
       setMsg(ph.message);
       return;
     }
+    const ctaError = validateCtaButtons(ctaButtons);
+    if (ctaError) {
+      setMsg(ctaError);
+      return;
+    }
     const token = getAccessToken();
     if (!token) return;
     setBusy(true);
@@ -131,6 +151,7 @@ export default function TemplateDetailPage() {
           name: name || data.name,
           content: content || data.content,
           placeholdersJson: ph.data,
+          ctaButtons: normalizeCtaButtons(ctaButtons),
         }),
       });
       setMsg("Đã cập nhật.");
@@ -186,6 +207,32 @@ export default function TemplateDetailPage() {
       void refetch();
     } catch (e) {
       setMsg(e instanceof ComviaApiError ? e.message : "Không lưu đơn giá.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveCtaUnitPrice(ctaButtonId: string) {
+    if (!isAppAdmin) return;
+    const token = getAccessToken();
+    if (!token) return;
+    const raw = (ctaUnitPrices[ctaButtonId] ?? "").trim();
+    const value = Number(raw);
+    if (!raw || !Number.isInteger(value) || value < 0) {
+      setMsg("Nhập đơn giá CTA hợp lệ (VND, số nguyên không âm).");
+      return;
+    }
+    setBusy(true);
+    setMsg(null);
+    try {
+      await comviaFetch(
+        `/workspaces/${workspaceId}/templates/${templateId}/cta-buttons/${ctaButtonId}/unit-price`,
+        { method: "PATCH", token, body: JSON.stringify({ unitPrice: value }) },
+      );
+      setMsg("Đã cập nhật đơn giá CTA.");
+      void refetch();
+    } catch (e) {
+      setMsg(e instanceof ComviaApiError ? e.message : "Không lưu được đơn giá CTA.");
     } finally {
       setBusy(false);
     }
@@ -337,7 +384,7 @@ export default function TemplateDetailPage() {
                       className="grid gap-2 rounded-xl border border-border/60 bg-surface-muted/40 p-3 sm:grid-cols-[1fr_1fr_1fr_auto]"
                     >
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-muted-foreground">Label</label>
+                        <label className="mb-1 block text-xs font-medium text-muted-foreground">Nhãn</label>
                         <Input
                           value={row.label}
                           onChange={(e) => updateRow(row.id, { label: e.target.value })}
@@ -382,6 +429,7 @@ export default function TemplateDetailPage() {
                 {!placeholdersParsed.ok ? (
                   <p className="text-xs text-danger">{placeholdersParsed.message}</p>
                 ) : null}
+                <TemplateCtaFields buttons={ctaButtons} onChange={setCtaButtons} disabled={busy} />
               </div>
 
               <Button className="w-full sm:w-auto" icon={<HiOutlineDocumentCheck className="size-4" />} type="button" disabled={busy} onClick={() => void savePatch()}>
@@ -409,6 +457,16 @@ export default function TemplateDetailPage() {
               ) : (
                 <p className="text-xs text-muted-foreground">Không có placeholder.</p>
               )}
+              {(data.ctaButtons ?? []).length > 0 ? (
+                <div className="space-y-2 rounded-xl bg-surface-muted p-3 text-xs">
+                  <p className="font-semibold text-foreground">Nút CTA</p>
+                  {(data.ctaButtons ?? []).map((button) => (
+                    <p key={button.id} className="text-muted-foreground">
+                      {button.position + 1}. {button.label || ctaTypeLabel(button.type)}{button.target ? ` · ${button.target}` : ""}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
             </>
           )}
 
@@ -434,6 +492,21 @@ export default function TemplateDetailPage() {
               <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => void saveUnitPrice()}>
                 Lưu đơn giá
               </Button>
+            </div>
+          ) : null}
+
+          {isAppAdmin && (data.ctaButtons ?? []).length > 0 ? (
+            <div className="space-y-3 border-t border-border/60 pt-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Đơn giá nút CTA (ADMIN)</p>
+              {(data.ctaButtons ?? []).map((button) => (
+                <div key={button.id} className="flex flex-wrap items-end gap-2">
+                  <label className="min-w-0 flex-1 text-xs text-muted-foreground">
+                    <span className="mb-1 block truncate">{button.label || ctaTypeLabel(button.type)}</span>
+                    <Input type="number" min={0} step={1} value={ctaUnitPrices[button.id] ?? ""} onChange={(event) => setCtaUnitPrices((prices) => ({ ...prices, [button.id]: event.target.value }))} placeholder="VD: 100" />
+                  </label>
+                  <Button type="button" variant="outline" size="sm" disabled={busy} onClick={() => void saveCtaUnitPrice(button.id)}>Lưu giá</Button>
+                </div>
+              ))}
             </div>
           ) : null}
 

@@ -1,7 +1,8 @@
 "use client";
 
 import { previewTemplateContent } from "@/lib/template-placeholders";
-import { PreviewCta, PreviewFrame } from "./preview-frame";
+import { PreviewCtas, PreviewFrame } from "./preview-frame";
+import type { TemplateCtaDraft } from "@/lib/template-cta";
 
 type TablePreviewProps = {
   title: string;
@@ -10,10 +11,11 @@ type TablePreviewProps = {
   placeholderLabels?: Record<string, string>;
   secondaryContent: string;
   logoUrl?: string | null;
+  ctaButtons: TemplateCtaDraft[];
 };
 
 /** Preview mẫu tin "Dạng bảng" (hình 4): tiêu đề + đoạn mở + bảng key-value + nội dung phụ + CTA. */
-export function TablePreview({ content, placeholders, placeholderLabels, secondaryContent, logoUrl }: TablePreviewProps) {
+export function TablePreview({ content, placeholders, placeholderLabels, secondaryContent, logoUrl, ctaButtons }: TablePreviewProps) {
   const rendered = previewTemplateContent(content, placeholders);
   const rows = Object.entries(placeholders);
 
@@ -35,7 +37,7 @@ export function TablePreview({ content, placeholders, placeholderLabels, seconda
       {secondaryContent ? (
         <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-600">{secondaryContent}</p>
       ) : null}
-      <PreviewCta label="Xem chi tiết" />
+      <PreviewCtas buttons={ctaButtons} />
     </PreviewFrame>
   );
 }

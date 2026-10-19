@@ -25,6 +25,8 @@ import {
   HiOutlineXMark,
 } from "react-icons/hi2";
 import { useComviaQuery } from "@/lib/use-comvia-query";
+import { TemplateCtaFields } from "@/components/template/template-cta-fields";
+import { normalizeCtaButtons, validateCtaButtons, type TemplateCtaDraft } from "@/lib/template-cta";
 
 export type CreateTemplateResponse = {
   id: string;
@@ -61,6 +63,7 @@ type CreateTemplateBody = {
   secondaryContent?: string;
   otpExpiryMinutes?: number;
   placeholdersJson?: Record<string, string>;
+  ctaButtons?: ReturnType<typeof normalizeCtaButtons>;
 };
 
 const TYPE_OPTIONS: { value: TemplateMessageType; label: string }[] = [
@@ -100,6 +103,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
   const [placeholderRows, setPlaceholderRows] = useState<PlaceholderRow[]>(() => [newPlaceholderRow()]);
+  const [ctaButtons, setCtaButtons] = useState<TemplateCtaDraft[]>([]);
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -174,6 +178,8 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
     if (!name.trim()) {
       return { ok: false, message: "Tên mẫu là bắt buộc." };
     }
+    const ctaError = validateCtaButtons(ctaButtons);
+    if (ctaError) return { ok: false, message: ctaError };
 
     const body: CreateTemplateBody = {
       name: name.trim(),
@@ -181,6 +187,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
     };
     if (title.trim()) body.title = title.trim();
     if (trackingId.trim()) body.trackingId = trackingId.trim();
+    if (ctaButtons.length > 0) body.ctaButtons = normalizeCtaButtons(ctaButtons);
 
     if (type === "otp") {
       const mins = Number(otpMinutes);
@@ -362,7 +369,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
                     className="grid gap-2 rounded-xl border border-border/60 bg-surface-muted/40 p-3 sm:grid-cols-[1fr_1fr_1fr_auto]"
                   >
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-muted-foreground">Label</label>
+                      <label className="mb-1 block text-xs font-medium text-muted-foreground">Nhãn</label>
                       <Input
                         value={row.label}
                         onChange={(e) => updateRow(row.id, { label: e.target.value })}
@@ -436,6 +443,8 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
           </div>
         ) : null}
 
+        <TemplateCtaFields buttons={ctaButtons} onChange={setCtaButtons} />
+
         {error ? <p className="text-sm text-danger">{error}</p> : null}
 
         <div className="space-y-2 border-t border-border/60 pt-4">
@@ -446,7 +455,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
               disabled={loading}
               onClick={() => void handleSave(false)}
             >
-              {loading ? "Đang xử lý…" : "Lưu template"}
+              {loading ? "Đang xử lý…" : "Lưu mẫu tin"}
             </Button>
             <Button
               icon={<HiOutlineDocumentArrowUp className="size-4" />}
@@ -483,6 +492,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
             secondaryContent={secondaryContent}
             minutes={otpMinutes}
             logoUrl={previewLogoUrl}
+            ctaButtons={ctaButtons}
           />
         </div>
       </Card>

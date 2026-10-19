@@ -1,16 +1,18 @@
 "use client";
 
 import { HiOutlineSquare2Stack } from "react-icons/hi2";
-import { PreviewFrame } from "./preview-frame";
+import { PreviewCtas, PreviewFrame } from "./preview-frame";
+import type { TemplateCtaDraft } from "@/lib/template-cta";
 
 type OtpPreviewProps = {
   title: string;
   minutes: string;
   logoUrl?: string | null;
+  ctaButtons: TemplateCtaDraft[];
 };
 
 /** Preview mẫu tin "Dạng OTP" (hình 6): tiêu đề + mã lớn + icon copy + cảnh báo bảo mật + thời hạn. */
-export function OtpPreview({ minutes, logoUrl }: OtpPreviewProps) {
+export function OtpPreview({ minutes, logoUrl, ctaButtons }: OtpPreviewProps) {
   const displayMinutes = minutes.trim() || "5";
 
   return (
@@ -24,6 +26,7 @@ export function OtpPreview({ minutes, logoUrl }: OtpPreviewProps) {
         Tuyệt đối KHÔNG chia sẻ mã xác thực cho bất kỳ ai dưới bất kỳ hình thức nào. Mã xác thực có hiệu lực trong{" "}
         {displayMinutes} phút.
       </p>
+      <PreviewCtas buttons={ctaButtons} />
     </PreviewFrame>
   );
 }
