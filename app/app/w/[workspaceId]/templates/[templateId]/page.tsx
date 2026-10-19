@@ -134,7 +134,7 @@ export default function TemplateDetailPage() {
       setMsg(ph.message);
       return;
     }
-    const ctaError = validateCtaButtons(ctaButtons);
+    const ctaError = validateCtaButtons(ctaButtons, filledSlugs);
     if (ctaError) {
       setMsg(ctaError);
       return;

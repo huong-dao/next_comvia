@@ -48,6 +48,14 @@ export function ctaNeedsTarget(type: TemplateCtaType) {
   return type !== "OA_PROFILE";
 }
 
+/**
+ * Zalo CTA dùng cú pháp `<param_name>` trong URL. Giữ nguyên token này trong
+ * `target` để backend có thể lưu và truyền giá trị riêng cho từng người nhận.
+ */
+function ctaUrlParams(target: string) {
+  return Array.from(target.matchAll(/<([^<>]*)>/g), ([, name]) => name);
+}
+
 function isValidVietnamPhone(value: string) {
   return /^(?:0\d{9}|84\d{9}|\+84\d{9})$/.test(value.replace(/[.\s-]/g, ""));
 }
@@ -71,7 +79,7 @@ export function normalizeCtaButtons(buttons: TemplateCtaDraft[]) {
   }));
 }
 
-export function validateCtaButtons(buttons: TemplateCtaDraft[]): string | null {
+export function validateCtaButtons(buttons: TemplateCtaDraft[], contentParams: string[] = []): string | null {
   if (buttons.length > 2) return "Mẫu tin chỉ có tối đa 2 nút CTA.";
 
   for (const button of buttons) {
@@ -84,6 +92,23 @@ export function validateCtaButtons(buttons: TemplateCtaDraft[]): string | null {
       if (!isValidVietnamPhone(target)) return "Số điện thoại CTA phải là số Việt Nam hợp lệ.";
     } else if (!isValidHttpUrl(target)) {
       return "Đích đến CTA phải là URL bắt đầu bằng http:// hoặc https://.";
+    } else {
+      const params = ctaUrlParams(target);
+      if (target.includes("<") || target.includes(">")) {
+        if (params.some((param) => !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(param))) {
+          return "Param CTA phải có dạng <ten_bien>, không dấu, không khoảng trắng.";
+        }
+        if (params.length === 0 || target.replace(/<[^<>]*>/g, "").includes("<") || target.replace(/<[^<>]*>/g, "").includes(">")) {
+          return "Param CTA phải có dạng <ten_bien>.";
+        }
+        const pathname = decodeURIComponent(new URL(target).pathname);
+        if (params.some((param) => !pathname.includes(`<${param}>`))) {
+          return "Param CTA phải nằm trong phần đường dẫn của URL, không đặt ở query string.";
+        }
+        if (params.some((param) => contentParams.includes(param))) {
+          return "Param CTA không được trùng với biến đã dùng trong nội dung mẫu tin.";
+        }
+      }
     }
   }
   return null;

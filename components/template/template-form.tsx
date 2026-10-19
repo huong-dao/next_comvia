@@ -178,7 +178,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
     if (!name.trim()) {
       return { ok: false, message: "Tên mẫu là bắt buộc." };
     }
-    const ctaError = validateCtaButtons(ctaButtons);
+    const ctaError = validateCtaButtons(ctaButtons, filledSlugs);
     if (ctaError) return { ok: false, message: ctaError };
 
     const body: CreateTemplateBody = {

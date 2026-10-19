@@ -29,7 +29,7 @@ export function TemplateCtaFields({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nút CTA</p>
-          <p className="mt-1 text-xs text-muted-foreground">Tối đa 2 nút; có thể để trống nếu mẫu tin không cần CTA.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Tối đa 2 nút theo quy định Zalo; có thể để trống nếu mẫu tin không cần CTA.</p>
         </div>
         {buttons.length < 2 ? (
           <Button
@@ -68,14 +68,19 @@ export function TemplateCtaFields({
           </div>
           <div className="md:col-span-2">
             <label className="mb-1 block text-xs font-medium text-muted-foreground">
-              {button.type === "PHONE_CALL" ? "Số điện thoại" : "Đích đến URL"}{ctaNeedsTarget(button.type) ? " *" : " (tuỳ chọn)"}
+              {button.type === "PHONE_CALL" ? "Số điện thoại" : "Đường dẫn liên kết"}{ctaNeedsTarget(button.type) ? " *" : " (tuỳ chọn)"}
             </label>
             <Input
               value={button.target}
               disabled={disabled}
               onChange={(event) => update(index, { target: event.target.value })}
-              placeholder={button.type === "PHONE_CALL" ? "vd: 0901234567" : "https://..."}
+              placeholder={button.type === "PHONE_CALL" ? "vd: 0901234567" : "https://example.com/don-hang/<order_token>"}
             />
+            {button.type !== "PHONE_CALL" && button.type !== "OA_PROFILE" ? (
+              <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
+                Để cá nhân hóa liên kết, nhập Param ngay trong phần path URL, dạng <code>&lt;order_token&gt;</code> (ví dụ: <code>https://example.com/don-hang/&lt;order_token&gt;</code>). Param dùng chữ, số, gạch dưới; không trùng biến trong nội dung. Khi gửi tin, truyền giá trị Param theo UTF-8/URL-encode.
+              </p>
+            ) : null}
           </div>
         </div>
       ))}
