@@ -256,7 +256,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,400px)]">
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,600px)]">
       <Card className="min-w-0 space-y-4">
         <div>
           <label className={LABEL_CLASS}>Tên mẫu</label>
