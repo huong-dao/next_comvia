@@ -115,15 +115,15 @@ const adminItems: Array<{
   href: string;
   icon: ComponentType<{ className?: string }>;
 }> = [
-  { label: "NgÆ°á»i dÃ¹ng", href: "/admin/users", icon: HiOutlineUsers },
+  { label: "Ng\u01b0\u1eddi d\u00f9ng", href: "/admin/users", icon: HiOutlineUsers },
   { label: "Workspaces", href: "/admin/workspaces", icon: HiOutlineRectangleStack },
   { label: "Zalo OAs", href: "/admin/oa-connections", icon: HiOutlineBuildingOffice2 },
   { label: "ZBS Templates", href: "/admin/templates", icon: HiOutlineDocumentText },
-  { label: "TÃ i khoáº£n cÃ´ng ty", href: "/admin/money-accounts", icon: HiOutlineCreditCard },
-  { label: "ÄÆ¡n hÃ ng", href: "/admin/orders", icon: HiOutlineShoppingCart },
-  { label: "HÃ³a Ä‘Æ¡n", href: "/admin/invoices", icon: HiOutlineDocumentText },
-  { label: "Lá»‹ch sá»­ hoáº¡t Ä‘á»™ng", href: "/admin/audit-logs", icon: HiOutlineClipboardDocumentList },
-  { label: "Cáº¥u hÃ¬nh chung", href: "/admin/config", icon: HiOutlineCog6Tooth },
+  { label: "T\u00e0i kho\u1ea3n c\u00f4ng ty", href: "/admin/money-accounts", icon: HiOutlineCreditCard },
+  { label: "\u0110\u01a1n h\u00e0ng", href: "/admin/orders", icon: HiOutlineShoppingCart },
+  { label: "H\u00f3a \u0111\u01a1n", href: "/admin/invoices", icon: HiOutlineDocumentText },
+  { label: "L\u1ecbch s\u1eed ho\u1ea1t \u0111\u1ed9ng", href: "/admin/audit-logs", icon: HiOutlineClipboardDocumentList },
+  { label: "C\u1ea5u h\u00ecnh chung", href: "/admin/config", icon: HiOutlineCog6Tooth },
 ];
 
 export function WorkspaceSidebar({
@@ -237,14 +237,14 @@ export function WorkspaceSidebar({
                   pathname.startsWith("/admin") &&
                     "bg-surface-muted text-secondary shadow-[inset_3px_0_0_0_var(--color-primary)]",
                 )}
-                title={isCompact ? "Quáº£n trá»‹" : undefined}
+                title={isCompact ? "Qu\u1ea3n tr\u1ecb" : undefined}
                 aria-expanded={adminOpen}
               >
                 <HiOutlineCog6Tooth className="size-5 shrink-0" />
                 {!isCompact ? (
                   <>
-                    <span className="flex-1 text-left">Quáº£n trá»‹</span>
-                    <span className="text-xs">{adminOpen ? "âˆ’" : "+"}</span>
+                    <span className="flex-1 text-left">{"Qu\u1ea3n tr\u1ecb"}</span>
+                    <span className="text-xs">{adminOpen ? "\u2212" : "+"}</span>
                   </>
                 ) : null}
               </button>
