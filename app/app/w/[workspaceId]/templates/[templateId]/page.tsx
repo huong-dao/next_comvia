@@ -398,7 +398,7 @@ export default function TemplateDetailPage() {
                 </p>
               </div>
               {readOnlyPlaceholders.length > 0 ? (
-                <ul className="max-h-[min(400px,55vh)] space-y-2 overflow-y-auto rounded-xl bg-surface-muted p-3 text-xs">
+                <ul className="max-h-[min(600px,55vh)] space-y-2 overflow-y-auto rounded-xl bg-surface-muted p-3 text-xs">
                   {readOnlyPlaceholders.map(([key, val]) => (
                     <li key={key} className="flex flex-col gap-0.5 border-b border-border/40 pb-2 last:border-0 last:pb-0">
                       <span className="font-mono font-medium text-foreground">{key}</span>
