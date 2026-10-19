@@ -4,11 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { HiOutlineDocumentCheck, HiOutlinePlus, HiOutlineTrash } from "react-icons/hi2";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { TemplateCtaFields } from "@/components/template/template-cta-fields";
+import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input, Textarea } from "@/components/ui/input";
 import { getAccessToken } from "@/lib/auth";
-import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
+import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
 import { newPlaceholderRow, recordToPlaceholderRows, rowsToPlaceholders, slugLooksValid, type PlaceholderRow } from "@/lib/template-placeholders";
 import { normalizeCtaButtons, validateCtaButtons, type TemplateCtaButton, type TemplateCtaDraft } from "@/lib/template-cta";
 import { useComviaQuery } from "@/lib/use-comvia-query";
@@ -16,26 +17,38 @@ import { useComviaQuery } from "@/lib/use-comvia-query";
 type EditableTemplate = {
   id: string;
   name?: string;
+  type?: string;
+  title?: string;
   content?: string;
+  secondaryContent?: string;
+  otpExpiryMinutes?: number;
   status?: string;
   placeholdersJson?: Record<string, string>;
   ctaButtons?: TemplateCtaButton[];
 };
+type OaPreviewAsset = { logoLightUrl?: string | null };
 
-export function TemplateEditForm({
-  workspaceId,
-  templateId,
-  onSaved,
-}: {
-  workspaceId: string;
-  templateId: string;
-  onSaved: () => void;
-}) {
+function toPreviewType(type?: string): TemplateMessageType {
+  if (type?.toUpperCase() === "TEXT") return "van_ban";
+  if (type?.toUpperCase() === "OTP") return "otp";
+  return "bang";
+}
+
+export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspaceId: string; templateId: string; onSaved: () => void }) {
   const fetcher = useCallback(
-    (token: string) => comviaFetch<EditableTemplate>(`/workspaces/${workspaceId}/templates/${templateId}`, { token }),
+    (token: string) => comviaFetch<EditableTemplate>("/workspaces/" + workspaceId + "/templates/" + templateId, { token }),
     [workspaceId, templateId],
   );
+  const oaFetcher = useCallback(async (token: string): Promise<OaPreviewAsset | null> => {
+    try {
+      return await comviaFetch<OaPreviewAsset>("/workspaces/" + workspaceId + "/oa", { token });
+    } catch (fetchError) {
+      if (fetchError instanceof ComviaApiError && fetchError.statusCode === 404) return null;
+      throw fetchError;
+    }
+  }, [workspaceId]);
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId && templateId), fetcher);
+  const { data: oa } = useComviaQuery(Boolean(workspaceId), oaFetcher);
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
   const [placeholderRows, setPlaceholderRows] = useState<PlaceholderRow[]>(() => [newPlaceholderRow()]);
@@ -48,15 +61,9 @@ export function TemplateEditForm({
     setName(data.name ?? "");
     setContent(data.content ?? "");
     setPlaceholderRows(recordToPlaceholderRows(data.placeholdersJson));
-    setCtaButtons(
-      (data.ctaButtons ?? []).map(({ id, type, label, target, position }) => ({
-        id,
-        type,
-        label: label ?? "",
-        target: target ?? "",
-        position,
-      })),
-    );
+    setCtaButtons((data.ctaButtons ?? []).map(({ id, type, label, target, position }) => ({
+      id, type, label: label ?? "", target: target ?? "", position,
+    })));
   }, [data]);
 
   const placeholdersParsed = useMemo(() => rowsToPlaceholders(placeholderRows), [placeholderRows]);
@@ -64,38 +71,33 @@ export function TemplateEditForm({
     () => placeholderRows.map((row) => row.slug.trim()).filter((slug) => slug.length > 0 && slugLooksValid(slug)),
     [placeholderRows],
   );
+  const previewLabels = useMemo(
+    () => Object.fromEntries(placeholderRows.filter((row) => row.slug.trim() && slugLooksValid(row.slug.trim())).map((row) => [row.slug.trim(), row.label.trim() || row.slug.trim()])),
+    [placeholderRows],
+  );
   const approved = (data?.status ?? "").toUpperCase() === "APPROVED";
 
   function updateRow(id: string, patch: Partial<Pick<PlaceholderRow, "label" | "slug" | "defaultValue">>) {
     setPlaceholderRows((rows) => rows.map((row) => (row.id === id ? { ...row, ...patch } : row)));
   }
-
   function removeRow(id: string) {
     setPlaceholderRows((rows) => {
       const next = rows.filter((row) => row.id !== id);
       return next.length > 0 ? next : [newPlaceholderRow()];
     });
   }
-
   async function save() {
     if (!data || approved) return;
     const placeholders = rowsToPlaceholders(placeholderRows);
-    if (!placeholders.ok) {
-      setMessage(placeholders.message);
-      return;
-    }
+    if (!placeholders.ok) return setMessage(placeholders.message);
     const ctaError = validateCtaButtons(ctaButtons, filledSlugs);
-    if (ctaError) {
-      setMessage(ctaError);
-      return;
-    }
+    if (ctaError) return setMessage(ctaError);
     const token = getAccessToken();
     if (!token) return;
-
     setSaving(true);
     setMessage(null);
     try {
-      await comviaFetch(`/workspaces/${workspaceId}/templates/${templateId}`, {
+      await comviaFetch("/workspaces/" + workspaceId + "/templates/" + templateId, {
         method: "PATCH",
         token,
         body: JSON.stringify({
@@ -116,25 +118,20 @@ export function TemplateEditForm({
   if (loading) return <PageLoading message="Đang tải mẫu tin…" />;
   if (error && !data) return <PageError message={error} onRetry={() => void refetch()} />;
   if (!data) return null;
-  if (approved) {
-    return <p className="pb-4 text-sm text-muted-foreground">Mẫu tin đã duyệt chỉ có thể xem, không thể chỉnh sửa.</p>;
-  }
+  if (approved) return <p className="pb-4 text-sm text-muted-foreground">Mẫu tin đã duyệt chỉ có thể xem, không thể chỉnh sửa.</p>;
 
   return (
-    <div className="grid gap-6 xl:grid-cols-2">
-      <Card className="space-y-4">
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,600px)]">
+      <Card className="min-w-0 space-y-4">
         <div>
           <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tên mẫu tin</label>
           <Input value={name} disabled={saving} onChange={(event) => setName(event.target.value)} />
         </div>
         <div>
           <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung</label>
-          <Textarea rows={15} value={content} disabled={saving} onChange={(event) => setContent(event.target.value)} />
+          <Textarea rows={12} value={content} disabled={saving} onChange={(event) => setContent(event.target.value)} />
         </div>
-      </Card>
-
-      <Card className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Các trường thông tin</p>
           <Button type="button" variant="outline" size="sm" icon={<HiOutlinePlus className="size-4" />} disabled={saving} onClick={() => setPlaceholderRows((rows) => [...rows, newPlaceholderRow()])}>
             Thêm trường
@@ -168,6 +165,23 @@ export function TemplateEditForm({
         <Button type="button" icon={<HiOutlineDocumentCheck className="size-4" />} disabled={saving} onClick={() => void save()}>
           {saving ? "Đang lưu…" : "Lưu thay đổi"}
         </Button>
+      </Card>
+
+      <Card className="flex min-w-0 flex-col gap-3">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Xem trước</p>
+        <div className="flex-1 overflow-auto rounded-xl bg-surface-muted p-4">
+          <TemplatePreview
+            type={toPreviewType(data.type)}
+            title={data.title ?? ""}
+            content={content}
+            placeholders={placeholdersParsed.ok ? placeholdersParsed.data : {}}
+            placeholderLabels={previewLabels}
+            secondaryContent={data.secondaryContent ?? ""}
+            minutes={String(data.otpExpiryMinutes ?? 5)}
+            logoUrl={resolvePublicAssetUrl(oa?.logoLightUrl)}
+            ctaButtons={ctaButtons}
+          />
+        </div>
       </Card>
     </div>
   );
