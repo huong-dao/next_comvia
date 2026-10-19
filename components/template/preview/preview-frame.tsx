@@ -10,7 +10,7 @@ import { HiOutlineEllipsisHorizontal } from "react-icons/hi2";
  */
 export function PreviewFrame({ children, logoUrl }: { children: ReactNode; logoUrl?: string | null }) {
   return (
-    <div className="mx-auto w-full max-w-[360px] rounded-2xl border border-zinc-200 bg-white p-4 text-zinc-800 shadow-sm">
+    <div className="mx-auto w-full max-w-[100%] rounded-2xl border border-zinc-200 bg-white p-4 text-zinc-800 shadow-sm">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex size-9 items-center justify-center overflow-hidden rounded-lg bg-blue-50 text-[11px] font-bold text-blue-600">
           {logoUrl ? (
