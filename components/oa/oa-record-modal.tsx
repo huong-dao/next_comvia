@@ -438,11 +438,13 @@ export function OaRecordModal({
             hint="Tải lên logo phiên bản nền sáng để hiển thị trên giao diện sáng của Zalo"
           >
             <ImageUploadField
-              label="Kích thước yêu cầu: 400x96px. Định dạng: PNG, JPG."
+              label="Kích thước yêu cầu: 400x96px. Định dạng: PNG."
               value={logoLight}
               existingUrl={savedRecord?.logoLightUrl ?? undefined}
               requiredWidth={LOGO_WIDTH}
               requiredHeight={LOGO_HEIGHT}
+              accept="image/png"
+              allowedTypes={["image/png"]}
               onChange={(f) => {
                 setLogoLight(f);
                 if (errors.logoLight) setErrors((e) => ({ ...e, logoLight: undefined }));
@@ -457,11 +459,13 @@ export function OaRecordModal({
             hint="Tải lên logo phiên bản nền tối để hiển thị trên giao diện tối của Zalo"
           >
             <ImageUploadField
-              label="Kích thước yêu cầu: 400x96px. Định dạng: PNG, JPG."
+              label="Kích thước yêu cầu: 400x96px. Định dạng: PNG."
               value={logoDark}
               existingUrl={savedRecord?.logoDarkUrl ?? undefined}
               requiredWidth={LOGO_WIDTH}
               requiredHeight={LOGO_HEIGHT}
+              accept="image/png"
+              allowedTypes={["image/png"]}
               onChange={(f) => {
                 setLogoDark(f);
                 if (errors.logoDark) setErrors((e) => ({ ...e, logoDark: undefined }));
@@ -630,8 +634,8 @@ function CountedTextarea({
         value={value}
         maxLength={max}
         placeholder={placeholder}
-        rows={3}
-        className="resize-none pr-16"
+        rows={5}
+        className="min-h-32 resize-y pr-16"
         onChange={(e) => onChange(e.target.value)}
       />
       <span className="pointer-events-none absolute bottom-3 right-3 text-xs text-muted-foreground">

@@ -12,8 +12,10 @@ type TemplatePreviewProps = {
   title: string;
   content: string;
   placeholders: Record<string, string>;
+  placeholderLabels?: Record<string, string>;
   secondaryContent: string;
   minutes: string;
+  logoUrl?: string | null;
 };
 
 /** Chọn preview trực quan theo loại tin. Chỉ render phía client, không gửi gì thêm lên API. */
@@ -22,8 +24,10 @@ export function TemplatePreview({
   title,
   content,
   placeholders,
+  placeholderLabels,
   secondaryContent,
   minutes,
+  logoUrl,
 }: TemplatePreviewProps) {
   switch (type) {
     case "bang":
@@ -32,12 +36,14 @@ export function TemplatePreview({
           title={title}
           content={content}
           placeholders={placeholders}
+          placeholderLabels={placeholderLabels}
           secondaryContent={secondaryContent}
+          logoUrl={logoUrl}
         />
       );
     case "van_ban":
-      return <TextPreview title={title} content={content} placeholders={placeholders} />;
+      return <TextPreview title={title} content={content} placeholders={placeholders} logoUrl={logoUrl} />;
     case "otp":
-      return <OtpPreview title={title} minutes={minutes} />;
+      return <OtpPreview title={title} minutes={minutes} logoUrl={logoUrl} />;
   }
 }

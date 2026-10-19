@@ -6,14 +6,15 @@ import { PreviewFrame } from "./preview-frame";
 type OtpPreviewProps = {
   title: string;
   minutes: string;
+  logoUrl?: string | null;
 };
 
 /** Preview mẫu tin "Dạng OTP" (hình 6): tiêu đề + mã lớn + icon copy + cảnh báo bảo mật + thời hạn. */
-export function OtpPreview({ title, minutes }: OtpPreviewProps) {
+export function OtpPreview({ minutes, logoUrl }: OtpPreviewProps) {
   const displayMinutes = minutes.trim() || "5";
 
   return (
-    <PreviewFrame>
+    <PreviewFrame logoUrl={logoUrl}>
       <p className="mb-3 text-sm font-bold text-zinc-900">Nội dung này sẽ do Zalo quyết định.</p>
       <div className="mb-3 flex items-center gap-2">
         <span className="text-3xl font-bold tracking-wider text-zinc-900">123456</span>

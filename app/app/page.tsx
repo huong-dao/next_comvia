@@ -2,17 +2,19 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getAccessToken, getStoredUser, postLoginPathForRole } from "@/lib/auth";
+import { getAccessToken, getStoredUser } from "@/lib/auth";
+import { resolvePostLoginPath } from "@/lib/post-login-redirect";
 
 export default function AppIndexPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (!getAccessToken()) {
+    const token = getAccessToken();
+    if (!token) {
       router.replace("/auth/login");
       return;
     }
-    router.replace(postLoginPathForRole(getStoredUser()?.role));
+    void resolvePostLoginPath(getStoredUser()?.role, token).then((path) => router.replace(path));
   }, [router]);
 
   return (

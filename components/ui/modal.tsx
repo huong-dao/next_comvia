@@ -6,10 +6,11 @@ import { cn } from "@/lib/cn";
 import { Button } from "@/components/ui/button";
 
 /** Lớp max-width theo kích thước modal. `md` giữ nguyên hành vi cũ. */
-const SIZE_MAX_WIDTH: Record<"md" | "lg" | "xl", string> = {
+const SIZE_MAX_WIDTH: Record<"md" | "lg" | "xl" | "full", string> = {
   md: "max-w-2xl",
   lg: "max-w-4xl",
   xl: "max-w-6xl",
+  full: "max-w-[calc(100vw-2rem)]",
 };
 
 // Đếm số modal đang mở để khoá cuộn nền (body) đúng cách khi nhiều modal chồng
@@ -32,7 +33,7 @@ export function Modal({
   /** Nếu truyền, thay thế footer mặc định (chỉ nút đóng). */
   footer?: React.ReactNode;
   /** Chiều rộng tối đa của popup. Mặc định `md` (= `max-w-2xl`, giữ hành vi cũ). */
-  size?: "md" | "lg" | "xl";
+  size?: "md" | "lg" | "xl" | "full";
 }) {
   // Guard SSR: `document` chưa tồn tại khi render trên server. Chỉ portal sau khi
   // mount client (cùng pattern mounted-guard với components/ui/toast.tsx).

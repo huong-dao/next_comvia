@@ -31,6 +31,8 @@ export type ImageUploadFieldProps = {
   existingUrl?: string | null;
   /** Class bổ sung cho wrapper. */
   className?: string;
+  /** MIME types được chấp nhận; mặc định PNG/JPEG. */
+  allowedTypes?: string[];
 };
 
 /**
@@ -49,6 +51,7 @@ export function ImageUploadField({
   accept = "image/png,image/jpeg",
   existingUrl,
   className,
+  allowedTypes = ACCEPTED_IMAGE_TYPES,
 }: ImageUploadFieldProps) {
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -75,8 +78,12 @@ export function ImageUploadField({
       onChange(null);
       return;
     }
-    if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-      setError("Chỉ chấp nhận ảnh PNG hoặc JPEG.");
+    if (!allowedTypes.includes(file.type)) {
+      setError(
+        allowedTypes.length === 1 && allowedTypes[0] === "image/png"
+          ? "Chỉ chấp nhận ảnh PNG."
+          : "Chỉ chấp nhận ảnh PNG hoặc JPEG.",
+      );
       onChange(null);
       return;
     }

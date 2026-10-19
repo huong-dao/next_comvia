@@ -1,11 +1,12 @@
 export type PlaceholderRow = {
   id: string;
+  label: string;
   slug: string;
   defaultValue: string;
 };
 
 export function newPlaceholderRow(): PlaceholderRow {
-  return { id: crypto.randomUUID(), slug: "", defaultValue: "" };
+  return { id: crypto.randomUUID(), label: "", slug: "", defaultValue: "" };
 }
 
 export function slugLooksValid(slug: string): boolean {
@@ -51,6 +52,7 @@ export function recordToPlaceholderRows(record: unknown): PlaceholderRow[] {
   if (entries.length === 0) return [newPlaceholderRow()];
   return entries.map(([slug, raw]) => ({
     id: crypto.randomUUID(),
+    label: slug,
     slug,
     defaultValue: raw === undefined || raw === null ? "" : String(raw),
   }));

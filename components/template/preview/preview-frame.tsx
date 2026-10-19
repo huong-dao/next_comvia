@@ -8,12 +8,17 @@ import { HiOutlineEllipsisHorizontal } from "react-icons/hi2";
  * Chủ ý dùng màu cố định (white/zinc + xanh Zalo) thay vì token theme:
  * đây là mô phỏng tin nhắn trên Zalo, phải đọc như nhau ở light/dark mode.
  */
-export function PreviewFrame({ children }: { children: ReactNode }) {
+export function PreviewFrame({ children, logoUrl }: { children: ReactNode; logoUrl?: string | null }) {
   return (
     <div className="mx-auto w-full max-w-[360px] rounded-2xl border border-zinc-200 bg-white p-4 text-zinc-800 shadow-sm">
       <div className="mb-3 flex items-center justify-between">
-        <div className="flex size-9 items-center justify-center rounded-lg bg-blue-50 text-[11px] font-bold text-blue-600">
-          OA
+        <div className="flex size-9 items-center justify-center overflow-hidden rounded-lg bg-blue-50 text-[11px] font-bold text-blue-600">
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logoUrl} alt="Logo OA" className="size-full object-contain" />
+          ) : (
+            "OA"
+          )}
         </div>
         <HiOutlineEllipsisHorizontal className="size-5 text-zinc-400" />
       </div>

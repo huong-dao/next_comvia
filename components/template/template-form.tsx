@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input, Select, Textarea } from "@/components/ui/input";
-import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
+import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
 import {
   newPlaceholderRow,
@@ -24,6 +24,7 @@ import {
   HiOutlineTrash,
   HiOutlineXMark,
 } from "react-icons/hi2";
+import { useComviaQuery } from "@/lib/use-comvia-query";
 
 export type CreateTemplateResponse = {
   id: string;
@@ -70,8 +71,23 @@ const TYPE_OPTIONS: { value: TemplateMessageType; label: string }[] = [
 
 const LABEL_CLASS = "mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground";
 
+type OaPreviewAsset = { logoLightUrl?: string | null };
+
 export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormProps) {
   const router = useRouter();
+
+  const oaFetcher = useCallback(
+    async (token: string): Promise<OaPreviewAsset | null> => {
+      try {
+        return await comviaFetch<OaPreviewAsset>(`/workspaces/${workspaceId}/oa`, { token });
+      } catch (error) {
+        if (error instanceof ComviaApiError && error.statusCode === 404) return null;
+        throw error;
+      }
+    },
+    [workspaceId],
+  );
+  const { data: oa } = useComviaQuery(Boolean(workspaceId), oaFetcher);
 
   // Field mới (ISSUE-004) — gửi lên API theo tên chuẩn backend (BR-05).
   const [trackingId, setTrackingId] = useState("");
@@ -102,6 +118,16 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
     () => (showContentFields && placeholdersParsed.ok ? placeholdersParsed.data : {}),
     [showContentFields, placeholdersParsed],
   );
+  const previewPlaceholderLabels = useMemo(
+    () =>
+      Object.fromEntries(
+        placeholderRows
+          .filter((row) => row.slug.trim() && slugLooksValid(row.slug.trim()))
+          .map((row) => [row.slug.trim(), row.label.trim() || row.slug.trim()]),
+      ),
+    [placeholderRows],
+  );
+  const previewLogoUrl = useMemo(() => resolvePublicAssetUrl(oa?.logoLightUrl), [oa?.logoLightUrl]);
 
   const filledSlugs = useMemo(() => {
     return placeholderRows
@@ -128,7 +154,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
     [content],
   );
 
-  function updateRow(id: string, patch: Partial<Pick<PlaceholderRow, "slug" | "defaultValue">>) {
+  function updateRow(id: string, patch: Partial<Pick<PlaceholderRow, "label" | "slug" | "defaultValue">>) {
     setPlaceholderRows((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   }
 
@@ -230,8 +256,8 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <Card className="space-y-4">
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,400px)]">
+      <Card className="min-w-0 space-y-4">
         <div>
           <label className={LABEL_CLASS}>Tên mẫu</label>
           <Input value={name} onChange={(e) => setName(e.target.value)} required />
@@ -326,17 +352,25 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
                 </Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Mỗi dòng: tên biến (slug, ví dụ <code className="rounded bg-surface-muted px-1">name</code>) và giá trị
-                mẫu để xem trước.
+                Mỗi dòng gồm nhãn hiển thị, biến (slug, ví dụ <code className="rounded bg-surface-muted px-1">name</code>)
+                và giá trị mẫu để xem trước.
               </p>
               <ul className="space-y-3">
                 {placeholderRows.map((row) => (
                   <li
                     key={row.id}
-                    className="grid gap-2 rounded-xl border border-border/60 bg-surface-muted/40 p-3 sm:grid-cols-[1fr_1fr_auto]"
+                    className="grid gap-2 rounded-xl border border-border/60 bg-surface-muted/40 p-3 sm:grid-cols-[1fr_1fr_1fr_auto]"
                   >
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-muted-foreground">Slug</label>
+                      <label className="mb-1 block text-xs font-medium text-muted-foreground">Label</label>
+                      <Input
+                        value={row.label}
+                        onChange={(e) => updateRow(row.id, { label: e.target.value })}
+                        placeholder="vd: Họ và tên"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-muted-foreground">Biến</label>
                       <Input
                         value={row.slug}
                         onChange={(e) => updateRow(row.id, { slug: e.target.value })}
@@ -437,7 +471,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
         </div>
       </Card>
 
-      <Card className="flex flex-col gap-3">
+      <Card className="flex min-w-0 flex-col gap-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Xem trước</p>
         <div className="flex-1 overflow-auto rounded-xl bg-surface-muted p-4">
           <TemplatePreview
@@ -445,8 +479,10 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
             title={title}
             content={content}
             placeholders={previewPlaceholders}
+            placeholderLabels={previewPlaceholderLabels}
             secondaryContent={secondaryContent}
             minutes={otpMinutes}
+            logoUrl={previewLogoUrl}
           />
         </div>
       </Card>

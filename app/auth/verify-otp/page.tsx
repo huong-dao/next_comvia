@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAlertModal } from "@/components/ui/alert-modal";
-import { postLoginPathForRole, saveAuthSession } from "@/lib/auth";
+import { saveAuthSession } from "@/lib/auth";
+import { resolvePostLoginPath } from "@/lib/post-login-redirect";
 import {
   clearPendingOtpContext,
   createDefaultOtpExpiredAt,
@@ -166,7 +167,7 @@ function VerifyOtpContent() {
       });
       clearPendingOtpContext(otpRequestId);
 
-      router.push(postLoginPathForRole(data.user?.role));
+      router.push(await resolvePostLoginPath(data.user?.role, data.accessToken));
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Không thể kết nối server. Kiểm tra backend ở localhost:3000.";

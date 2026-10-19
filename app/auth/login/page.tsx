@@ -4,16 +4,16 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FcGoogle } from "react-icons/fc";
-import { HiOutlineEye, HiOutlineEyeOff, HiOutlineLockClosed, HiOutlineMail, HiOutlineKey } from "react-icons/hi";
+import { HiOutlineEye, HiOutlineEyeOff, HiOutlineLockClosed, HiOutlineMail } from "react-icons/hi";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/controls";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAlertModal } from "@/components/ui/alert-modal";
 import { cn } from "@/lib/cn";
-import { getAccessToken, getStoredUser, postLoginPathForRole, saveAuthSession } from "@/lib/auth";
+import { getAccessToken, getStoredUser, saveAuthSession } from "@/lib/auth";
 import { createDefaultOtpExpiredAt, createOtpRequestId, savePendingOtpContext } from "@/lib/otp-context";
+import { resolvePostLoginPath } from "@/lib/post-login-redirect";
 
 type LoginErrors = {
   email?: string;
@@ -55,7 +55,13 @@ export default function LoginPage() {
   useEffect(() => {
     const token = getAccessToken();
     if (token) {
-      router.replace(postLoginPathForRole(getStoredUser()?.role));
+      let cancelled = false;
+      void resolvePostLoginPath(getStoredUser()?.role, token).then((path) => {
+        if (!cancelled) router.replace(path);
+      });
+      return () => {
+        cancelled = true;
+      };
     }
   }, [router]);
 
@@ -183,7 +189,7 @@ export default function LoginPage() {
         remember,
       });
 
-      router.push(postLoginPathForRole(data.user?.role));
+      router.push(await resolvePostLoginPath(data.user?.role, data.accessToken));
     } catch (error) {
       const message =
         error instanceof Error

@@ -211,7 +211,7 @@ export default function TemplateDetailPage() {
     }
   }
 
-  function updateRow(id: string, patch: Partial<Pick<PlaceholderRow, "slug" | "defaultValue">>) {
+  function updateRow(id: string, patch: Partial<Pick<PlaceholderRow, "label" | "slug" | "defaultValue">>) {
     setPlaceholderRows((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
   }
 
@@ -288,7 +288,7 @@ export default function TemplateDetailPage() {
                 </div>
               ) : (
                 <p className="text-xs text-muted-foreground">
-                  Thêm slug hợp lệ ở cột "Thông tin" để hiện nút chèn.
+                  Thêm biến hợp lệ ở cột Thông tin để hiện nút chèn.
                 </p>
               )}
             </>
@@ -327,16 +327,25 @@ export default function TemplateDetailPage() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Slug (vd: <code className="rounded bg-surface-muted px-1">name</code>) và giá trị mẫu cho xem trước.
+                  Mỗi dòng gồm nhãn hiển thị, biến (vd: <code className="rounded bg-surface-muted px-1">name</code>)
+                  và giá trị mẫu cho xem trước.
                 </p>
                 <ul className="space-y-3">
                   {placeholderRows.map((row) => (
                     <li
                       key={row.id}
-                      className="grid gap-2 rounded-xl border border-border/60 bg-surface-muted/40 p-3 sm:grid-cols-[1fr_1fr_auto]"
+                      className="grid gap-2 rounded-xl border border-border/60 bg-surface-muted/40 p-3 sm:grid-cols-[1fr_1fr_1fr_auto]"
                     >
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-muted-foreground">Slug</label>
+                        <label className="mb-1 block text-xs font-medium text-muted-foreground">Label</label>
+                        <Input
+                          value={row.label}
+                          onChange={(e) => updateRow(row.id, { label: e.target.value })}
+                          placeholder="vd: Họ và tên"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-muted-foreground">Biến</label>
                         <Input
                           value={row.slug}
                           onChange={(e) => updateRow(row.id, { slug: e.target.value })}
