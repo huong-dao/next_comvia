@@ -11,6 +11,7 @@ import { Modal } from "@/components/ui/modal";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { SimpleTable } from "@/components/ui/simple-table";
 import { TemplateForm } from "@/components/template/template-form";
+import { TemplateEditForm } from "@/components/template/template-edit-form";
 import { useToast } from "@/components/ui/toast";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { workspacePath } from "@/lib/paths";
@@ -33,6 +34,16 @@ type TemplateRow = {
 /** Số dòng hiển thị rút gọn trên dashboard (xem đầy đủ qua "Xem tất cả"). */
 const PREVIEW_LIMIT = 5;
 
+const STATUS_FILTERS = [
+  { value: "ALL", label: "Tất cả" },
+  { value: "DRAFT", label: "Bản nháp" },
+  { value: "SUBMITTED", label: "Đã gửi" },
+  { value: "PENDING_ZALO_APPROVAL", label: "Đang chờ duyệt" },
+  { value: "APPROVED", label: "Đã duyệt" },
+  { value: "REJECTED", label: "Đã từ chối" },
+  { value: "DISABLED", label: "Đã khóa" },
+] as const;
+
 /**
  * Box phải của section OA trên dashboard (TICKET-014, hình 2):
  * danh sách mẫu tin rút gọn + "Xem tất cả" + "Tạo mẫu tin" (popup dùng TemplateForm).
@@ -45,6 +56,8 @@ export function DashboardTemplateList({ className }: { className?: string }) {
   const { showToast } = useToast();
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<(typeof STATUS_FILTERS)[number]["value"]>("ALL");
 
   const fetcher = useCallback(
     (token: string) => comviaFetch<TemplateRow[]>(`/workspaces/${workspaceId}/templates`, { token }),
@@ -52,11 +65,22 @@ export function DashboardTemplateList({ className }: { className?: string }) {
   );
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId), fetcher);
 
-  const rows = useMemo(() => (data ?? []).slice(0, PREVIEW_LIMIT), [data]);
+  const rows = useMemo(() => {
+    const matching = filter === "ALL"
+      ? data ?? []
+      : (data ?? []).filter((template) => (template.status ?? "").toUpperCase() === filter);
+    return matching.slice(0, PREVIEW_LIMIT);
+  }, [data, filter]);
 
   function handleCreated() {
     setCreateOpen(false);
     showToast({ type: "success", message: "Đã tạo mẫu tin." });
+    void refetch();
+  }
+
+  function handleSaved() {
+    setEditingTemplateId(null);
+    showToast({ type: "success", message: "Đã cập nhật mẫu tin." });
     void refetch();
   }
 
@@ -78,6 +102,19 @@ export function DashboardTemplateList({ className }: { className?: string }) {
       </div>
 
       <div className="mt-4">
+        <div className="mb-4 flex flex-wrap gap-2">
+          {STATUS_FILTERS.map((item) => (
+            <Button
+              key={item.value}
+              type="button"
+              size="sm"
+              variant={filter === item.value ? "primary" : "outline"}
+              onClick={() => setFilter(item.value)}
+            >
+              {item.label}
+            </Button>
+          ))}
+        </div>
         {loading && !data ? (
           <PageLoading message="Đang tải mẫu tin…" />
         ) : error && !data ? (
@@ -98,12 +135,13 @@ export function DashboardTemplateList({ className }: { className?: string }) {
                 key: "name",
                 header: "Tên mẫu tin",
                 cell: (r) => (
-                  <Link
+                  <button
+                    type="button"
                     className="font-medium text-primary hover:underline"
-                    href={workspacePath(workspaceId, "templates", r.id)}
+                    onClick={() => setEditingTemplateId(r.id)}
                   >
                     {r.name ?? r.id}
-                  </Link>
+                  </button>
                 ),
               },
               {
@@ -134,6 +172,9 @@ export function DashboardTemplateList({ className }: { className?: string }) {
 
       <Modal size="full" open={createOpen} title="Tạo mẫu tin" onClose={() => setCreateOpen(false)}>
         <TemplateForm workspaceId={workspaceId} onCreated={handleCreated} />
+      </Modal>
+      <Modal size="full" open={Boolean(editingTemplateId)} title="Chỉnh sửa mẫu tin" onClose={() => setEditingTemplateId(null)}>
+        {editingTemplateId ? <TemplateEditForm workspaceId={workspaceId} templateId={editingTemplateId} onSaved={handleSaved} /> : null}
       </Modal>
     </Card>
   );
