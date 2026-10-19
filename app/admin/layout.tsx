@@ -1,5 +1,5 @@
-import { InternalAppShell } from "@/components/layout/internal-app-shell";
+import { AppShell } from "@/components/layout/app-shell";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  return <InternalAppShell variant="admin">{children}</InternalAppShell>;
+  return <AppShell>{children}</AppShell>;
 }

@@ -60,7 +60,7 @@ export function getStoredUser(): StoredUser | null {
 /** Home path after auth — see `FRONTEND_SITEMAP_UX.mdc` §1 (Admin vs App). */
 export function postLoginPathForRole(role?: string | null): string {
   const r = String(role ?? "").toUpperCase();
-  if (r === "ADMIN") return "/admin";
+  if (r === "ADMIN") return "/app/workspaces";
   if (r === "STAFF") return "/staff";
   return "/app/workspaces";
 }
