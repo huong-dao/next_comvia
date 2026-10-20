@@ -19,12 +19,8 @@ export default function NewTemplatePage() {
 
       <TemplateForm
         workspaceId={workspaceId}
-        onCreated={(tpl, { submitted }) => {
-          router.push(
-            submitted
-              ? workspacePath(workspaceId, "templates", tpl.id)
-              : workspacePath(workspaceId, "templates"),
-          );
+        onCreated={(tpl) => {
+          router.push(workspacePath(workspaceId, "templates", tpl.id));
         }}
         onCancel={() => router.push(workspacePath(workspaceId, "templates"))}
       />

@@ -72,9 +72,9 @@ export function DashboardTemplateList({ className }: { className?: string }) {
     return matching.slice(0, PREVIEW_LIMIT);
   }, [data, filter]);
 
-  function handleCreated() {
-    setCreateOpen(false);
-    showToast({ type: "success", message: "Đã tạo mẫu tin." });
+  function handleCreated(_: TemplateRow, { submitted }: { submitted: boolean }) {
+    if (submitted) setCreateOpen(false);
+    showToast({ type: "success", message: submitted ? "Đã gửi duyệt mẫu tin." : "Đã lưu mẫu tin." });
     void refetch();
   }
 

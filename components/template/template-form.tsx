@@ -104,6 +104,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
   const [content, setContent] = useState("");
   const [placeholderRows, setPlaceholderRows] = useState<PlaceholderRow[]>(() => [newPlaceholderRow()]);
   const [ctaButtons, setCtaButtons] = useState<TemplateCtaDraft[]>([]);
+  const [createdTemplate, setCreatedTemplate] = useState<CreateTemplateResponse | null>(null);
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -231,23 +232,13 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
     });
   }
 
-  async function handleSave(submitAfter: boolean) {
+  async function handleSave() {
     setError(null);
     setLoading(true);
     try {
       const created = await createTemplate();
-      if (submitAfter) {
-        const token = getAccessToken();
-        if (!token) {
-          router.replace("/auth/login");
-          return;
-        }
-        await comviaFetch(`/workspaces/${workspaceId}/templates/${created.id}/submit`, {
-          method: "POST",
-          token,
-        });
-      }
-      onCreated(created, { submitted: submitAfter });
+      setCreatedTemplate(created);
+      onCreated(created, { submitted: false });
     } catch (err) {
       if (err instanceof ComviaApiError) {
         setError(err.message);
@@ -262,9 +253,32 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
     }
   }
 
+  async function submitCreatedTemplate() {
+    if (!createdTemplate) return;
+    const token = getAccessToken();
+    if (!token) {
+      router.replace("/auth/login");
+      return;
+    }
+    setError(null);
+    setLoading(true);
+    try {
+      await comviaFetch(`/workspaces/${workspaceId}/templates/${createdTemplate.id}/submit`, {
+        method: "POST",
+        token,
+      });
+      onCreated(createdTemplate, { submitted: true });
+    } catch (err) {
+      setError(err instanceof ComviaApiError ? err.message : "Không gửi duyệt được mẫu tin.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,600px)]">
       <Card className="min-w-0 space-y-4">
+        <fieldset disabled={createdTemplate !== null} className="space-y-4">
         <div>
           <label className={LABEL_CLASS}>Tên mẫu</label>
           <Input value={name} onChange={(e) => setName(e.target.value)} required />
@@ -444,28 +458,32 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
         ) : null}
 
         <TemplateCtaFields buttons={ctaButtons} onChange={setCtaButtons} />
+        </fieldset>
 
         {error ? <p className="text-sm text-danger">{error}</p> : null}
 
         <div className="space-y-2 border-t border-border/60 pt-4">
           <div className="flex flex-wrap gap-2">
-            <Button
-              icon={<HiOutlineDocumentCheck className="size-4" />}
-              type="button"
-              disabled={loading}
-              onClick={() => void handleSave(false)}
-            >
-              {loading ? "Đang xử lý…" : "Lưu mẫu tin"}
-            </Button>
-            <Button
-              icon={<HiOutlineDocumentArrowUp className="size-4" />}
-              type="button"
-              variant="accent"
-              disabled={loading}
-              onClick={() => void handleSave(true)}
-            >
-              Lưu và gửi duyệt
-            </Button>
+            {createdTemplate ? (
+              <Button
+                icon={<HiOutlineDocumentArrowUp className="size-4" />}
+                type="button"
+                variant="accent"
+                disabled={loading}
+                onClick={() => void submitCreatedTemplate()}
+              >
+                {loading ? "Đang gửi duyệt…" : "Gửi duyệt"}
+              </Button>
+            ) : (
+              <Button
+                icon={<HiOutlineDocumentCheck className="size-4" />}
+                type="button"
+                disabled={loading}
+                onClick={() => void handleSave()}
+              >
+                {loading ? "Đang xử lý…" : "Lưu mẫu tin"}
+              </Button>
+            )}
             {onCancel ? (
               <Button
                 icon={<HiOutlineXMark className="size-4" />}
@@ -477,6 +495,9 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
               </Button>
             ) : null}
           </div>
+          {createdTemplate ? (
+            <p className="text-xs text-success">Đã lưu mẫu tin. Bạn có thể gửi duyệt ngay hoặc đóng popup để tiếp tục sửa tại trang chi tiết.</p>
+          ) : null}
         </div>
       </Card>
 
