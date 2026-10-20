@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useCallback } from "react";
 import {
-  HiOutlineBolt,
   HiOutlineCheckCircle,
   HiOutlineClipboardDocumentList,
   HiOutlineClock,
@@ -81,12 +80,7 @@ export default function StaffHomePage() {
         <div>
           <PageHeader
             title="Staff hub"
-            description="Khu vực nội bộ cho review template toàn cục và internal quick chat theo đúng router map STAFF."
-            actions={
-              <Button variant="outline" asChild icon={<HiOutlineBolt className="size-4" />}>
-                <Link href="/staff/internal-quick-chat">Mở Internal Quick Chat</Link>
-              </Button>
-            }
+            description="Khu vực nội bộ để duyệt mẫu tin toàn cục và xử lý hóa đơn."
           />
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
@@ -110,10 +104,10 @@ export default function StaffHomePage() {
             })}
           </div>
 
-          <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)]">
+          <div className="mt-6">
             <Card className="space-y-4">
               <div>
-                <p className="text-base font-semibold text-foreground">Review template nội bộ</p>
+                <p className="text-base font-semibold text-foreground">Duyệt mẫu tin nội bộ</p>
                 <p className="text-sm text-muted-foreground">
                   Staff không phụ thuộc membership workspace. Tất cả queue đều lấy từ `GET /internal/templates`.
                 </p>
@@ -126,18 +120,6 @@ export default function StaffHomePage() {
                   <Link href="/staff/templates-review/pending-zalo-approval">Pending Zalo Approval</Link>
                 </Button>
               </div>
-            </Card>
-
-            <Card className="space-y-4">
-              <div>
-                <p className="text-base font-semibold text-foreground">Internal Quick Chat</p>
-                <p className="text-sm text-muted-foreground">
-                  Dùng để tạo session theo `workspaceId` mục tiêu, gửi message và confirm action nội bộ.
-                </p>
-              </div>
-              <Button variant="outline" asChild icon={<HiOutlineBolt className="size-4" />}>
-                <Link href="/staff/internal-quick-chat">Vào playground</Link>
-              </Button>
             </Card>
           </div>
         </div>

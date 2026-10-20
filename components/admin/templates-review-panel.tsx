@@ -119,7 +119,7 @@ export function TemplatesReviewPanel({
     <div>
       <PageHeader
         eyebrow="Review"
-        title={title ?? "Duyệt template"}
+        title={title ?? "Duyệt mẫu tin"}
         description="Queue review nội bộ toàn cục cho STAFF. Dùng `GET /internal/templates` để tải theo từng trạng thái; xem chi tiết để cập nhật `pending_zalo_approval / approved / rejected / disabled`."
       />
 

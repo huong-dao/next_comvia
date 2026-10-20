@@ -129,7 +129,7 @@ export function StaffTemplateReviewDetail({
     <div>
       <PageHeader
         eyebrow="Staff"
-        title="Chi tiết duyệt template"
+        title="Chi tiết duyệt mẫu tin"
         description="Dùng `GET /internal/templates/:templateId` để xem nội dung, workspace, OA và cập nhật trạng thái nội bộ."
         actions={
           <Button variant="outline" size="sm" asChild icon={<HiArrowLeft className="size-4" />}>

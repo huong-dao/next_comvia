@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { useCallback, useState } from "react";
 import { HiArrowLeft, HiOutlineDocumentCheck } from "react-icons/hi2";
 import { IssueInvoicePdfModal } from "@/components/admin/issue-invoice-pdf-modal";
@@ -134,7 +134,10 @@ type AdminInvoiceDetail = {
 
 export default function AdminInvoiceDetailPage() {
   const params = useParams();
+  const pathname = usePathname();
   const invoiceId = params.invoiceId as string;
+  const isStaffRoute = pathname.startsWith("/staff/");
+  const invoiceListPath = isStaffRoute ? "/staff/invoices" : "/admin/invoices";
 
   const [issueOpen, setIssueOpen] = useState(false);
 
@@ -182,7 +185,7 @@ export default function AdminInvoiceDetailPage() {
                   </Button>
                 ) : null}
                 <Button icon={<HiArrowLeft className="size-4" />} variant="outline" size="sm" asChild>
-                  <Link href="/admin/invoices">Danh sách hóa đơn</Link>
+                  <Link href={invoiceListPath}>Danh sách hóa đơn</Link>
                 </Button>
               </div>
             }
@@ -220,9 +223,13 @@ export default function AdminInvoiceDetailPage() {
             <div>
               <p className="text-xs uppercase text-muted-foreground">Đơn hàng liên kết</p>
               {data.order?.id ? (
-                <Button variant="ghost" size="sm" className="h-auto px-0 underline-offset-2 hover:underline" asChild>
-                  <Link href={`/admin/orders/${data.order.id}`}>{data.order.orderCode ?? data.order.id}</Link>
-                </Button>
+                isStaffRoute ? (
+                  <p className="text-sm font-medium">{data.order.orderCode ?? data.order.id}</p>
+                ) : (
+                  <Button variant="ghost" size="sm" className="h-auto px-0 underline-offset-2 hover:underline" asChild>
+                    <Link href={`/admin/orders/${data.order.id}`}>{data.order.orderCode ?? data.order.id}</Link>
+                  </Button>
+                )
               ) : (
                 <p className="text-sm">—</p>
               )}
