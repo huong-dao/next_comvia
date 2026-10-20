@@ -17,6 +17,7 @@ import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input, Textarea } from "@/components/ui/input";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
+import { ctaTypeLabel, type TemplateCtaButton } from "@/lib/template-cta";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
 type TemplateDetail = {
@@ -25,6 +26,7 @@ type TemplateDetail = {
   code?: string;
   content?: string;
   placeholdersJson?: Record<string, unknown>;
+  ctaButtons?: TemplateCtaButton[];
   providerTemplateId?: string | null;
   status?: string;
   requiresOwnerRevision?: boolean;
@@ -133,6 +135,7 @@ export function StaffTemplateReviewDetail({
   const requiresOwnerRevision = Boolean(template.requiresOwnerRevision);
   const canSendToZalo = status === "SUBMITTED" && !requiresOwnerRevision;
   const canApprove = status === "PENDING_ZALO_APPROVAL";
+  const ctaButtons = [...(template.ctaButtons ?? [])].sort((a, b) => a.position - b.position);
 
   return (
     <div>
@@ -209,6 +212,23 @@ export function StaffTemplateReviewDetail({
               <pre className="max-h-[220px] overflow-auto rounded-xl bg-surface-muted p-4 text-xs whitespace-pre-wrap">
                 {JSON.stringify(template.placeholdersJson ?? {}, null, 2)}
               </pre>
+            </Card>
+
+            <Card className="space-y-3 p-4">
+              <p className="text-xs font-semibold uppercase text-muted-foreground">Nút CTA</p>
+              {ctaButtons.length ? (
+                <div className="space-y-2">
+                  {ctaButtons.map((button, index) => (
+                    <div key={button.id ?? `${button.position}-${index}`} className="rounded-xl border border-border/70 bg-surface-muted/50 p-3 text-sm">
+                      <p className="font-medium text-foreground">{button.label || ctaTypeLabel(button.type)}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">Loại: {ctaTypeLabel(button.type)}</p>
+                      <p className="mt-1 break-all text-xs text-muted-foreground">Đích đến: {button.target || "—"}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Mẫu tin không có nút CTA.</p>
+              )}
             </Card>
 
             <Card className="space-y-3 p-4">
