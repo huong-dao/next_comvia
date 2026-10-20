@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { HiOutlineDocumentArrowUp, HiOutlineDocumentCheck, HiOutlinePlus, HiOutlineTrash } from "react-icons/hi2";
+import { HiLockClosed, HiOutlineDocumentArrowUp, HiOutlineDocumentCheck, HiOutlinePlus, HiOutlineTrash } from "react-icons/hi2";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { TemplateCtaFields } from "@/components/template/template-cta-fields";
 import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
@@ -85,6 +85,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
   const requiresOwnerRevision = Boolean(data?.requiresOwnerRevision);
   const editable = status === "DRAFT" || (status === "SUBMITTED" && requiresOwnerRevision);
   const canSubmit = owner && editable;
+  const canDisable = owner && status !== "DISABLED";
 
   function updateRow(id: string, patch: Partial<Pick<PlaceholderRow, "label" | "slug" | "defaultValue">>) {
     setPlaceholderRows((rows) => rows.map((row) => (row.id === id ? { ...row, ...patch } : row)));
@@ -143,10 +144,41 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
     }
   }
 
+  async function disableTemplate() {
+    if (!canDisable) return;
+    const token = getAccessToken();
+    if (!token) return;
+    setSaving(true);
+    setMessage(null);
+    try {
+      await comviaFetch("/workspaces/" + workspaceId + "/templates/" + templateId + "/disable", {
+        method: "POST",
+        token,
+      });
+      onSaved();
+    } catch (disableError) {
+      setMessage(disableError instanceof ComviaApiError ? disableError.message : "Không thể khóa mẫu tin.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (loading) return <PageLoading message="Đang tải mẫu tin…" />;
   if (error && !data) return <PageError message={error} onRetry={() => void refetch()} />;
   if (!data) return null;
-  if (!editable) return <p className="pb-4 text-sm text-muted-foreground">Mẫu tin đang được Staff hoặc Zalo xử lý nên chưa thể chỉnh sửa.</p>;
+  if (!editable) {
+    return (
+      <div className="space-y-4 pb-4">
+        <p className="text-sm text-muted-foreground">Mẫu tin đang được Staff hoặc Zalo xử lý nên chưa thể chỉnh sửa.</p>
+        {message ? <p className="text-sm text-danger">{message}</p> : null}
+        {canDisable ? (
+          <Button type="button" variant="outline" icon={<HiLockClosed className="size-4" />} disabled={saving} onClick={() => void disableTemplate()}>
+            {saving ? "Đang khóa…" : "Khóa (Chủ Workspace)"}
+          </Button>
+        ) : null}
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,600px)]">
@@ -204,6 +236,11 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
           {canSubmit ? (
             <Button type="button" variant="accent" icon={<HiOutlineDocumentArrowUp className="size-4" />} disabled={saving} onClick={() => void submitTemplate()}>
               {saving ? "Đang xử lý…" : requiresOwnerRevision ? "Gửi lại Staff xử lý" : "Gửi Staff xử lý"}
+            </Button>
+          ) : null}
+          {canDisable ? (
+            <Button type="button" variant="outline" icon={<HiLockClosed className="size-4" />} disabled={saving} onClick={() => void disableTemplate()}>
+              {saving ? "Đang khóa…" : "Khóa (Chủ Workspace)"}
             </Button>
           ) : null}
         </div>
