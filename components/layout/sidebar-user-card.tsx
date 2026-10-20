@@ -42,7 +42,7 @@ export function SidebarUserCard({
   const label = initials(user?.fullName, user?.email);
   const isStaff = user?.role?.toUpperCase() === "STAFF";
   const showSecurity = variant === "tenant" || isStaff;
-  const securityHref = isStaff ? "/auth/forgot-password" : APP_PATHS.settingsSecurity;
+  const securityHref = isStaff ? APP_PATHS.staffSettingsSecurity : APP_PATHS.settingsSecurity;
 
   if (compact) {
     return (

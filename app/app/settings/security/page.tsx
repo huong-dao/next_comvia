@@ -7,7 +7,13 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { APP_PATHS } from "@/lib/paths";
 
-export default function SecuritySettingsPage() {
+export function SecuritySettingsPage({
+  profileHref = APP_PATHS.profile,
+  profileLabel = "Hồ sơ",
+}: {
+  profileHref?: string;
+  profileLabel?: string;
+}) {
   return (
     <div>
       <PageHeader
@@ -16,7 +22,7 @@ export default function SecuritySettingsPage() {
         // description="Đổi mật khẩu và quản lý phiên — placeholder theo sitemap; kết nối API khi backend sẵn sàng."
         actions={
           <Button variant="outline" asChild>
-            <Link href={APP_PATHS.profile}>Hồ sơ</Link>
+            <Link href={profileHref}>{profileLabel}</Link>
           </Button>
         }
       />
@@ -43,4 +49,8 @@ export default function SecuritySettingsPage() {
       </div>
     </div>
   );
+}
+
+export default function TenantSecuritySettingsPage() {
+  return <SecuritySettingsPage />;
 }
