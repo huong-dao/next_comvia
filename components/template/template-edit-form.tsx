@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { HiOutlineDocumentCheck, HiOutlinePlus, HiOutlineTrash } from "react-icons/hi2";
+import { HiOutlineDocumentArrowUp, HiOutlineDocumentCheck, HiOutlinePlus, HiOutlineTrash } from "react-icons/hi2";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { TemplateCtaFields } from "@/components/template/template-cta-fields";
 import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
@@ -115,6 +115,24 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
     }
   }
 
+  async function submitTemplate() {
+    const token = getAccessToken();
+    if (!token) return;
+    setSaving(true);
+    setMessage(null);
+    try {
+      await comviaFetch("/workspaces/" + workspaceId + "/templates/" + templateId + "/submit", {
+        method: "POST",
+        token,
+      });
+      onSaved();
+    } catch (submitError) {
+      setMessage(submitError instanceof ComviaApiError ? submitError.message : "Không gửi duyệt được mẫu tin.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (loading) return <PageLoading message="Đang tải mẫu tin…" />;
   if (error && !data) return <PageError message={error} onRetry={() => void refetch()} />;
   if (!data) return null;
@@ -162,9 +180,14 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
         {!placeholdersParsed.ok ? <p className="text-xs text-danger">{placeholdersParsed.message}</p> : null}
         <TemplateCtaFields buttons={ctaButtons} onChange={setCtaButtons} disabled={saving} />
         {message ? <p className="text-sm text-danger">{message}</p> : null}
-        <Button type="button" icon={<HiOutlineDocumentCheck className="size-4" />} disabled={saving} onClick={() => void save()}>
-          {saving ? "Đang lưu…" : "Lưu thay đổi"}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" icon={<HiOutlineDocumentCheck className="size-4" />} disabled={saving} onClick={() => void save()}>
+            {saving ? "Đang lưu…" : "Lưu thay đổi"}
+          </Button>
+          <Button type="button" variant="accent" icon={<HiOutlineDocumentArrowUp className="size-4" />} disabled={saving} onClick={() => void submitTemplate()}>
+            {saving ? "Đang xử lý…" : "Gửi duyệt"}
+          </Button>
+        </div>
       </Card>
 
       <Card className="flex min-w-0 flex-col gap-3">
