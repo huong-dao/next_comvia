@@ -8,14 +8,13 @@ import {
   HiOutlineCheckCircle,
   HiOutlineClock,
   HiOutlineSquares2X2,
-  HiOutlineXCircle,
 } from "react-icons/hi2";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
-import { Input, Textarea } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
 import { useComviaQuery } from "@/lib/use-comvia-query";
@@ -28,7 +27,6 @@ type TemplateDetail = {
   placeholdersJson?: Record<string, unknown>;
   providerTemplateId?: string | null;
   status?: string;
-  rejectedReason?: string | null;
   createdAt?: string;
   updatedAt?: string;
   workspace?: {
@@ -69,7 +67,6 @@ export function StaffTemplateReviewDetail({
   section?: "overview" | "workspace" | "oa";
 }) {
   const [providerId, setProviderId] = useState("");
-  const [rejectReason, setRejectReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -109,15 +106,6 @@ export function StaffTemplateReviewDetail({
     });
   }
 
-  async function reject() {
-    const reason = rejectReason.trim();
-    if (!reason) {
-      setMsg("Nhập lý do từ chối.");
-      return;
-    }
-    await updateStatus(`/internal/templates/${templateId}/reject`, "Đã chuyển sang rejected.", { reason });
-  }
-
   if (loading) return <PageLoading message="Đang tải chi tiết template…" />;
   if (error && !template) return <PageError message={error} onRetry={() => void refetch()} />;
   if (!template) return null;
@@ -126,7 +114,6 @@ export function StaffTemplateReviewDetail({
   const status = (template.status ?? "").toUpperCase();
   const canSendToZalo = status === "SUBMITTED";
   const canApprove = status === "PENDING_ZALO_APPROVAL";
-  const canReject = canSendToZalo || canApprove;
 
   return (
     <div>
@@ -233,20 +220,9 @@ export function StaffTemplateReviewDetail({
                   <Input className="mt-1" value={providerId} onChange={(e) => setProviderId(e.target.value)} placeholder="ZALO_TPL_..." />
                 </div>
               ) : null}
-              {canReject ? (
-                <div>
-                  <label className="text-xs font-semibold uppercase text-muted-foreground">Lý do từ chối</label>
-                  <Textarea className="mt-1" rows={4} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} placeholder="Nhập lý do từ chối" />
-                </div>
-              ) : null}
               {template.providerTemplateId ? (
                 <p className="text-sm text-muted-foreground">
                   Provider template ID hiện tại: <span className="font-mono">{template.providerTemplateId}</span>
-                </p>
-              ) : null}
-              {template.rejectedReason ? (
-                <p className="text-sm text-muted-foreground">
-                  Lý do rejected hiện tại: <span className="font-medium">{template.rejectedReason}</span>
                 </p>
               ) : null}
               {msg ? <p className="text-sm text-muted-foreground">{msg}</p> : null}
@@ -265,11 +241,6 @@ export function StaffTemplateReviewDetail({
                 {canApprove ? (
                   <Button type="button" disabled={busy} onClick={() => void approve()} icon={<HiOutlineCheckCircle className="size-4" />}>
                     Zalo đã duyệt
-                  </Button>
-                ) : null}
-                {canReject ? (
-                  <Button type="button" variant="outline" disabled={busy} onClick={() => void reject()} icon={<HiOutlineXCircle className="size-4" />}>
-                    Từ chối xử lý
                   </Button>
                 ) : null}
               </div>

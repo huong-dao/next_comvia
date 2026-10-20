@@ -7,7 +7,6 @@ import {
   HiOutlineClipboardDocumentList,
   HiOutlineClock,
   HiOutlineNoSymbol,
-  HiOutlineXCircle,
 } from "react-icons/hi2";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
@@ -40,13 +39,6 @@ const staffQueues = [
     icon: HiOutlineCheckCircle,
     status: "APPROVED",
     description: "Danh sách template đã duyệt để tra cứu nhanh.",
-  },
-  {
-    title: "Rejected",
-    href: "/staff/templates-review/rejected",
-    icon: HiOutlineXCircle,
-    status: "REJECTED",
-    description: "Theo dõi template bị từ chối và lý do kèm theo.",
   },
   {
     title: "Disabled",

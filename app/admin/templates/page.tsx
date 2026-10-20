@@ -63,7 +63,7 @@ export default function AdminTemplatesPage() {
               <div>
                 <label className="mb-1 block text-xs text-muted-foreground">Trạng thái</label>
                 <Select value={draft.status} onChange={(event) => setDraft((value) => ({ ...value, status: event.target.value }))}>
-                  <option value="">Tất cả</option><option value="DRAFT">DRAFT</option><option value="PENDING">PENDING</option><option value="APPROVED">APPROVED</option><option value="REJECTED">REJECTED</option>
+                  <option value="">Tất cả</option><option value="DRAFT">DRAFT</option><option value="PENDING">PENDING</option><option value="APPROVED">APPROVED</option>
                 </Select>
               </div>
               <div>

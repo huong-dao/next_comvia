@@ -8,7 +8,6 @@ import {
   HiOutlineClipboardDocumentList,
   HiOutlineClock,
   HiOutlineNoSymbol,
-  HiOutlineXCircle,
 } from "react-icons/hi2";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
@@ -26,7 +25,6 @@ type InternalTemplateItem = {
   code?: string;
   status?: string;
   providerTemplateId?: string | null;
-  rejectedReason?: string | null;
   createdAt?: string;
   updatedAt?: string;
   workspace?: {
@@ -61,12 +59,6 @@ const staffStatuses = [
     label: "Approved",
     href: "/staff/templates-review/approved",
     icon: HiOutlineCheckCircle,
-  },
-  {
-    value: "REJECTED",
-    label: "Rejected",
-    href: "/staff/templates-review/rejected",
-    icon: HiOutlineXCircle,
   },
   {
     value: "DISABLED",
@@ -120,7 +112,7 @@ export function TemplatesReviewPanel({
       <PageHeader
         eyebrow="Review"
         title={title ?? "Duyệt mẫu tin"}
-        description="Queue review nội bộ toàn cục cho STAFF. Dùng `GET /internal/templates` để tải theo từng trạng thái; xem chi tiết để cập nhật `pending_zalo_approval / approved / rejected / disabled`."
+        description="Queue review nội bộ toàn cục cho STAFF. Dùng `GET /internal/templates` để tải theo từng trạng thái; xem chi tiết để chuyển sang chờ Zalo duyệt hoặc đã duyệt."
       />
 
       <div className="mb-4 flex flex-wrap gap-2">
@@ -212,11 +204,6 @@ export function TemplatesReviewPanel({
             key: "p",
             header: "Provider Template ID",
             cell: (r) => <span className="font-mono text-xs">{r.providerTemplateId ?? "—"}</span>,
-          },
-          {
-            key: "rr",
-            header: "Rejected Reason",
-            cell: (r) => <span className="text-xs text-muted-foreground">{r.rejectedReason ?? "—"}</span>,
           },
           {
             key: "d",

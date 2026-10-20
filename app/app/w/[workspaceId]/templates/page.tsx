@@ -27,7 +27,6 @@ const FILTERS = [
   { value: "SUBMITTED", label: "Đã gửi" },
   { value: "PENDING_ZALO_APPROVAL", label: "Đang chờ duyệt" },
   { value: "APPROVED", label: "Đã duyệt" },
-  { value: "REJECTED", label: "Đã từ chối" },
   { value: "DISABLED", label: "Đã khóa" },
 ] as const;
 
