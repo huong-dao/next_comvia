@@ -1,10 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { HiOutlineAdjustmentsHorizontal, HiOutlineClipboardDocumentList } from "react-icons/hi2";
-import { AdminStaffRoleGate } from "@/components/admin/role-gate";
+import { AdminRoleGate } from "@/components/admin/role-gate";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { Button } from "@/components/ui/button";
@@ -59,8 +58,6 @@ const initialFilters = (): AppliedFilters => ({
 });
 
 export default function AdminInvoicesPage() {
-  const pathname = usePathname();
-  const invoicePath = pathname.startsWith("/staff/") ? "/staff/invoices" : "/admin/invoices";
   const [page, setPage] = useState(1);
   const [applied, setApplied] = useState<AppliedFilters>(initialFilters);
   const [draft, setDraft] = useState<AppliedFilters>(initialFilters);
@@ -106,7 +103,7 @@ export default function AdminInvoicesPage() {
   }
 
   return (
-    <AdminStaffRoleGate>
+    <AdminRoleGate>
       {loading && !data ? <PageLoading /> : null}
       {error && !data ? <PageError message={error} onRetry={() => void refetch()} /> : null}
       {data ? (
@@ -184,7 +181,7 @@ export default function AdminInvoicesPage() {
                 header: "Mã HĐ",
                 cell: (r) => (
                   <Button variant="ghost" size="sm" className="h-auto px-2 text-sm" asChild>
-                    <Link href={`${invoicePath}/${r.id}`}>{r.invoiceCode ?? r.id}</Link>
+                    <Link href={`/admin/invoices/${r.id}`}>{r.invoiceCode ?? r.id}</Link>
                   </Button>
                 ),
               },
@@ -229,6 +226,6 @@ export default function AdminInvoicesPage() {
           </div>
         </div>
       ) : null}
-    </AdminStaffRoleGate>
+    </AdminRoleGate>
   );
 }

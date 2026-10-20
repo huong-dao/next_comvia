@@ -95,12 +95,6 @@ const adminNav: NavItem[] = [
 const staffNav: NavItem[] = [
   { label: "Staff hub", icon: HiOutlineHome, href: "/staff", match: (p) => p === "/staff" },
   {
-    label: "Hóa đơn",
-    icon: HiOutlineDocumentText,
-    href: "/staff/invoices",
-    match: (p) => p.startsWith("/staff/invoices"),
-  },
-  {
     label: "Duyệt mẫu tin",
     icon: HiOutlineClipboardDocumentList,
     href: "/staff/templates-review/submitted",

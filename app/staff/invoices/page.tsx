@@ -1,5 +1,5 @@
-import AdminInvoicesPage from "@/app/admin/invoices/page";
+import { redirect } from "next/navigation";
 
 export default function StaffInvoicesPage() {
-  return <AdminInvoicesPage />;
+  redirect("/staff");
 }

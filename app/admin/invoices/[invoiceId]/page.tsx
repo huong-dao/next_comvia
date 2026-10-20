@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useParams, usePathname } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useCallback, useState } from "react";
 import { HiArrowLeft, HiOutlineDocumentCheck } from "react-icons/hi2";
 import { IssueInvoicePdfModal } from "@/components/admin/issue-invoice-pdf-modal";
-import { AdminStaffRoleGate } from "@/components/admin/role-gate";
+import { AdminRoleGate } from "@/components/admin/role-gate";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { Button } from "@/components/ui/button";
@@ -134,10 +134,7 @@ type AdminInvoiceDetail = {
 
 export default function AdminInvoiceDetailPage() {
   const params = useParams();
-  const pathname = usePathname();
   const invoiceId = params.invoiceId as string;
-  const isStaffRoute = pathname.startsWith("/staff/");
-  const invoiceListPath = isStaffRoute ? "/staff/invoices" : "/admin/invoices";
 
   const [issueOpen, setIssueOpen] = useState(false);
 
@@ -154,13 +151,13 @@ export default function AdminInvoiceDetailPage() {
   if (!invoiceId) return null;
 
   return (
-    <AdminStaffRoleGate>
+    <AdminRoleGate>
       {loading ? <PageLoading /> : null}
       {error && !data ? <PageError message={error} onRetry={() => void refetch()} /> : null}
       {data ? (
         <div>
           <PageHeader
-            eyebrow="Invoice (staff)"
+            eyebrow="Invoice"
             title={data.invoiceCode ?? data.id ?? "Chi tiết hóa đơn"}
             description={
               data.workspace?.name ? `Workspace: ${data.workspace.name}` : data.workspaceId ? `Workspace ID: ${data.workspaceId}` : undefined
@@ -185,7 +182,7 @@ export default function AdminInvoiceDetailPage() {
                   </Button>
                 ) : null}
                 <Button icon={<HiArrowLeft className="size-4" />} variant="outline" size="sm" asChild>
-                  <Link href={invoiceListPath}>Danh sách hóa đơn</Link>
+                  <Link href="/admin/invoices">Danh sách hóa đơn</Link>
                 </Button>
               </div>
             }
@@ -223,13 +220,9 @@ export default function AdminInvoiceDetailPage() {
             <div>
               <p className="text-xs uppercase text-muted-foreground">Đơn hàng liên kết</p>
               {data.order?.id ? (
-                isStaffRoute ? (
-                  <p className="text-sm font-medium">{data.order.orderCode ?? data.order.id}</p>
-                ) : (
-                  <Button variant="ghost" size="sm" className="h-auto px-0 underline-offset-2 hover:underline" asChild>
-                    <Link href={`/admin/orders/${data.order.id}`}>{data.order.orderCode ?? data.order.id}</Link>
-                  </Button>
-                )
+                <Button variant="ghost" size="sm" className="h-auto px-0 underline-offset-2 hover:underline" asChild>
+                  <Link href={`/admin/orders/${data.order.id}`}>{data.order.orderCode ?? data.order.id}</Link>
+                </Button>
               ) : (
                 <p className="text-sm">—</p>
               )}
@@ -289,6 +282,6 @@ export default function AdminInvoiceDetailPage() {
           />
         </div>
       ) : null}
-    </AdminStaffRoleGate>
+    </AdminRoleGate>
   );
 }
