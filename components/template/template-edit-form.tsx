@@ -75,7 +75,9 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
     () => Object.fromEntries(placeholderRows.filter((row) => row.slug.trim() && slugLooksValid(row.slug.trim())).map((row) => [row.slug.trim(), row.label.trim() || row.slug.trim()])),
     [placeholderRows],
   );
-  const approved = (data?.status ?? "").toUpperCase() === "APPROVED";
+  const status = (data?.status ?? "").toUpperCase();
+  const approved = status === "APPROVED";
+  const canSubmit = status === "DRAFT" || status === "REJECTED";
 
   function updateRow(id: string, patch: Partial<Pick<PlaceholderRow, "label" | "slug" | "defaultValue">>) {
     setPlaceholderRows((rows) => rows.map((row) => (row.id === id ? { ...row, ...patch } : row)));
@@ -184,9 +186,11 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
           <Button type="button" icon={<HiOutlineDocumentCheck className="size-4" />} disabled={saving} onClick={() => void save()}>
             {saving ? "Đang lưu…" : "Lưu thay đổi"}
           </Button>
-          <Button type="button" variant="accent" icon={<HiOutlineDocumentArrowUp className="size-4" />} disabled={saving} onClick={() => void submitTemplate()}>
-            {saving ? "Đang xử lý…" : "Gửi duyệt"}
-          </Button>
+          {canSubmit ? (
+            <Button type="button" variant="accent" icon={<HiOutlineDocumentArrowUp className="size-4" />} disabled={saving} onClick={() => void submitTemplate()}>
+              {saving ? "Đang xử lý…" : "Gửi duyệt"}
+            </Button>
+          ) : null}
         </div>
       </Card>
 

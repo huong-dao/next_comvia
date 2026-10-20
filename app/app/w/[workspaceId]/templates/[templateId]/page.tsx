@@ -55,7 +55,9 @@ export default function TemplateDetailPage() {
 
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId && templateId), fetcher);
 
-  const approved = (data?.status ?? "").toUpperCase() === "APPROVED";
+  const status = (data?.status ?? "").toUpperCase();
+  const approved = status === "APPROVED";
+  const canSubmit = status === "DRAFT" || status === "REJECTED";
   const editable = Boolean(data && !approved);
 
   const [name, setName] = useState("");
@@ -511,9 +513,11 @@ export default function TemplateDetailPage() {
           ) : null}
 
           <div className="mt-auto flex flex-col gap-2 border-t border-border/60 pt-4">
-            <Button icon={<HiOutlineDocumentArrowUp className="size-4" />} type="button" variant="accent" disabled={busy || approved} onClick={() => void submitTemplate()}>
-              Gửi duyệt
-            </Button>
+            {canSubmit ? (
+              <Button icon={<HiOutlineDocumentArrowUp className="size-4" />} type="button" variant="accent" disabled={busy} onClick={() => void submitTemplate()}>
+                Gửi duyệt
+              </Button>
+            ) : null}
             {owner ? (
               <Button icon={<HiLockClosed className="size-4" />} type="button" variant="outline" disabled={busy} onClick={() => void disableTemplate()}>
                 Khóa (Chủ Workspace)
