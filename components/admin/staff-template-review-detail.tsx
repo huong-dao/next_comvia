@@ -139,10 +139,10 @@ export function StaffTemplateReviewDetail({
       <PageHeader
         eyebrow="Staff"
         title="Chi tiết duyệt mẫu tin"
-        description="Dùng `GET /internal/templates/:templateId` để xem nội dung, workspace, OA và cập nhật trạng thái nội bộ."
+        // description="Dùng `GET /internal/templates/:templateId` để xem nội dung, workspace, OA và cập nhật trạng thái nội bộ."
         actions={
           <Button variant="outline" size="sm" asChild icon={<HiArrowLeft className="size-4" />}>
-            <Link href="/staff/templates-review/submitted">Về danh sách</Link>
+            <Link href="/staff/templates-review/submitted">Về danh sách mẫu tin</Link>
           </Button>
         }
       />
@@ -153,20 +153,20 @@ export function StaffTemplateReviewDetail({
           {template.status ? <EntityStatusBadge value={template.status} /> : null}
         </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div>
+          {/* <div>
             <p className="text-xs font-semibold uppercase text-muted-foreground">Template ID</p>
             <p className="mt-1 font-mono text-sm text-foreground">{template.id}</p>
-          </div>
+          </div> */}
           <div>
-            <p className="text-xs font-semibold uppercase text-muted-foreground">Mã template</p>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">Mã mẫu tin</p>
             <p className="mt-1 text-sm text-foreground">{template.code ?? "—"}</p>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase text-muted-foreground">Created</p>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">Ngày tạo</p>
             <p className="mt-1 text-sm text-foreground">{template.createdAt ? new Date(template.createdAt).toLocaleString() : "—"}</p>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase text-muted-foreground">Updated</p>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">Ngày cập nhật</p>
             <p className="mt-1 text-sm text-foreground">{template.updatedAt ? new Date(template.updatedAt).toLocaleString() : "—"}</p>
           </div>
         </div>
@@ -198,7 +198,7 @@ export function StaffTemplateReviewDetail({
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(340px,1fr)]">
           <div className="space-y-6">
             <Card className="space-y-3 p-4">
-              <p className="text-xs font-semibold uppercase text-muted-foreground">Nội dung template</p>
+              <p className="text-xs font-semibold uppercase text-muted-foreground">Nội dung mẫu tin</p>
               <pre className="max-h-[360px] overflow-auto rounded-xl bg-surface-muted p-4 text-xs whitespace-pre-wrap">
                 {template.content ?? "Không có nội dung"}
               </pre>
@@ -212,7 +212,7 @@ export function StaffTemplateReviewDetail({
             </Card>
 
             <Card className="space-y-3 p-4">
-              <p className="text-xs font-semibold uppercase text-muted-foreground">Lịch sử submit</p>
+              <p className="text-xs font-semibold uppercase text-muted-foreground">Lịch sử trạng thái</p>
               {template.submissions?.length ? (
                 <div className="space-y-2">
                   {template.submissions.map((submission, index) => (
