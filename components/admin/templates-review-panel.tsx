@@ -166,7 +166,9 @@ export function TemplatesReviewPanel({
         emptyMessage="Không có template nào khớp bộ lọc hiện tại."
         getRowKey={(r) => r.id}
         columns={[
-          { key: "n", header: "Tên", cell: (r) => r.name ?? "—" },
+          { key: "n", header: "Tên", cell: (r) => (
+            <Link href={`/staff/templates-review/${r.id}`}>r.name</Link>
+          ) },
           { key: "c", header: "Mã", cell: (r) => r.code ?? "—" },
           {
             key: "s",
@@ -183,7 +185,7 @@ export function TemplatesReviewPanel({
             header: "Workspace",
             cell: (r) => (
               <div className="min-w-[180px]">
-                <p className="font-medium text-foreground"><Link href={`/staff/templates-review/${r.id}`}>{r.workspace?.name ?? "—"}</Link></p>
+                <p className="font-medium text-foreground">{r.workspace?.name ?? "—"}</p>
                 <p className="text-xs text-muted-foreground">{r.workspace?.slug ?? r.workspace?.id ?? ""}</p>
               </div>
             ),
