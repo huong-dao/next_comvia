@@ -74,7 +74,7 @@ export function DashboardTemplateList({ className }: { className?: string }) {
 
   function handleCreated(_: TemplateRow, { submitted }: { submitted: boolean }) {
     if (submitted) setCreateOpen(false);
-    showToast({ type: "success", message: submitted ? "Đã gửi duyệt mẫu tin." : "Đã lưu mẫu tin." });
+    showToast({ type: "success", message: submitted ? "Đã gửi mẫu tin để Staff xử lý." : "Đã lưu mẫu tin." });
     void refetch();
   }
 

@@ -7,7 +7,6 @@ import {
   HiOutlineBuildingOffice2,
   HiOutlineCheckCircle,
   HiOutlineClock,
-  HiOutlineNoSymbol,
   HiOutlineSquares2X2,
   HiOutlineXCircle,
 } from "react-icons/hi2";
@@ -124,6 +123,10 @@ export function StaffTemplateReviewDetail({
   if (!template) return null;
 
   const baseHref = `/staff/templates-review/${templateId}`;
+  const status = (template.status ?? "").toUpperCase();
+  const canSendToZalo = status === "SUBMITTED";
+  const canApprove = status === "PENDING_ZALO_APPROVAL";
+  const canReject = canSendToZalo || canApprove;
 
   return (
     <div>
@@ -224,14 +227,18 @@ export function StaffTemplateReviewDetail({
           <div className="space-y-6">
             <Card className="space-y-4 p-4">
               <p className="text-xs font-semibold uppercase text-muted-foreground">Cập nhật trạng thái nội bộ</p>
-              <div>
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Provider template ID (approved)</label>
-                <Input className="mt-1" value={providerId} onChange={(e) => setProviderId(e.target.value)} placeholder="ZALO_TPL_..." />
-              </div>
-              <div>
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Lý do rejected</label>
-                <Textarea className="mt-1" rows={4} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} placeholder="Nhập lý do từ chối" />
-              </div>
+              {canApprove ? (
+                <div>
+                  <label className="text-xs font-semibold uppercase text-muted-foreground">Provider template ID (Zalo đã duyệt)</label>
+                  <Input className="mt-1" value={providerId} onChange={(e) => setProviderId(e.target.value)} placeholder="ZALO_TPL_..." />
+                </div>
+              ) : null}
+              {canReject ? (
+                <div>
+                  <label className="text-xs font-semibold uppercase text-muted-foreground">Lý do từ chối</label>
+                  <Textarea className="mt-1" rows={4} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} placeholder="Nhập lý do từ chối" />
+                </div>
+              ) : null}
               {template.providerTemplateId ? (
                 <p className="text-sm text-muted-foreground">
                   Provider template ID hiện tại: <span className="font-mono">{template.providerTemplateId}</span>
@@ -244,30 +251,27 @@ export function StaffTemplateReviewDetail({
               ) : null}
               {msg ? <p className="text-sm text-muted-foreground">{msg}</p> : null}
               <div className="grid gap-2 sm:grid-cols-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={busy}
-                  onClick={() => void updateStatus(`/internal/templates/${templateId}/mark-pending-zalo-approval`, "Đã chuyển sang pending_zalo_approval.")}
-                  icon={<HiOutlineClock className="size-4" />}
-                >
-                  Pending Zalo Approval
-                </Button>
-                <Button type="button" disabled={busy} onClick={() => void approve()} icon={<HiOutlineCheckCircle className="size-4" />}>
-                  Approved
-                </Button>
-                <Button type="button" variant="outline" disabled={busy} onClick={() => void reject()} icon={<HiOutlineXCircle className="size-4" />}>
-                  Rejected
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={busy}
-                  onClick={() => void updateStatus(`/internal/templates/${templateId}/disable`, "Đã chuyển sang disabled.")}
-                  icon={<HiOutlineNoSymbol className="size-4" />}
-                >
-                  Disabled
-                </Button>
+                {canSendToZalo ? (
+                  <Button
+                    type="button"
+                    variant="accent"
+                    disabled={busy}
+                    onClick={() => void updateStatus(`/internal/templates/${templateId}/mark-pending-zalo-approval`, "Đã gửi mẫu tin để Zalo duyệt.")}
+                    icon={<HiOutlineClock className="size-4" />}
+                  >
+                    Gửi duyệt Zalo
+                  </Button>
+                ) : null}
+                {canApprove ? (
+                  <Button type="button" disabled={busy} onClick={() => void approve()} icon={<HiOutlineCheckCircle className="size-4" />}>
+                    Zalo đã duyệt
+                  </Button>
+                ) : null}
+                {canReject ? (
+                  <Button type="button" variant="outline" disabled={busy} onClick={() => void reject()} icon={<HiOutlineXCircle className="size-4" />}>
+                    Từ chối xử lý
+                  </Button>
+                ) : null}
               </div>
             </Card>
           </div>

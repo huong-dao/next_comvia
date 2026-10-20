@@ -76,8 +76,8 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
     [placeholderRows],
   );
   const status = (data?.status ?? "").toUpperCase();
-  const approved = status === "APPROVED";
-  const canSubmit = status === "DRAFT" || status === "REJECTED";
+  const editable = status === "DRAFT";
+  const canSubmit = editable;
 
   function updateRow(id: string, patch: Partial<Pick<PlaceholderRow, "label" | "slug" | "defaultValue">>) {
     setPlaceholderRows((rows) => rows.map((row) => (row.id === id ? { ...row, ...patch } : row)));
@@ -89,7 +89,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
     });
   }
   async function save() {
-    if (!data || approved) return;
+    if (!data || !editable) return;
     const placeholders = rowsToPlaceholders(placeholderRows);
     if (!placeholders.ok) return setMessage(placeholders.message);
     const ctaError = validateCtaButtons(ctaButtons, filledSlugs);
@@ -138,7 +138,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
   if (loading) return <PageLoading message="Đang tải mẫu tin…" />;
   if (error && !data) return <PageError message={error} onRetry={() => void refetch()} />;
   if (!data) return null;
-  if (approved) return <p className="pb-4 text-sm text-muted-foreground">Mẫu tin đã duyệt chỉ có thể xem, không thể chỉnh sửa.</p>;
+  if (!editable) return <p className="pb-4 text-sm text-muted-foreground">Chỉ mẫu tin nháp mới có thể chỉnh sửa hoặc gửi Staff xử lý.</p>;
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,600px)]">
@@ -188,7 +188,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
           </Button>
           {canSubmit ? (
             <Button type="button" variant="accent" icon={<HiOutlineDocumentArrowUp className="size-4" />} disabled={saving} onClick={() => void submitTemplate()}>
-              {saving ? "Đang xử lý…" : "Gửi duyệt"}
+              {saving ? "Đang xử lý…" : "Gửi Staff xử lý"}
             </Button>
           ) : null}
         </div>

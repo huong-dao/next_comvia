@@ -56,9 +56,8 @@ export default function TemplateDetailPage() {
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId && templateId), fetcher);
 
   const status = (data?.status ?? "").toUpperCase();
-  const approved = status === "APPROVED";
-  const canSubmit = status === "DRAFT" || status === "REJECTED";
-  const editable = Boolean(data && !approved);
+  const editable = Boolean(data && status === "DRAFT");
+  const canSubmit = editable;
 
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
@@ -97,12 +96,12 @@ export default function TemplateDetailPage() {
   /** Khi đã duyệt chỉ xem — preview lấy từ dữ liệu server, không phụ thuộc state form có thể chỉnh. */
   const preview = useMemo(() => {
     if (!data) return "";
-    if (approved) {
+    if (!editable) {
       return previewTemplateContent(data.content ?? "", data.placeholdersJson ?? {});
     }
     if (!placeholdersParsed.ok) return content;
     return previewTemplateContent(content, placeholdersParsed.data);
-  }, [data, approved, content, placeholdersParsed]);
+  }, [data, editable, content, placeholdersParsed]);
 
   const filledSlugs = useMemo(() => {
     return placeholderRows
@@ -130,7 +129,7 @@ export default function TemplateDetailPage() {
   );
 
   async function savePatch() {
-    if (!data || approved) return;
+    if (!data || !editable) return;
     const ph = rowsToPlaceholders(placeholderRows);
     if (!ph.ok) {
       setMsg(ph.message);
@@ -343,7 +342,7 @@ export default function TemplateDetailPage() {
             </>
           ) : (
             <>
-              <p className="text-xs text-muted-foreground">Template đã duyệt — chỉ xem, không chỉnh sửa nội dung.</p>
+              <p className="text-xs text-muted-foreground">Mẫu tin đã gửi Staff xử lý — chỉ xem, không chỉnh sửa nội dung.</p>
               <pre className="max-h-[min(520px,70vh)] min-h-[280px] flex-1 overflow-auto rounded-xl bg-surface-muted p-4 text-xs whitespace-pre-wrap">
                 {data.content ?? "—"}
               </pre>
@@ -440,7 +439,7 @@ export default function TemplateDetailPage() {
             </>
           ) : (
             <>
-              <p className="text-xs text-muted-foreground">Template đã duyệt — không thêm/sửa/xóa trường placeholder.</p>
+              <p className="text-xs text-muted-foreground">Mẫu tin đã gửi Staff xử lý — không thêm/sửa/xóa trường thông tin.</p>
               <div>
                 <p className="mb-1 text-xs text-muted-foreground">Tên</p>
                 <p className="rounded-xl border border-border/60 bg-surface-muted px-3 py-2 text-sm text-foreground">
@@ -515,7 +514,7 @@ export default function TemplateDetailPage() {
           <div className="mt-auto flex flex-col gap-2 border-t border-border/60 pt-4">
             {canSubmit ? (
               <Button icon={<HiOutlineDocumentArrowUp className="size-4" />} type="button" variant="accent" disabled={busy} onClick={() => void submitTemplate()}>
-                Gửi duyệt
+                Gửi Staff xử lý
               </Button>
             ) : null}
             {owner ? (

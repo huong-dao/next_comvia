@@ -472,7 +472,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
                 disabled={loading}
                 onClick={() => void submitCreatedTemplate()}
               >
-                {loading ? "Đang gửi duyệt…" : "Gửi duyệt"}
+                {loading ? "Đang gửi Staff xử lý…" : "Gửi Staff xử lý"}
               </Button>
             ) : (
               <Button
