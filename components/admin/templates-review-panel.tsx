@@ -167,7 +167,7 @@ export function TemplatesReviewPanel({
         getRowKey={(r) => r.id}
         columns={[
           { key: "n", header: "Tên", cell: (r) => (
-            <Link href={`/staff/templates-review/${r.id}`}>r.name</Link>
+            <Link href={`/staff/templates-review/${r.id}`}>{r.name}</Link>
           ) },
           { key: "c", header: "Mã", cell: (r) => r.code ?? "—" },
           {
