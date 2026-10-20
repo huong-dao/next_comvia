@@ -108,9 +108,6 @@ export default function StaffHomePage() {
             <Card className="space-y-4">
               <div>
                 <p className="text-base font-semibold text-foreground">Duyệt mẫu tin nội bộ</p>
-                <p className="text-sm text-muted-foreground">
-                  Staff không phụ thuộc membership workspace. Tất cả queue đều lấy từ `GET /internal/templates`.
-                </p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button asChild icon={<HiOutlineClipboardDocumentList className="size-4" />}>
