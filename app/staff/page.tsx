@@ -20,32 +20,32 @@ type TemplatePreview = { id: string };
 
 const staffQueues = [
   {
-    title: "Submitted",
+    title: "Đã gửi",
     href: "/staff/templates-review/submitted",
     icon: HiOutlineClipboardDocumentList,
     status: "SUBMITTED",
-    description: "Template mới submit chờ staff xử lý.",
+    description: "Mẫu tin mới gửi chờ xử lý.",
   },
   {
-    title: "Pending Zalo Approval",
+    title: "Đang chờ duyệt",
     href: "/staff/templates-review/pending-zalo-approval",
     icon: HiOutlineClock,
     status: "PENDING_ZALO_APPROVAL",
-    description: "Template đang ở bước pending để theo dõi tiếp.",
+    description: "Mẫu tin đang chờ Zalo duyệt.",
   },
   {
-    title: "Approved",
+    title: "Đã duyệt",
     href: "/staff/templates-review/approved",
     icon: HiOutlineCheckCircle,
     status: "APPROVED",
-    description: "Danh sách template đã duyệt để tra cứu nhanh.",
+    description: "Mẫu tin đã được duyệt.",
   },
   {
-    title: "Disabled",
+    title: "Khóa",
     href: "/staff/templates-review/disabled",
     icon: HiOutlineNoSymbol,
     status: "DISABLED",
-    description: "Template đã disable để phục vụ xác minh vận hành.",
+    description: "Mẫu tin đã khóa.",
   },
 ] as const;
 
@@ -71,8 +71,8 @@ export default function StaffHomePage() {
       {!loading && data ? (
         <div>
           <PageHeader
-            title="Staff hub"
-            description="Khu vực nội bộ để duyệt mẫu tin toàn cục và xử lý hóa đơn."
+            title="Staff Hub"
+            description="Khu vực nội bộ để duyệt mẫu tin."
           />
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
@@ -89,7 +89,7 @@ export default function StaffHomePage() {
                     <p className="mt-1 text-sm text-muted-foreground">{queue.description}</p>
                   </div>
                   <Button size="sm" variant="outline" asChild icon={<Icon className="size-4" />}>
-                    <Link href={queue.href}>Mở queue</Link>
+                    <Link href={queue.href}>Xem tất cả</Link>
                   </Button>
                 </Card>
               );
@@ -103,10 +103,10 @@ export default function StaffHomePage() {
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button asChild icon={<HiOutlineClipboardDocumentList className="size-4" />}>
-                  <Link href="/staff/templates-review/submitted">Queue submitted</Link>
+                  <Link href="/staff/templates-review/submitted">Tất cả mẫu tin đã gửi</Link>
                 </Button>
                 <Button variant="outline" asChild icon={<HiOutlineClock className="size-4" />}>
-                  <Link href="/staff/templates-review/pending-zalo-approval">Pending Zalo Approval</Link>
+                  <Link href="/staff/templates-review/pending-zalo-approval">Tất cả mẫu tin đang chờ duyệt</Link>
                 </Button>
               </div>
             </Card>

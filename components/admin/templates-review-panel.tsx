@@ -113,7 +113,7 @@ export function TemplatesReviewPanel({
       <PageHeader
         eyebrow="Review"
         title={title ?? "Duyệt mẫu tin"}
-        description="Queue review nội bộ toàn cục cho STAFF. Dùng `GET /internal/templates` để tải theo từng trạng thái; xem chi tiết để chuyển sang chờ Zalo duyệt hoặc đã duyệt."
+        // description=""
       />
 
       <div className="mb-4 flex flex-wrap gap-2">
@@ -183,7 +183,7 @@ export function TemplatesReviewPanel({
             header: "Workspace",
             cell: (r) => (
               <div className="min-w-[180px]">
-                <p className="font-medium text-foreground">{r.workspace?.name ?? "—"}</p>
+                <p className="font-medium text-foreground"><Link href={`/staff/templates-review/${r.id}`}>{r.workspace?.name ?? "—"}</Link></p>
                 <p className="text-xs text-muted-foreground">{r.workspace?.slug ?? r.workspace?.id ?? ""}</p>
               </div>
             ),
