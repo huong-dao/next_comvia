@@ -40,6 +40,9 @@ export function SidebarUserCard({
 
   const name = user?.fullName ?? user?.email ?? "Tài khoản";
   const label = initials(user?.fullName, user?.email);
+  const isStaff = user?.role?.toUpperCase() === "STAFF";
+  const showSecurity = variant === "tenant" || isStaff;
+  const securityHref = isStaff ? "/auth/forgot-password" : APP_PATHS.settingsSecurity;
 
   if (compact) {
     return (
@@ -96,9 +99,9 @@ export function SidebarUserCard({
         </div>
       )}
 
-      {variant === "tenant" ? (
+      {showSecurity ? (
         <Link
-          href={APP_PATHS.settingsSecurity}
+          href={securityHref}
           className="mb-0 flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-muted-foreground transition hover:text-foreground"
         >
           <HiOutlineShieldCheck className="size-4 shrink-0" />
