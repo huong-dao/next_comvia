@@ -14,7 +14,7 @@ import { PageError, PageLoading } from "@/components/app/page-state";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
-import { Input } from "@/components/ui/input";
+import { Input, Textarea } from "@/components/ui/input";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
 import { useComviaQuery } from "@/lib/use-comvia-query";
@@ -27,6 +27,9 @@ type TemplateDetail = {
   placeholdersJson?: Record<string, unknown>;
   providerTemplateId?: string | null;
   status?: string;
+  requiresOwnerRevision?: boolean;
+  revisionReason?: string | null;
+  returnedForRevisionAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
   workspace?: {
@@ -67,6 +70,7 @@ export function StaffTemplateReviewDetail({
   section?: "overview" | "workspace" | "oa";
 }) {
   const [providerId, setProviderId] = useState("");
+  const [revisionReason, setRevisionReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -101,8 +105,22 @@ export function StaffTemplateReviewDetail({
   }
 
   async function approve() {
+    if (!providerId.trim()) {
+      setMsg("Nhập Provider template ID do Zalo cấp trước khi duyệt.");
+      return;
+    }
     await updateStatus(`/internal/templates/${templateId}/approve`, "Đã chuyển sang approved.", {
-      providerTemplateId: providerId.trim() || undefined,
+      providerTemplateId: providerId.trim(),
+    });
+  }
+
+  async function returnToOwner() {
+    if (!revisionReason.trim()) {
+      setMsg("Nhập lý do để Owner chỉnh sửa mẫu tin.");
+      return;
+    }
+    await updateStatus(`/internal/templates/${templateId}/return-to-submitted`, "Đã trả mẫu tin về Owner để chỉnh sửa.", {
+      reason: revisionReason.trim(),
     });
   }
 
@@ -112,7 +130,8 @@ export function StaffTemplateReviewDetail({
 
   const baseHref = `/staff/templates-review/${templateId}`;
   const status = (template.status ?? "").toUpperCase();
-  const canSendToZalo = status === "SUBMITTED";
+  const requiresOwnerRevision = Boolean(template.requiresOwnerRevision);
+  const canSendToZalo = status === "SUBMITTED" && !requiresOwnerRevision;
   const canApprove = status === "PENDING_ZALO_APPROVAL";
 
   return (
@@ -152,6 +171,14 @@ export function StaffTemplateReviewDetail({
           </div>
         </div>
       </Card>
+
+      {requiresOwnerRevision ? (
+        <Card className="mb-6 border-border bg-surface-muted/60 p-4">
+          <p className="font-semibold text-foreground">Đã trả Owner chỉnh sửa</p>
+          <p className="mt-1 text-sm text-muted-foreground">{template.revisionReason || "Chờ Owner cập nhật mẫu tin theo yêu cầu từ Zalo."}</p>
+          {template.returnedForRevisionAt ? <p className="mt-1 text-xs text-muted-foreground">Trả về lúc {new Date(template.returnedForRevisionAt).toLocaleString("vi-VN")}</p> : null}
+        </Card>
+      ) : null}
 
       <div className="mb-6 flex flex-wrap gap-2">
         {detailTabs.map((tab) => (
@@ -215,10 +242,16 @@ export function StaffTemplateReviewDetail({
             <Card className="space-y-4 p-4">
               <p className="text-xs font-semibold uppercase text-muted-foreground">Cập nhật trạng thái nội bộ</p>
               {canApprove ? (
-                <div>
-                  <label className="text-xs font-semibold uppercase text-muted-foreground">Provider template ID (Zalo đã duyệt)</label>
-                  <Input className="mt-1" value={providerId} onChange={(e) => setProviderId(e.target.value)} placeholder="ZALO_TPL_..." />
-                </div>
+                <>
+                  <div>
+                    <label className="text-xs font-semibold uppercase text-muted-foreground">Provider template ID (Zalo đã duyệt)</label>
+                    <Input className="mt-1" value={providerId} onChange={(e) => setProviderId(e.target.value)} placeholder="ZALO_TPL_..." />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold uppercase text-muted-foreground">Lý do trả Owner chỉnh sửa</label>
+                    <Textarea className="mt-1" rows={3} value={revisionReason} onChange={(e) => setRevisionReason(e.target.value)} placeholder="Nêu yêu cầu điều chỉnh từ Zalo" />
+                  </div>
+                </>
               ) : null}
               {template.providerTemplateId ? (
                 <p className="text-sm text-muted-foreground">
@@ -239,9 +272,14 @@ export function StaffTemplateReviewDetail({
                   </Button>
                 ) : null}
                 {canApprove ? (
-                  <Button type="button" disabled={busy} onClick={() => void approve()} icon={<HiOutlineCheckCircle className="size-4" />}>
-                    Zalo đã duyệt
-                  </Button>
+                  <>
+                    <Button type="button" variant="outline" disabled={busy} onClick={() => void returnToOwner()} icon={<HiArrowLeft className="size-4" />}>
+                      Trả Owner chỉnh sửa
+                    </Button>
+                    <Button type="button" disabled={busy} onClick={() => void approve()} icon={<HiOutlineCheckCircle className="size-4" />}>
+                      Zalo đã duyệt
+                    </Button>
+                  </>
                 ) : null}
               </div>
             </Card>

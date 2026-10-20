@@ -24,6 +24,7 @@ type InternalTemplateItem = {
   name?: string;
   code?: string;
   status?: string;
+  requiresOwnerRevision?: boolean;
   providerTemplateId?: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -170,7 +171,12 @@ export function TemplatesReviewPanel({
           {
             key: "s",
             header: "Trạng thái",
-            cell: (r) => (r.status ? <EntityStatusBadge value={r.status} /> : "—"),
+            cell: (r) => (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {r.status ? <EntityStatusBadge value={r.status} /> : "—"}
+                {r.requiresOwnerRevision ? <span className="rounded-full bg-surface-muted px-2 py-0.5 text-xs text-muted-foreground">Chờ Owner sửa</span> : null}
+              </div>
+            ),
           },
           {
             key: "w",

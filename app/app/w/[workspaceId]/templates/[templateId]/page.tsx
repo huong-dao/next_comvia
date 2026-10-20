@@ -33,6 +33,9 @@ type TemplateDetail = {
   code?: string;
   content?: string;
   status?: string;
+  requiresOwnerRevision?: boolean;
+  revisionReason?: string | null;
+  returnedForRevisionAt?: string | null;
   placeholdersJson?: Record<string, string>;
   unitPricePerMessage?: number | string | null;
   ctaButtons?: TemplateCtaButton[];
@@ -56,8 +59,9 @@ export default function TemplateDetailPage() {
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId && templateId), fetcher);
 
   const status = (data?.status ?? "").toUpperCase();
-  const editable = Boolean(data && status === "DRAFT");
-  const canSubmit = editable;
+  const requiresOwnerRevision = Boolean(data?.requiresOwnerRevision);
+  const editable = Boolean(data && (status === "DRAFT" || (status === "SUBMITTED" && requiresOwnerRevision)));
+  const canSubmit = owner && editable;
 
   const [name, setName] = useState("");
   const [content, setContent] = useState("");
@@ -165,6 +169,7 @@ export default function TemplateDetailPage() {
   }
 
   async function submitTemplate() {
+    if (!canSubmit) return;
     const token = getAccessToken();
     if (!token) return;
     setBusy(true);
@@ -292,6 +297,16 @@ export default function TemplateDetailPage() {
         }
       />
 
+      {requiresOwnerRevision ? (
+        <Card className="mb-6 border-border bg-surface-muted/60 p-4">
+          <p className="font-semibold text-foreground">Zalo yêu cầu chỉnh sửa mẫu tin</p>
+          <p className="mt-1 text-sm text-muted-foreground">{data.revisionReason || "Staff đã trả mẫu tin về để bạn điều chỉnh."}</p>
+          {data.returnedForRevisionAt ? (
+            <p className="mt-1 text-xs text-muted-foreground">Trả về lúc {new Date(data.returnedForRevisionAt).toLocaleString("vi-VN")}</p>
+          ) : null}
+        </Card>
+      ) : null}
+
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="flex min-h-0 flex-col gap-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung</p>
@@ -342,7 +357,7 @@ export default function TemplateDetailPage() {
             </>
           ) : (
             <>
-              <p className="text-xs text-muted-foreground">Mẫu tin đã gửi Staff xử lý — chỉ xem, không chỉnh sửa nội dung.</p>
+              <p className="text-xs text-muted-foreground">Mẫu tin đang được Staff hoặc Zalo xử lý — chỉ xem, không chỉnh sửa nội dung.</p>
               <pre className="max-h-[min(520px,70vh)] min-h-[280px] flex-1 overflow-auto rounded-xl bg-surface-muted p-4 text-xs whitespace-pre-wrap">
                 {data.content ?? "—"}
               </pre>
@@ -439,7 +454,7 @@ export default function TemplateDetailPage() {
             </>
           ) : (
             <>
-              <p className="text-xs text-muted-foreground">Mẫu tin đã gửi Staff xử lý — không thêm/sửa/xóa trường thông tin.</p>
+              <p className="text-xs text-muted-foreground">Mẫu tin đang được Staff hoặc Zalo xử lý — không thêm/sửa/xóa trường thông tin.</p>
               <div>
                 <p className="mb-1 text-xs text-muted-foreground">Tên</p>
                 <p className="rounded-xl border border-border/60 bg-surface-muted px-3 py-2 text-sm text-foreground">
@@ -514,7 +529,7 @@ export default function TemplateDetailPage() {
           <div className="mt-auto flex flex-col gap-2 border-t border-border/60 pt-4">
             {canSubmit ? (
               <Button icon={<HiOutlineDocumentArrowUp className="size-4" />} type="button" variant="accent" disabled={busy} onClick={() => void submitTemplate()}>
-                Gửi Staff xử lý
+                {requiresOwnerRevision ? "Gửi lại Staff xử lý" : "Gửi Staff xử lý"}
               </Button>
             ) : null}
             {owner ? (

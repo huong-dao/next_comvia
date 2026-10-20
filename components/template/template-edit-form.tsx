@@ -13,6 +13,7 @@ import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comvia
 import { newPlaceholderRow, recordToPlaceholderRows, rowsToPlaceholders, slugLooksValid, type PlaceholderRow } from "@/lib/template-placeholders";
 import { normalizeCtaButtons, validateCtaButtons, type TemplateCtaButton, type TemplateCtaDraft } from "@/lib/template-cta";
 import { useComviaQuery } from "@/lib/use-comvia-query";
+import { isWorkspaceOwner, useWorkspaceContext } from "@/components/workspace/workspace-gate";
 
 type EditableTemplate = {
   id: string;
@@ -23,6 +24,9 @@ type EditableTemplate = {
   secondaryContent?: string;
   otpExpiryMinutes?: number;
   status?: string;
+  requiresOwnerRevision?: boolean;
+  revisionReason?: string | null;
+  returnedForRevisionAt?: string | null;
   placeholdersJson?: Record<string, string>;
   ctaButtons?: TemplateCtaButton[];
 };
@@ -35,6 +39,8 @@ function toPreviewType(type?: string): TemplateMessageType {
 }
 
 export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspaceId: string; templateId: string; onSaved: () => void }) {
+  const { role } = useWorkspaceContext();
+  const owner = isWorkspaceOwner(role);
   const fetcher = useCallback(
     (token: string) => comviaFetch<EditableTemplate>("/workspaces/" + workspaceId + "/templates/" + templateId, { token }),
     [workspaceId, templateId],
@@ -76,8 +82,9 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
     [placeholderRows],
   );
   const status = (data?.status ?? "").toUpperCase();
-  const editable = status === "DRAFT";
-  const canSubmit = editable;
+  const requiresOwnerRevision = Boolean(data?.requiresOwnerRevision);
+  const editable = status === "DRAFT" || (status === "SUBMITTED" && requiresOwnerRevision);
+  const canSubmit = owner && editable;
 
   function updateRow(id: string, patch: Partial<Pick<PlaceholderRow, "label" | "slug" | "defaultValue">>) {
     setPlaceholderRows((rows) => rows.map((row) => (row.id === id ? { ...row, ...patch } : row)));
@@ -118,6 +125,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
   }
 
   async function submitTemplate() {
+    if (!canSubmit) return;
     const token = getAccessToken();
     if (!token) return;
     setSaving(true);
@@ -138,11 +146,18 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
   if (loading) return <PageLoading message="Đang tải mẫu tin…" />;
   if (error && !data) return <PageError message={error} onRetry={() => void refetch()} />;
   if (!data) return null;
-  if (!editable) return <p className="pb-4 text-sm text-muted-foreground">Chỉ mẫu tin nháp mới có thể chỉnh sửa hoặc gửi Staff xử lý.</p>;
+  if (!editable) return <p className="pb-4 text-sm text-muted-foreground">Mẫu tin đang được Staff hoặc Zalo xử lý nên chưa thể chỉnh sửa.</p>;
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,600px)]">
       <Card className="min-w-0 space-y-4">
+        {requiresOwnerRevision ? (
+          <div className="rounded-xl border border-border bg-surface-muted/60 p-3 text-sm">
+            <p className="font-semibold text-foreground">Zalo yêu cầu chỉnh sửa mẫu tin</p>
+            <p className="mt-1 text-muted-foreground">{data.revisionReason || "Staff đã trả mẫu tin về để bạn điều chỉnh."}</p>
+            {data.returnedForRevisionAt ? <p className="mt-1 text-xs text-muted-foreground">Trả về lúc {new Date(data.returnedForRevisionAt).toLocaleString("vi-VN")}</p> : null}
+          </div>
+        ) : null}
         <div>
           <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tên mẫu tin</label>
           <Input value={name} disabled={saving} onChange={(event) => setName(event.target.value)} />
@@ -188,7 +203,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
           </Button>
           {canSubmit ? (
             <Button type="button" variant="accent" icon={<HiOutlineDocumentArrowUp className="size-4" />} disabled={saving} onClick={() => void submitTemplate()}>
-              {saving ? "Đang xử lý…" : "Gửi Staff xử lý"}
+              {saving ? "Đang xử lý…" : requiresOwnerRevision ? "Gửi lại Staff xử lý" : "Gửi Staff xử lý"}
             </Button>
           ) : null}
         </div>

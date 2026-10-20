@@ -27,6 +27,7 @@ import {
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { TemplateCtaFields } from "@/components/template/template-cta-fields";
 import { normalizeCtaButtons, validateCtaButtons, type TemplateCtaDraft } from "@/lib/template-cta";
+import { isWorkspaceOwner, useWorkspaceContext } from "@/components/workspace/workspace-gate";
 
 export type CreateTemplateResponse = {
   id: string;
@@ -78,6 +79,8 @@ type OaPreviewAsset = { logoLightUrl?: string | null };
 
 export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormProps) {
   const router = useRouter();
+  const { role } = useWorkspaceContext();
+  const owner = isWorkspaceOwner(role);
 
   const oaFetcher = useCallback(
     async (token: string): Promise<OaPreviewAsset | null> => {
@@ -254,7 +257,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
   }
 
   async function submitCreatedTemplate() {
-    if (!createdTemplate) return;
+    if (!createdTemplate || !owner) return;
     const token = getAccessToken();
     if (!token) {
       router.replace("/auth/login");
@@ -464,7 +467,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
 
         <div className="space-y-2 border-t border-border/60 pt-4">
           <div className="flex flex-wrap gap-2">
-            {createdTemplate ? (
+            {createdTemplate && owner ? (
               <Button
                 icon={<HiOutlineDocumentArrowUp className="size-4" />}
                 type="button"
@@ -474,7 +477,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
               >
                 {loading ? "Đang gửi Staff xử lý…" : "Gửi Staff xử lý"}
               </Button>
-            ) : (
+            ) : !createdTemplate ? (
               <Button
                 icon={<HiOutlineDocumentCheck className="size-4" />}
                 type="button"
@@ -483,7 +486,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
               >
                 {loading ? "Đang xử lý…" : "Lưu mẫu tin"}
               </Button>
-            )}
+            ) : null}
             {onCancel ? (
               <Button
                 icon={<HiOutlineXMark className="size-4" />}
@@ -496,7 +499,11 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
             ) : null}
           </div>
           {createdTemplate ? (
-            <p className="text-xs text-success">Đã lưu mẫu tin. Bạn có thể gửi duyệt ngay hoặc đóng popup để tiếp tục sửa tại trang chi tiết.</p>
+            <p className="text-xs text-success">
+              {owner
+                ? "Đã lưu mẫu tin. Bạn có thể gửi Staff xử lý ngay hoặc đóng popup để tiếp tục sửa tại trang chi tiết."
+                : "Đã lưu mẫu tin. Chủ Workspace có thể gửi mẫu tin cho Staff xử lý."}
+            </p>
           ) : null}
         </div>
       </Card>
