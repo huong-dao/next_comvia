@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useState } from "react";
 import { PageHeader } from "@/components/app/page-header";
@@ -12,10 +11,8 @@ import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Select } from "@/components/ui/input";
 import { SimpleTable } from "@/components/ui/simple-table";
 import { comviaFetch } from "@/lib/comviaFetch";
-import { workspacePath } from "@/lib/paths";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { formatVND } from "@/lib/utils";
-import { HiOutlineCreditCard } from "react-icons/hi2";
 
 type WalletBalance = {
   balance?: string;
@@ -70,15 +67,7 @@ export default function WalletPage() {
         // eyebrow="Wallet"
         title="Ví tiền"
         description="Số dư và lịch sử giao dịch theo Workspace."
-        actions={
-          owner ? (
-            <Button icon={<HiOutlineCreditCard className="size-4" />} variant="secondary" asChild>
-              <Link href={workspacePath(workspaceId, "topup")}>Nạp tiền</Link>
-            </Button>
-          ) : (
-            <EntityStatusBadge value="MEMBER" />
-          )
-        }
+        actions={<EntityStatusBadge value={owner ? "OWNER" : "MEMBER"} />}
       />
 
       <div className="mb-6 grid gap-4 md:grid-cols-4">

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { HiOutlineAdjustmentsHorizontal, HiOutlineClipboardDocumentList } from "react-icons/hi2";
-import { AdminStaffRoleGate } from "@/components/admin/role-gate";
+import { AdminRoleGate } from "@/components/admin/role-gate";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { Button } from "@/components/ui/button";
@@ -103,7 +103,7 @@ export default function AdminInvoicesPage() {
   }
 
   return (
-    <AdminStaffRoleGate>
+    <AdminRoleGate>
       {loading && !data ? <PageLoading /> : null}
       {error && !data ? <PageError message={error} onRetry={() => void refetch()} /> : null}
       {data ? (
@@ -226,6 +226,6 @@ export default function AdminInvoicesPage() {
           </div>
         </div>
       ) : null}
-    </AdminStaffRoleGate>
+    </AdminRoleGate>
   );
 }

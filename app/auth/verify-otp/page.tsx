@@ -8,7 +8,9 @@ import { HiMiniClock, HiOutlinePencil } from "react-icons/hi2";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { postLoginPathForRole, saveAuthSession } from "@/lib/auth";
+import { useAlertModal } from "@/components/ui/alert-modal";
+import { saveAuthSession } from "@/lib/auth";
+import { resolvePostLoginPath } from "@/lib/post-login-redirect";
 import {
   clearPendingOtpContext,
   createDefaultOtpExpiredAt,
@@ -33,12 +35,12 @@ function VerifyOtpContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const inputRef = useRef<HTMLInputElement>(null);
+  const { showAlert } = useAlertModal();
 
   const otpRequestId = searchParams.get("otpRequestId") ?? "";
   const [email, setEmail] = useState("");
   const [purpose, setPurpose] = useState("REGISTER");
   const [otpCode, setOtpCode] = useState("");
-  const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [cooldown, setCooldown] = useState(60);
@@ -48,13 +50,16 @@ function VerifyOtpContent() {
 
   useEffect(() => {
     if (!otpRequestId) {
-      setError("Thiếu otpRequestId. Vui lòng đăng ký lại.");
+      showAlert({ type: "error", message: "Thiếu otpRequestId. Vui lòng đăng ký lại." });
       return;
     }
 
     const context = getPendingOtpContext(otpRequestId);
     if (!context) {
-      setError("Phiên xác thực OTP không hợp lệ hoặc đã hết hạn. Vui lòng đăng ký lại.");
+      showAlert({
+        type: "error",
+        message: "Phiên xác thực OTP không hợp lệ hoặc đã hết hạn. Vui lòng đăng ký lại.",
+      });
       return;
     }
 
@@ -71,7 +76,7 @@ function VerifyOtpContent() {
         expiredAt: new Date(expiredAtMs).toISOString(),
       });
     }
-  }, [otpRequestId]);
+  }, [otpRequestId, showAlert]);
 
   useEffect(() => {
     if (otpExpiredAtMs === null) return;
@@ -95,29 +100,27 @@ function VerifyOtpContent() {
   function updateOtp(value: string) {
     const sanitized = value.replace(/\D/g, "").slice(0, 6);
     setOtpCode(sanitized);
-    if (error) setError("");
   }
 
   async function handleVerify(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!email) {
-      setError("Thiếu email đăng ký. Vui lòng đăng ký lại.");
+      showAlert({ type: "error", message: "Thiếu email đăng ký. Vui lòng đăng ký lại." });
       return;
     }
 
     if (otpCode.length !== 6) {
-      setError("Mã OTP phải đủ 6 ký tự.");
+      showAlert({ type: "error", message: "Mã OTP phải đủ 6 ký tự." });
       return;
     }
 
     if (remainingSeconds <= 0) {
-      setError("Mã OTP đã hết hạn. Vui lòng gửi lại mã.");
+      showAlert({ type: "error", message: "Mã OTP đã hết hạn. Vui lòng gửi lại mã." });
       return;
     }
 
     setIsSubmitting(true);
-    setError("");
 
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || "http://localhost:3000";
@@ -147,13 +150,13 @@ function VerifyOtpContent() {
           (Array.isArray(apiError?.message) && apiError.message.join(", ")) ||
           apiError?.error ||
           "Mã xác thực không hợp lệ. Vui lòng kiểm tra lại.";
-        setError(message);
+        showAlert({ type: "error", message });
         return;
       }
 
       const data = payload as VerifyOtpResponse | null;
       if (!data?.accessToken) {
-        setError("API không trả về access token hợp lệ.");
+        showAlert({ type: "error", message: "API không trả về access token hợp lệ." });
         return;
       }
 
@@ -164,11 +167,11 @@ function VerifyOtpContent() {
       });
       clearPendingOtpContext(otpRequestId);
 
-      router.push(postLoginPathForRole(data.user?.role));
+      router.push(await resolvePostLoginPath(data.user?.role, data.accessToken));
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Không thể kết nối server. Kiểm tra backend ở localhost:3000.";
-      setError(message);
+      showAlert({ type: "error", message });
     } finally {
       setIsSubmitting(false);
     }
@@ -178,7 +181,6 @@ function VerifyOtpContent() {
     if (!email || cooldown > 0 || isResending) return;
 
     setIsResending(true);
-    setError("");
 
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || "http://localhost:3000";
@@ -204,7 +206,7 @@ function VerifyOtpContent() {
           (Array.isArray(payload?.message) && payload.message.join(", ")) ||
           payload?.error ||
           "Không thể gửi lại OTP.";
-        setError(message);
+        showAlert({ type: "error", message });
         return;
       }
 
@@ -223,7 +225,7 @@ function VerifyOtpContent() {
         setDemoOtpCode(payload.demoOtpCode);
       }
     } catch {
-      setError("Không thể gửi lại OTP.");
+      showAlert({ type: "error", message: "Không thể gửi lại OTP." });
     } finally {
       setIsResending(false);
     }
@@ -313,12 +315,6 @@ function VerifyOtpContent() {
                 )}
               </p>
 
-              {error ? (
-                <p className="text-left text-base text-danger">
-                  {error}
-                </p>
-              ) : null}
-
               {demoOtpCode ? (
                 <p className="rounded-lg border border-primary/40 bg-primary/10 px-3 py-2 text-sm text-primary">
                   Demo OTP: <strong>{demoOtpCode}</strong>
@@ -381,7 +377,7 @@ function VerifyOtpContent() {
           </div>
           <span>© 2026 COMVIA. Tất cả quyền được bảo lưu.</span>
         </footer>
-        <div className="flex items-center justify-center text-center shadow-[var(--shadow-soft)] bg-card/90 p-2 text-sm mt-3 rounded-[10px]">COMVIA một sản phẩm công nghệ của SoftX.asia</div>
+        <div className="flex items-center justify-center text-center shadow-[var(--shadow-soft)] bg-card/90 p-2 text-sm mt-[35px] rounded-[10px]">COMVIA một sản phẩm công nghệ của SoftX.asia</div>
       </div>
     </main>
   );

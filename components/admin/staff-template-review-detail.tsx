@@ -7,9 +7,7 @@ import {
   HiOutlineBuildingOffice2,
   HiOutlineCheckCircle,
   HiOutlineClock,
-  HiOutlineNoSymbol,
   HiOutlineSquares2X2,
-  HiOutlineXCircle,
 } from "react-icons/hi2";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
@@ -19,6 +17,7 @@ import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input, Textarea } from "@/components/ui/input";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
+import { ctaTypeLabel, type TemplateCtaButton } from "@/lib/template-cta";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
 type TemplateDetail = {
@@ -27,9 +26,12 @@ type TemplateDetail = {
   code?: string;
   content?: string;
   placeholdersJson?: Record<string, unknown>;
+  ctaButtons?: TemplateCtaButton[];
   providerTemplateId?: string | null;
   status?: string;
-  rejectedReason?: string | null;
+  requiresOwnerRevision?: boolean;
+  revisionReason?: string | null;
+  returnedForRevisionAt?: string | null;
   createdAt?: string;
   updatedAt?: string;
   workspace?: {
@@ -70,7 +72,7 @@ export function StaffTemplateReviewDetail({
   section?: "overview" | "workspace" | "oa";
 }) {
   const [providerId, setProviderId] = useState("");
-  const [rejectReason, setRejectReason] = useState("");
+  const [revisionReason, setRevisionReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -105,18 +107,23 @@ export function StaffTemplateReviewDetail({
   }
 
   async function approve() {
+    if (!providerId.trim()) {
+      setMsg("Nhập Provider template ID do Zalo cấp trước khi duyệt.");
+      return;
+    }
     await updateStatus(`/internal/templates/${templateId}/approve`, "Đã chuyển sang approved.", {
-      providerTemplateId: providerId.trim() || undefined,
+      providerTemplateId: providerId.trim(),
     });
   }
 
-  async function reject() {
-    const reason = rejectReason.trim();
-    if (!reason) {
-      setMsg("Nhập lý do từ chối.");
+  async function returnToOwner() {
+    if (!revisionReason.trim()) {
+      setMsg("Nhập lý do để Owner chỉnh sửa mẫu tin.");
       return;
     }
-    await updateStatus(`/internal/templates/${templateId}/reject`, "Đã chuyển sang rejected.", { reason });
+    await updateStatus(`/internal/templates/${templateId}/return-to-submitted`, "Đã trả mẫu tin về Owner để chỉnh sửa.", {
+      reason: revisionReason.trim(),
+    });
   }
 
   if (loading) return <PageLoading message="Đang tải chi tiết template…" />;
@@ -124,16 +131,21 @@ export function StaffTemplateReviewDetail({
   if (!template) return null;
 
   const baseHref = `/staff/templates-review/${templateId}`;
+  const status = (template.status ?? "").toUpperCase();
+  const requiresOwnerRevision = Boolean(template.requiresOwnerRevision);
+  const canSendToZalo = status === "SUBMITTED" && !requiresOwnerRevision;
+  const canApprove = status === "PENDING_ZALO_APPROVAL";
+  const ctaButtons = [...(template.ctaButtons ?? [])].sort((a, b) => a.position - b.position);
 
   return (
     <div>
       <PageHeader
         eyebrow="Staff"
-        title="Chi tiết duyệt template"
-        description="Dùng `GET /internal/templates/:templateId` để xem nội dung, workspace, OA và cập nhật trạng thái nội bộ."
+        title="Chi tiết duyệt mẫu tin"
+        // description="Dùng `GET /internal/templates/:templateId` để xem nội dung, workspace, OA và cập nhật trạng thái nội bộ."
         actions={
           <Button variant="outline" size="sm" asChild icon={<HiArrowLeft className="size-4" />}>
-            <Link href="/staff/templates-review/submitted">Về danh sách</Link>
+            <Link href="/staff/templates-review/submitted">Về danh sách mẫu tin</Link>
           </Button>
         }
       />
@@ -144,24 +156,32 @@ export function StaffTemplateReviewDetail({
           {template.status ? <EntityStatusBadge value={template.status} /> : null}
         </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div>
+          {/* <div>
             <p className="text-xs font-semibold uppercase text-muted-foreground">Template ID</p>
             <p className="mt-1 font-mono text-sm text-foreground">{template.id}</p>
-          </div>
+          </div> */}
           <div>
-            <p className="text-xs font-semibold uppercase text-muted-foreground">Mã template</p>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">Mã mẫu tin</p>
             <p className="mt-1 text-sm text-foreground">{template.code ?? "—"}</p>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase text-muted-foreground">Created</p>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">Ngày tạo</p>
             <p className="mt-1 text-sm text-foreground">{template.createdAt ? new Date(template.createdAt).toLocaleString() : "—"}</p>
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase text-muted-foreground">Updated</p>
+            <p className="text-xs font-semibold uppercase text-muted-foreground">Ngày cập nhật</p>
             <p className="mt-1 text-sm text-foreground">{template.updatedAt ? new Date(template.updatedAt).toLocaleString() : "—"}</p>
           </div>
         </div>
       </Card>
+
+      {requiresOwnerRevision ? (
+        <Card className="mb-6 border-border bg-surface-muted/60 p-4">
+          <p className="font-semibold text-foreground">Đã trả Owner chỉnh sửa</p>
+          <p className="mt-1 text-sm text-muted-foreground">{template.revisionReason || "Chờ Owner cập nhật mẫu tin theo yêu cầu từ Zalo."}</p>
+          {template.returnedForRevisionAt ? <p className="mt-1 text-xs text-muted-foreground">Trả về lúc {new Date(template.returnedForRevisionAt).toLocaleString("vi-VN")}</p> : null}
+        </Card>
+      ) : null}
 
       <div className="mb-6 flex flex-wrap gap-2">
         {detailTabs.map((tab) => (
@@ -181,7 +201,7 @@ export function StaffTemplateReviewDetail({
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(340px,1fr)]">
           <div className="space-y-6">
             <Card className="space-y-3 p-4">
-              <p className="text-xs font-semibold uppercase text-muted-foreground">Nội dung template</p>
+              <p className="text-xs font-semibold uppercase text-muted-foreground">Nội dung mẫu tin</p>
               <pre className="max-h-[360px] overflow-auto rounded-xl bg-surface-muted p-4 text-xs whitespace-pre-wrap">
                 {template.content ?? "Không có nội dung"}
               </pre>
@@ -195,7 +215,24 @@ export function StaffTemplateReviewDetail({
             </Card>
 
             <Card className="space-y-3 p-4">
-              <p className="text-xs font-semibold uppercase text-muted-foreground">Lịch sử submit</p>
+              <p className="text-xs font-semibold uppercase text-muted-foreground">Nút CTA</p>
+              {ctaButtons.length ? (
+                <div className="space-y-2">
+                  {ctaButtons.map((button, index) => (
+                    <div key={button.id ?? `${button.position}-${index}`} className="rounded-xl border border-border/70 bg-surface-muted/50 p-3 text-sm">
+                      <p className="font-medium text-foreground">{button.label || ctaTypeLabel(button.type)}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">Loại: {ctaTypeLabel(button.type)}</p>
+                      <p className="mt-1 break-all text-xs text-muted-foreground">Đích đến: {button.target || "—"}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Mẫu tin không có nút CTA.</p>
+              )}
+            </Card>
+
+            <Card className="space-y-3 p-4">
+              <p className="text-xs font-semibold uppercase text-muted-foreground">Lịch sử trạng thái</p>
               {template.submissions?.length ? (
                 <div className="space-y-2">
                   {template.submissions.map((submission, index) => (
@@ -224,50 +261,46 @@ export function StaffTemplateReviewDetail({
           <div className="space-y-6">
             <Card className="space-y-4 p-4">
               <p className="text-xs font-semibold uppercase text-muted-foreground">Cập nhật trạng thái nội bộ</p>
-              <div>
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Provider template ID (approved)</label>
-                <Input className="mt-1" value={providerId} onChange={(e) => setProviderId(e.target.value)} placeholder="ZALO_TPL_..." />
-              </div>
-              <div>
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Lý do rejected</label>
-                <Textarea className="mt-1" rows={4} value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} placeholder="Nhập lý do từ chối" />
-              </div>
+              {canApprove ? (
+                <>
+                  <div>
+                    <label className="text-xs font-semibold uppercase text-muted-foreground">Provider template ID (Zalo đã duyệt)</label>
+                    <Input className="mt-1" value={providerId} onChange={(e) => setProviderId(e.target.value)} placeholder="ZALO_TPL_..." />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold uppercase text-muted-foreground">Lý do trả Owner chỉnh sửa</label>
+                    <Textarea className="mt-1" rows={3} value={revisionReason} onChange={(e) => setRevisionReason(e.target.value)} placeholder="Nêu yêu cầu điều chỉnh từ Zalo" />
+                  </div>
+                </>
+              ) : null}
               {template.providerTemplateId ? (
                 <p className="text-sm text-muted-foreground">
                   Provider template ID hiện tại: <span className="font-mono">{template.providerTemplateId}</span>
                 </p>
               ) : null}
-              {template.rejectedReason ? (
-                <p className="text-sm text-muted-foreground">
-                  Lý do rejected hiện tại: <span className="font-medium">{template.rejectedReason}</span>
-                </p>
-              ) : null}
               {msg ? <p className="text-sm text-muted-foreground">{msg}</p> : null}
               <div className="grid gap-2 sm:grid-cols-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={busy}
-                  onClick={() => void updateStatus(`/internal/templates/${templateId}/mark-pending-zalo-approval`, "Đã chuyển sang pending_zalo_approval.")}
-                  icon={<HiOutlineClock className="size-4" />}
-                >
-                  Pending Zalo Approval
-                </Button>
-                <Button type="button" disabled={busy} onClick={() => void approve()} icon={<HiOutlineCheckCircle className="size-4" />}>
-                  Approved
-                </Button>
-                <Button type="button" variant="outline" disabled={busy} onClick={() => void reject()} icon={<HiOutlineXCircle className="size-4" />}>
-                  Rejected
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={busy}
-                  onClick={() => void updateStatus(`/internal/templates/${templateId}/disable`, "Đã chuyển sang disabled.")}
-                  icon={<HiOutlineNoSymbol className="size-4" />}
-                >
-                  Disabled
-                </Button>
+                {canSendToZalo ? (
+                  <Button
+                    type="button"
+                    variant="accent"
+                    disabled={busy}
+                    onClick={() => void updateStatus(`/internal/templates/${templateId}/mark-pending-zalo-approval`, "Đã gửi mẫu tin để Zalo duyệt.")}
+                    icon={<HiOutlineClock className="size-4" />}
+                  >
+                    Gửi duyệt Zalo
+                  </Button>
+                ) : null}
+                {canApprove ? (
+                  <>
+                    <Button type="button" variant="outline" disabled={busy} onClick={() => void returnToOwner()} icon={<HiArrowLeft className="size-4" />}>
+                      Trả Owner chỉnh sửa
+                    </Button>
+                    <Button type="button" disabled={busy} onClick={() => void approve()} icon={<HiOutlineCheckCircle className="size-4" />}>
+                      Zalo đã duyệt
+                    </Button>
+                  </>
+                ) : null}
               </div>
             </Card>
           </div>

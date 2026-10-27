@@ -5,10 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   HiBars3BottomLeft,
-  HiOutlineBolt,
-  HiOutlineChatBubbleLeftRight,
   HiOutlineClipboardDocumentList,
-  HiOutlineCog6Tooth,
   HiOutlineCreditCard,
   HiOutlineCurrencyDollar,
   HiOutlineDocumentText,
@@ -16,7 +13,6 @@ import {
   HiOutlineRectangleStack,
   HiOutlineShoppingCart,
   HiOutlineUsers,
-  HiOutlineWrenchScrewdriver,
 } from "react-icons/hi2";
 import { cn } from "@/lib/cn";
 import { SidebarUserCard } from "@/components/layout/sidebar-user-card";
@@ -99,22 +95,10 @@ const adminNav: NavItem[] = [
 const staffNav: NavItem[] = [
   { label: "Staff hub", icon: HiOutlineHome, href: "/staff", match: (p) => p === "/staff" },
   {
-    label: "Hóa đơn",
-    icon: HiOutlineDocumentText,
-    href: "/admin/invoices",
-    match: (p) => p.startsWith("/admin/invoices"),
-  },
-  {
-    label: "Duyệt template",
+    label: "Duyệt mẫu tin",
     icon: HiOutlineClipboardDocumentList,
     href: "/staff/templates-review/submitted",
     match: (p) => p.startsWith("/staff/templates-review"),
-  },
-  {
-    label: "Internal Quick Chat",
-    icon: HiOutlineBolt,
-    href: "/staff/internal-quick-chat",
-    match: (p) => p.startsWith("/staff/internal-quick-chat"),
   },
 ];
 

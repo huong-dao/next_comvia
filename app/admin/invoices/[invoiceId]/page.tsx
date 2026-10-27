@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useState } from "react";
 import { HiArrowLeft, HiOutlineDocumentCheck } from "react-icons/hi2";
 import { IssueInvoicePdfModal } from "@/components/admin/issue-invoice-pdf-modal";
-import { AdminStaffRoleGate } from "@/components/admin/role-gate";
+import { AdminRoleGate } from "@/components/admin/role-gate";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { Button } from "@/components/ui/button";
@@ -151,13 +151,13 @@ export default function AdminInvoiceDetailPage() {
   if (!invoiceId) return null;
 
   return (
-    <AdminStaffRoleGate>
+    <AdminRoleGate>
       {loading ? <PageLoading /> : null}
       {error && !data ? <PageError message={error} onRetry={() => void refetch()} /> : null}
       {data ? (
         <div>
           <PageHeader
-            eyebrow="Invoice (staff)"
+            eyebrow="Invoice"
             title={data.invoiceCode ?? data.id ?? "Chi tiết hóa đơn"}
             description={
               data.workspace?.name ? `Workspace: ${data.workspace.name}` : data.workspaceId ? `Workspace ID: ${data.workspaceId}` : undefined
@@ -282,6 +282,6 @@ export default function AdminInvoiceDetailPage() {
           />
         </div>
       ) : null}
-    </AdminStaffRoleGate>
+    </AdminRoleGate>
   );
 }

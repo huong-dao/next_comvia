@@ -16,11 +16,20 @@ import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
 import { WorkspaceTopbar } from "@/components/layout/workspace-topbar";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Modal } from "@/components/ui/modal";
+import { useAlertModal, type AlertModalType } from "@/components/ui/alert-modal";
 import { SimpleTable } from "@/components/ui/simple-table";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 
+const ALERT_DEMOS: { type: AlertModalType; title: string; message: string }[] = [
+  { type: "success", title: "Cập nhật thành công", message: "Cập nhật record thành công." },
+  { type: "error", title: "Có lỗi xảy ra", message: "Không thể lưu thay đổi. Vui lòng thử lại." },
+  { type: "warning", title: "Lưu ý", message: "Một vài trường chưa được điền đầy đủ." },
+  { type: "info", title: "Thông báo", message: "Hệ thống sẽ bảo trì lúc 23:00 hôm nay." },
+];
+
 export default function UiKitPage() {
   const [modalOpen, setModalOpen] = useState(false);
+  const { showAlert } = useAlertModal();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
   const [checked, setChecked] = useState(true);
@@ -235,6 +244,21 @@ export default function UiKitPage() {
               label="Inactive Choice"
             />
             <Button onClick={() => setModalOpen(true)}>Open Modal Demo</Button>
+          </div>
+        </Card>
+
+        <Card>
+          <CardTitle>Alert Modal (toast góc phải)</CardTitle>
+          <div className="mt-5 flex flex-wrap gap-2">
+            {ALERT_DEMOS.map((demo) => (
+              <Button
+                key={demo.type}
+                variant="outline"
+                onClick={() => showAlert({ type: demo.type, title: demo.title, message: demo.message })}
+              >
+                {demo.title}
+              </Button>
+            ))}
           </div>
         </Card>
       </section>

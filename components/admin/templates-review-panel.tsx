@@ -8,7 +8,6 @@ import {
   HiOutlineClipboardDocumentList,
   HiOutlineClock,
   HiOutlineNoSymbol,
-  HiOutlineXCircle,
 } from "react-icons/hi2";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
@@ -25,8 +24,8 @@ type InternalTemplateItem = {
   name?: string;
   code?: string;
   status?: string;
+  requiresOwnerRevision?: boolean;
   providerTemplateId?: string | null;
-  rejectedReason?: string | null;
   createdAt?: string;
   updatedAt?: string;
   workspace?: {
@@ -61,12 +60,6 @@ const staffStatuses = [
     label: "Approved",
     href: "/staff/templates-review/approved",
     icon: HiOutlineCheckCircle,
-  },
-  {
-    value: "REJECTED",
-    label: "Rejected",
-    href: "/staff/templates-review/rejected",
-    icon: HiOutlineXCircle,
   },
   {
     value: "DISABLED",
@@ -119,8 +112,8 @@ export function TemplatesReviewPanel({
     <div>
       <PageHeader
         eyebrow="Review"
-        title={title ?? "Duyệt template"}
-        description="Queue review nội bộ toàn cục cho STAFF. Dùng `GET /internal/templates` để tải theo từng trạng thái; xem chi tiết để cập nhật `pending_zalo_approval / approved / rejected / disabled`."
+        title={title ?? "Duyệt mẫu tin"}
+        // description=""
       />
 
       <div className="mb-4 flex flex-wrap gap-2">
@@ -173,12 +166,19 @@ export function TemplatesReviewPanel({
         emptyMessage="Không có template nào khớp bộ lọc hiện tại."
         getRowKey={(r) => r.id}
         columns={[
-          { key: "n", header: "Tên", cell: (r) => r.name ?? "—" },
+          { key: "n", header: "Tên", cell: (r) => (
+            <Link href={`/staff/templates-review/${r.id}`}>{r.name}</Link>
+          ) },
           { key: "c", header: "Mã", cell: (r) => r.code ?? "—" },
           {
             key: "s",
             header: "Trạng thái",
-            cell: (r) => (r.status ? <EntityStatusBadge value={r.status} /> : "—"),
+            cell: (r) => (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {r.status ? <EntityStatusBadge value={r.status} /> : "—"}
+                {r.requiresOwnerRevision ? <span className="rounded-full bg-surface-muted px-2 py-0.5 text-xs text-muted-foreground">Chờ Owner sửa</span> : null}
+              </div>
+            ),
           },
           {
             key: "w",
@@ -212,11 +212,6 @@ export function TemplatesReviewPanel({
             key: "p",
             header: "Provider Template ID",
             cell: (r) => <span className="font-mono text-xs">{r.providerTemplateId ?? "—"}</span>,
-          },
-          {
-            key: "rr",
-            header: "Rejected Reason",
-            cell: (r) => <span className="text-xs text-muted-foreground">{r.rejectedReason ?? "—"}</span>,
           },
           {
             key: "d",

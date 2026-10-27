@@ -9,6 +9,7 @@ export const APP_PATHS = {
   workspacesNew: "/app/workspaces/new",
   profile: "/app/profile",
   settingsSecurity: "/app/settings/security",
+  staffSettingsSecurity: "/staff/settings/security",
   /** Trang nhận redirect sau Zalo OAuth (`ZALO_OAUTH_SUCCESS_REDIRECT_URL`). */
   settingsOa: "/app/settings/oa",
   admin: "/admin",

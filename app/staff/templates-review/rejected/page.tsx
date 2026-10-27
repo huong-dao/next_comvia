@@ -1,12 +1,7 @@
 "use client";
 
-import { StaffRoleGate } from "@/components/admin/role-gate";
-import { TemplatesReviewPanel } from "@/components/admin/templates-review-panel";
+import { redirect } from "next/navigation";
 
 export default function StaffTemplatesReviewRejectedPage() {
-  return (
-    <StaffRoleGate>
-      <TemplatesReviewPanel title="Templates Rejected" status="REJECTED" />
-    </StaffRoleGate>
-  );
+  redirect("/staff/templates-review/submitted");
 }

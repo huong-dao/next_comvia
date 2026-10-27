@@ -4,20 +4,20 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FcGoogle } from "react-icons/fc";
-import { HiOutlineEye, HiOutlineEyeOff, HiOutlineLockClosed, HiOutlineMail, HiOutlineKey } from "react-icons/hi";
+import { HiOutlineEye, HiOutlineEyeOff, HiOutlineLockClosed, HiOutlineMail } from "react-icons/hi";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/controls";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useAlertModal } from "@/components/ui/alert-modal";
 import { cn } from "@/lib/cn";
-import { getAccessToken, getStoredUser, postLoginPathForRole, saveAuthSession } from "@/lib/auth";
+import { getAccessToken, getStoredUser, saveAuthSession } from "@/lib/auth";
 import { createDefaultOtpExpiredAt, createOtpRequestId, savePendingOtpContext } from "@/lib/otp-context";
+import { resolvePostLoginPath } from "@/lib/post-login-redirect";
 
 type LoginErrors = {
   email?: string;
   password?: string;
-  form?: string;
 };
 
 type LoginResponse = {
@@ -43,6 +43,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function LoginPage() {
   const router = useRouter();
+  const { showAlert } = useAlertModal();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
@@ -54,7 +55,13 @@ export default function LoginPage() {
   useEffect(() => {
     const token = getAccessToken();
     if (token) {
-      router.replace(postLoginPathForRole(getStoredUser()?.role));
+      let cancelled = false;
+      void resolvePostLoginPath(getStoredUser()?.role, token).then((path) => {
+        if (!cancelled) router.replace(path);
+      });
+      return () => {
+        cancelled = true;
+      };
     }
   }, [router]);
 
@@ -97,7 +104,7 @@ export default function LoginPage() {
         (Array.isArray(resendPayload?.message) && resendPayload.message.join(", ")) ||
         resendPayload?.error ||
         "Không thể gửi mã OTP. Vui lòng thử lại.";
-      setErrors({ form: resendMessage });
+      showAlert({ type: "error", message: resendMessage });
       return;
     }
 
@@ -166,13 +173,13 @@ export default function LoginPage() {
           return;
         }
 
-        setErrors({ form: message });
+        showAlert({ type: "error", message });
         return;
       }
 
       const data = payload as LoginResponse | null;
       if (!data?.accessToken) {
-        setErrors({ form: "API không trả về access token hợp lệ." });
+        showAlert({ type: "error", message: "API không trả về access token hợp lệ." });
         return;
       }
 
@@ -182,13 +189,13 @@ export default function LoginPage() {
         remember,
       });
 
-      router.push(postLoginPathForRole(data.user?.role));
+      router.push(await resolvePostLoginPath(data.user?.role, data.accessToken));
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
           : "Không thể kết nối server. Kiểm tra backend ở localhost:3000.";
-      setErrors({ form: message });
+      showAlert({ type: "error", message });
     } finally {
       setIsSubmitting(false);
     }
@@ -312,10 +319,6 @@ export default function LoginPage() {
                 />
               </div>
 
-              {errors.form ? (
-                <p className="rounded-lg border border-danger/50 bg-danger/10 px-3 py-2 text-sm text-red-200">{errors.form}</p>
-              ) : null}
-
               <Button type="submit" size="lg" disabled={isSubmitting || !isFormComplete} className="w-full">
                 {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
               </Button>
@@ -369,7 +372,7 @@ export default function LoginPage() {
           </div>
           <span>© 2026 COMVIA. Tất cả quyền được bảo lưu.</span>
         </footer>
-        <div className="flex items-center justify-center text-center shadow-[var(--shadow-soft)] bg-card/90 p-2 text-sm mt-3 rounded-[10px]">COMVIA một sản phẩm công nghệ của SoftX.asia</div>
+        <div className="flex items-center justify-center text-center shadow-[var(--shadow-soft)] bg-card/90 p-2 text-sm mt-[35px] rounded-[10px]">COMVIA một sản phẩm công nghệ của SoftX.asia</div>
       </div>
     </main>
   );

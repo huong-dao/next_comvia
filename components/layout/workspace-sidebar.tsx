@@ -1,19 +1,23 @@
 "use client";
 
-import type { ComponentType } from "react";
+import { useState, type ComponentType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   HiBars3BottomLeft,
+  HiOutlineBuildingOffice2,
   HiOutlineChatBubbleLeftRight,
   HiOutlineClipboardDocumentList,
+  HiOutlineCog6Tooth,
   HiOutlineCreditCard,
   HiOutlineDocumentText,
   HiOutlineMegaphone,
   HiOutlineHome,
   HiOutlineKey,
-  HiOutlineRectangleGroup,
+  HiOutlineRectangleStack,
+  HiOutlineShoppingCart,
   HiOutlineUserGroup,
+  HiOutlineUsers,
 } from "react-icons/hi2";
 import { cn } from "@/lib/cn";
 import { APP_PATHS, workspacePath } from "@/lib/paths";
@@ -23,6 +27,7 @@ import { SidebarUserCard } from "@/components/layout/sidebar-user-card";
 import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
 import Image from "next/image";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { getStoredUser } from "@/lib/auth";
 
 type NavItem = {
   label: string;
@@ -47,26 +52,26 @@ const navItems: NavItem[] = [
     href: (w) => workspacePath(w, "messages", "send-single"),
     isActive: (p, w) => p.startsWith(workspacePath(w, "messages")),
   },
-  {
-    label: "Zalo OA",
-    icon: HiOutlineDocumentText,
-    href: (w) => workspacePath(w, "oa"),
-    isActive: (p, w) => p.startsWith(workspacePath(w, "oa")),
-  },
+  // {
+  //   label: "Zalo OA",
+  //   icon: HiOutlineDocumentText,
+  //   href: (w) => workspacePath(w, "oa"),
+  //   isActive: (p, w) => p.startsWith(workspacePath(w, "oa")),
+  // },
   // {
   //   label: "Thống kê",
   //   icon: HiOutlineChartBar,
   //   href: (w) => workspacePath(w, "analytics"),
   //   isActive: (p, w) => p.startsWith(workspacePath(w, "analytics")),
   // },
+  // {
+  //   label: "Mẫu tin nhắn",
+  //   icon: HiOutlineRectangleGroup,
+  //   href: (w) => workspacePath(w, "templates"),
+  //   isActive: (p, w) => p.startsWith(workspacePath(w, "templates")),
+  // },
   {
-    label: "Mẫu tin nhắn",
-    icon: HiOutlineRectangleGroup,
-    href: (w) => workspacePath(w, "templates"),
-    isActive: (p, w) => p.startsWith(workspacePath(w, "templates")),
-  },
-  {
-    label: "Chiến dịch Zalo",
+    label: "Chiến dịch",
     icon: HiOutlineMegaphone,
     href: (w) => workspacePath(w, "campaigns"),
     isActive: (p, w) => p.startsWith(workspacePath(w, "campaigns")),
@@ -83,13 +88,13 @@ const navItems: NavItem[] = [
     href: (w) => workspacePath(w, "activity-history"),
     isActive: (p, w) => p.startsWith(workspacePath(w, "activity-history")),
   },
-  {
-    label: "Ví tiền",
-    icon: HiOutlineCreditCard,
-    href: (w) => workspacePath(w, "wallet"),
-    isActive: (p, w) =>
-      p.startsWith(workspacePath(w, "wallet")) || p.startsWith(workspacePath(w, "topup")),
-  },
+  // {
+  //   label: "Ví tiền",
+  //   icon: HiOutlineCreditCard,
+  //   href: (w) => workspacePath(w, "wallet"),
+  //   isActive: (p, w) =>
+  //     p.startsWith(workspacePath(w, "wallet")) || p.startsWith(workspacePath(w, "topup")),
+  // },
   {
     label: "API Keys",
     icon: HiOutlineKey,
@@ -105,6 +110,22 @@ const navItems: NavItem[] = [
   // },
 ];
 
+const adminItems: Array<{
+  label: string;
+  href: string;
+  icon: ComponentType<{ className?: string }>;
+}> = [
+  { label: "Ng\u01b0\u1eddi d\u00f9ng", href: "/admin/users", icon: HiOutlineUsers },
+  { label: "Workspaces", href: "/admin/workspaces", icon: HiOutlineRectangleStack },
+  { label: "Zalo OAs", href: "/admin/oa-connections", icon: HiOutlineBuildingOffice2 },
+  { label: "ZBS Templates", href: "/admin/templates", icon: HiOutlineDocumentText },
+  { label: "T\u00e0i kho\u1ea3n c\u00f4ng ty", href: "/admin/money-accounts", icon: HiOutlineCreditCard },
+  { label: "\u0110\u01a1n h\u00e0ng", href: "/admin/orders", icon: HiOutlineShoppingCart },
+  { label: "H\u00f3a \u0111\u01a1n", href: "/admin/invoices", icon: HiOutlineDocumentText },
+  { label: "L\u1ecbch s\u1eed ho\u1ea1t \u0111\u1ed9ng", href: "/admin/audit-logs", icon: HiOutlineClipboardDocumentList },
+  { label: "C\u1ea5u h\u00ecnh chung", href: "/admin/config", icon: HiOutlineCog6Tooth },
+];
+
 export function WorkspaceSidebar({
   collapsed = false,
   onToggleCollapsed,
@@ -117,6 +138,8 @@ export function WorkspaceSidebar({
   const workspaceFromUrl = resolveWorkspaceIdFromPath(pathname);
   const currentWorkspaceId = workspaceFromUrl || activeWorkspaceId;
   const isCompact = collapsed;
+  const isAdmin = String(getStoredUser()?.role ?? "").toUpperCase() === "ADMIN";
+  const [adminOpen, setAdminOpen] = useState(pathname.startsWith("/admin"));
 
   return (
     <aside
@@ -161,7 +184,7 @@ export function WorkspaceSidebar({
         )}
       </div>
 
-      <div className="flex-1">
+      <div className="flex flex-1 flex-col">
         <WorkspaceSwitcher
           className="mb-6"
           compact={isCompact}
@@ -201,8 +224,58 @@ export function WorkspaceSidebar({
             );
           })}
         </nav>
+
+        {isAdmin ? (
+          <div className="mt-auto pt-6">
+            <div className="border-t border-border/70 pt-3">
+              <button
+                type="button"
+                onClick={() => setAdminOpen((open) => !open)}
+                className={cn(
+                  "flex w-full items-center rounded-lg py-2 text-sm font-semibold text-muted-foreground transition hover:bg-surface-muted/70 hover:text-foreground",
+                  isCompact ? "justify-center px-2" : "gap-3 px-4",
+                  pathname.startsWith("/admin") &&
+                    "bg-surface-muted text-secondary shadow-[inset_3px_0_0_0_var(--color-primary)]",
+                )}
+                title={isCompact ? "Qu\u1ea3n tr\u1ecb" : undefined}
+                aria-expanded={adminOpen}
+              >
+                <HiOutlineCog6Tooth className="size-5 shrink-0" />
+                {!isCompact ? (
+                  <>
+                    <span className="flex-1 text-left">{"Qu\u1ea3n tr\u1ecb"}</span>
+                    <span className="text-xs">{adminOpen ? "\u2212" : "+"}</span>
+                  </>
+                ) : null}
+              </button>
+
+              {adminOpen && !isCompact ? (
+                <div className="mt-1 space-y-1 border-l border-border/70 pl-3">
+                  {adminItems.map((item) => {
+                    const Icon = item.icon;
+                    const active = pathname === item.href || pathname.startsWith(item.href + "/");
+
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-surface-muted/70 hover:text-foreground",
+                          active && "bg-surface-muted text-secondary",
+                        )}
+                      >
+                        <Icon className="size-4 shrink-0" />
+                        {item.label}
+                      </Link>
+                    );
+                  })}
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
       </div>
-      <ThemeToggle iconOnly className="h-[34px] min-h-[34px] min-w-[34px] rounded-lg border-none !bg-surface-muted" />
+      <ThemeToggle variant="switch" className="mb-3 self-center" />
       <SidebarUserCard compact={isCompact} />
     </aside>
   );
