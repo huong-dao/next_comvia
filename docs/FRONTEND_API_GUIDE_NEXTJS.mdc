@@ -432,10 +432,17 @@ Response:
 ```json
 {
   "id": "INVITATION_ID",
-  "token": "INVITE_TOKEN",
   "expiredAt": "..."
 }
 ```
+
+Backend gửi một email tới đúng `inviteValue` và **không** trả token cho browser. Link trong email có format:
+
+```
+{COMVIA_APP_BASE_URL}/app/invitations/accept?workspaceId={workspaceId}&token={token}
+```
+
+Nếu SMTP gửi lỗi, invitation vừa tạo bị xóa và endpoint trả lỗi; Owner có thể tạo lại invitation. Không có resend/revoke trong scope.
 
 ### 5.3 Remove member (OWNER)
 - `DELETE /workspaces/:workspaceId/members/:memberUserId`
@@ -459,11 +466,14 @@ Request:
 
 Response:
 ```json
-{ "ok": true }
+{ "ok": true, "redirectPath": "/app/w/WORKSPACE_ID" }
 ```
+
+FE đọc `workspaceId` và `token` từ query, giữ chúng qua đăng nhập nếu user chưa có JWT, gọi API sau khi đăng nhập, rồi điều hướng client-side tới `redirectPath`. Backend trả JSON, không browser redirect. Các lỗi `400` dùng các message: `Invitation not found`, `Invitation does not belong to this workspace`, `Invitation is not available`, `Invitation expired`, hoặc `Invitation email does not match the signed-in user`.
 
 Ghi chú audit log:
 - Backend tự ghi `member.invited` / `member.removed` khi invite / xóa member.
+- Invitation chỉ nhận `inviteType: "EMAIL"`; lúc accept, email tài khoản JWT phải trùng email được mời (không phân biệt hoa/thường). Không có resend/revoke; Owner remove member sau khi accept.
 
 ## 6) OA Connection (Zalo OAuth + ZNS)
 
@@ -666,7 +676,7 @@ Alias tương thích doc cũ: `/settings/oa` → redirect sang `/app/settings/oa
 | Env | Mục đích | Ví dụ |
 |-----|----------|-------|
 | `ZALO_OAUTH_REDIRECT_URI` | Callback **API** (Zalo gọi) | `https://api.comvia.cloud/api/v1/oa/auth/callback` |
-| `COMVIA_APP_BASE_URL` | Origin **frontend** để build URL sau OAuth | `https://app.comvia.cloud` |
+| `COMVIA_APP_BASE_URL` | Origin **frontend** để build URL sau OAuth và email invitation | `https://app.comvia.cloud` |
 | `ZALO_OAUTH_SUCCESS_REDIRECT_URL` | **Chỉ fallback** nếu không build URL động `/app/w/{id}/oa` | `https://app.comvia.cloud/app/settings/oa` |
 | Zalo app credentials | `app_id`, secret, PKCE | Zalo Developer Console |
 
@@ -800,7 +810,7 @@ Ghi chú:
 - `type` và `trackingId` là giá trị nội bộ (không map/đối chiếu loại ZNS Zalo). `OTP` yêu cầu `otpExpiryMinutes`; backend chuẩn hóa placeholder `otp` và `phut`, không lưu placeholder null. Khi gửi OTP, `data.otp` và `data.phut` phải là string/number có giá trị. `TABLE` có thêm `secondaryContent`.
 - Các field mới được trả lại ở list/get.
 
-`ctaButtons` là mảng tối đa 2 nút, mỗi nút có `type`, `position` (0 hoặc 1, không trùng), tùy loại có `label`/`target`. Khi PATCH nút cũ gửi `id` UUID để giữ giá; `unitPrice` chỉ ADMIN được đặt. Giá gửi nội bộ/campaign = giá template (hoặc mặc định hệ thống) + tổng giá CTA (`unitPrice` override, fallback `defaultUnitPrice` snapshot). Public API hiện vẫn hardcode 1000, xem F04; không dùng giá public này làm chính sách chuẩn.
+`ctaButtons` là mảng tối đa 2 nút, mỗi nút có `type`, `position` (0 hoặc 1, không trùng), tùy loại có `label`/`target`. Khi PATCH nút cũ gửi `id` UUID để giữ giá; `unitPrice` chỉ ADMIN được đặt. Giá gửi nội bộ, campaign và Public API = giá template (hoặc mặc định hệ thống) + tổng giá CTA (`unitPrice` override, fallback `defaultUnitPrice` snapshot).
 
 ### 7.2 List templates
 - `GET /workspaces/:workspaceId/templates`
@@ -848,10 +858,10 @@ Auth/Role: `OWNER` hoặc `MEMBER` + workspace context.
 - `GET /workspaces/:workspaceId/campaigns/:campaignId/rows?status=&limit=`
 - `PATCH /workspaces/:workspaceId/campaigns/:campaignId/rows/:rowId`
 - `DELETE /workspaces/:workspaceId/campaigns/:campaignId/rows/:rowId`
-- `POST /workspaces/:workspaceId/campaigns/:campaignId/execute` — gửi tuần tự, trừ ví OWNER trước, hoàn tiền tin failed
-- `POST /workspaces/:workspaceId/campaigns/:campaignId/retry` — body `{ "rowIds": ["..."] }` (chỉ rows `FAILED`, trừ ví lại)
+- `POST /workspaces/:workspaceId/campaigns/:campaignId/execute` — tạo campaign run vào database queue và trừ ví OWNER trước; response xác nhận `{ campaignId, runId, status: "QUEUED", unitPrice, totalCharged }`, không chờ gửi hết trong HTTP request.
+- `POST /workspaces/:workspaceId/campaigns/:campaignId/retry` — body `{ "rowIds": ["..."] }` (chỉ rows `FAILED`, trừ ví lại, trả response queue tương tự).
 
-Dữ liệu từng dòng nằm ở bảng `CampaignRow` (`phoneNumber`, `payloadData` JSON, `status`, `messageLog`).
+Dữ liệu từng dòng nằm ở bảng `CampaignRow` (`phoneNumber`, `payloadData` JSON, `status`, `messageLog`). Worker claim `PENDING → PROCESSING` trước khi gọi provider. Chính sách **at-most-once**: `PROCESSING` gặp restart hoặc request mất response trở thành `RECONCILIATION_REQUIRED`, campaign `PAUSED`; FE phải hiển thị trạng thái cần đối soát và không gọi retry cho row này. Chỉ `FAILED` do provider đã trả lỗi xác định mới được retry; refund chỉ xảy ra một lần theo từng campaign run khi run hoàn tất.
 
 ### 7.8 Staff review APIs (internal)
 Base:
@@ -933,6 +943,8 @@ Base:
 
 Backend gọi API Zalo `POST https://business.openapi.zalo.me/message/template`, tự refresh access token nếu sắp hết hạn.
 
+**Ngữ nghĩa provider:** response `SUCCESS`/`providerMessageId` chỉ nghĩa Zalo đã tiếp nhận request (`error = 0`, có `msg_id`); không phải xác nhận người nhận đã nhận tin. BE-07 lưu `providerSentAt` và quota nếu Zalo trả về. Delivery webhook đang **deferred**: Comvia không kiểm soát relay `id.onweb.asia`, vì vậy chưa nhận event `user_received_message` và `providerDeliveredAt` sẽ chưa có dữ liệu live. FE chỉ hiển thị “Zalo đã tiếp nhận yêu cầu gửi”; không làm delivered/read/quota UI như dữ liệu live, không gọi webhook và không có secret ở browser. Chi tiết: [Zalo ZNS provider conformance](./architecture/zalo-zns-provider-conformance-2026-10-27.md).
+
 **Điều kiện gửi thành công:**
 - OA `CONNECTED`
 - Template `APPROVED` và có `providerTemplateId`
@@ -990,6 +1002,13 @@ Query:
 - `status` (MessageStatus)
 - `sendType` (SendType)
 - `limit` (optional)
+
+Provider fields có thể dùng trong mỗi MessageLog:
+- `providerMessageId`: mã đối soát `msg_id` của Zalo.
+- `providerTrackingId`: tracking ID chữ/số do BE gửi, tối đa 48 ký tự.
+- `providerSentAt`: thời điểm server Zalo bắt đầu gửi, hoặc `null` khi Zalo không trả field này.
+- `providerDeliveredAt`: reserved cho giai đoạn delivery webhook sau này; hiện luôn có thể là `null` vì webhook Zalo đang deferred. `null` không đồng nghĩa gửi thất bại.
+- `providerQuotaDaily` và `providerQuotaRemaining`: snapshot quota Zalo lúc request được chấp nhận, có thể `null`.
 
 ## 9) Wallet & Topup (Pay2S thật — không còn mock)
 
@@ -1101,15 +1120,14 @@ Request:
 ```json
 {
   "amountExclVat": 100000,
-  "moneyAccountId": "MONEY_ACCOUNT_ID",
-  "vatRate": 10
+  "moneyAccountId": "MONEY_ACCOUNT_ID"
 }
 ```
 
 Ghi chú request:
 - `amountExclVat`: số tiền trước VAT, tối thiểu `10000` (yêu cầu của Pay2S).
 - `moneyAccountId`: bắt buộc, lấy từ mục 9.3.
-- `vatRate`: optional, mặc định `10` (%).
+- VAT là rule server-side cố định `10%`; request không nhận `vatRate`. Gửi field này sẽ bị từ chối bởi validation.
 
 Response (thành công):
 ```json
@@ -1209,7 +1227,7 @@ Request (do Pay2S gửi, shape thật — **khác hoàn toàn** kiểu `mock_gat
 Xử lý:
 - `orderId` = `topupCode` đã gửi lúc tạo link (mục 9.4).
 - `resultCode !== 0` → backend trả `{ "status": "error", "message": "Transaction failed from provider" }`, không cộng credit.
-- `resultCode === 0` → cộng credit = `amount` (số tiền Pay2S báo đã nhận, không tự tính lại từ `amountInclVat` đã lưu), tạo `WalletTransaction` (`TOPUP_CREDIT`), tạo `Order` (`PAID`) + `OrderItem`, tạo `Invoice` (`POSTED`) + `InvoiceItem` snapshot billing hiện tại của workspace.
+- `resultCode === 0` → cộng credit = `amountExclVat` đã lưu; `amountInclVat` chỉ là số tiền Pay2S phải thu. Backend tạo `WalletTransaction` (`TOPUP_CREDIT`), `Order` (`PAID`) + `OrderItem`, `Invoice` (`POSTED`) + `InvoiceItem` snapshot billing hiện tại của workspace với VAT server-side `10%`.
 - Response luôn `HTTP 200` (kể cả khi lỗi nghiệp vụ) để Pay2S không retry vô hạn.
 
 **Ghi chú vận hành (đúng thực trạng code hiện tại, không phải hành vi mong đợi):**
@@ -1360,6 +1378,18 @@ Query:
 
 Ghi chú: hai action `invoice.*` cũng ghi kèm `workspaceId` (lấy từ `invoice.workspaceId`) nên hiện ở cả `GET /admin/audit-logs` lẫn `GET /workspaces/:workspaceId/audit-logs` (mục 11.1) của đúng workspace sở hữu đơn hàng đó.
 
+## 11.2 Owner finance (order, invoice, PDF)
+
+Chỉ `OWNER` của workspace được gọi; `MEMBER` không có quyền đọc order, invoice hoặc PDF. `ADMIN` vẫn dùng các route backoffice `/admin/*` riêng.
+
+- `GET /workspaces/:workspaceId/orders`
+- `GET /workspaces/:workspaceId/orders/:orderId`
+- `GET /workspaces/:workspaceId/invoices`
+- `GET /workspaces/:workspaceId/invoices/:invoiceId`
+- `GET /workspaces/:workspaceId/invoices/:invoiceId/pdf` — chỉ invoice `ISSUED`; PDF mới được stream từ private storage qua route đã guard.
+
+PDF lịch sử mang URL `/public/invoices/...` cần migration vận hành trước khi có thể tải qua route protected. BE cung cấp `npm run migrate:legacy-invoice-pdfs` ở chế độ dry-run; DevOps chỉ dùng `-- --apply` sau backup/release window và khi dry-run không còn failure.
+
 ## 12) Public API (gọi bằng API key)
 
 Base:
@@ -1371,6 +1401,8 @@ Base:
 - Với `POST /public/messages/send` (có body, validate bằng DTO yêu cầu field `api_key`): để tránh fail DTO, gửi cả:
   - header `x-api-key: <api_key>`
   - field `api_key` trong body.
+
+Tất cả endpoint `/public/*` chặn workspace không tồn tại hoặc khác `ACTIVE`, gồm cả list/detail template (không chỉ endpoint gửi tin).
 - Mỗi lần gọi thành công, backend cập nhật `lastUsedAt` của API key.
 
 ### 12.2 List approved templates
@@ -1417,6 +1449,7 @@ Response (Zalo ZNS thật):
 Ghi chú:
 - Cùng điều kiện như mục 8: OA connected, template approved + `providerTemplateId`, đủ credit.
 - Lỗi gửi tin trả `400` kèm `messageLogId` nếu đã ghi log FAILED.
+- `status: "success"` ở response có cùng ngữ nghĩa “Zalo đã tiếp nhận yêu cầu gửi”; không phải trạng thái delivered/received.
 
 ## 13) Quick Chat — đã ngừng sử dụng
 
@@ -1497,7 +1530,7 @@ Backend trả enum **UPPER_SNAKE_CASE** (theo Prisma). FE nên map label hiển 
 | `SendType` | `TEST`, `SINGLE`, `CAMPAIGN` — **lưu ý:** hiện chỉ `SINGLE` (mục 8.1) và `CAMPAIGN` (mục 7.7) có endpoint gửi thật; `TEST` tồn tại trong enum nhưng chưa có endpoint "gửi thử" nào dùng tới |
 | `MessageStatus` | `PENDING`, `SUCCESS`, `FAILED` |
 | `CampaignStatus` | `DRAFT`, `READY`, `RUNNING`, `PAUSED`, `COMPLETED`, `FAILED`, `CANCELLED` |
-| `CampaignRowStatus` | `PENDING`, `SUCCESS`, `FAILED`, `SKIPPED` |
+| `CampaignRowStatus` | `PENDING`, `PROCESSING`, `RECONCILIATION_REQUIRED`, `SUCCESS`, `FAILED`, `SKIPPED` |
 | `ApiKeyStatus` | `ACTIVE`, `DISABLED`, `REVOKED` |
 
 Nguồn sự thật: `prisma/schema.prisma`.
