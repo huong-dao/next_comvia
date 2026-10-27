@@ -98,26 +98,9 @@ export default function SendSinglePage() {
     <div>
       <PageHeader
         // eyebrow="Messaging"
-        title="Gửi tin single"
+        title="Gửi tin"
         description="Chỉ được sử dụng các mẫu tin đã được duyệt."
       />
-
-      <div className="mb-6 grid gap-4 md:grid-cols-3">
-        <Card>
-          <p className="text-xs font-semibold uppercase text-muted-foreground">OA</p>
-          <p className="mt-2">
-            <EntityStatusBadge value={(data?.oa?.status ?? "UNKNOWN").toUpperCase()} />
-          </p>
-        </Card>
-        <Card>
-          <p className="text-xs font-semibold uppercase text-muted-foreground">Số dư ví (chủ workspace)</p>
-          <p className="mt-2 text-xl font-semibold tabular-nums">{data?.wallet?.balance != null ? formatVND(Number(data.wallet.balance)) : "—"}</p>
-        </Card>
-        <Card>
-          <p className="text-xs font-semibold uppercase text-muted-foreground">Mẫu tin nhắn đã duyệt</p>
-          <p className="mt-2 text-xl font-semibold tabular-nums">{approved.length}</p>
-        </Card>
-      </div>
 
       <Card className="max-w-2xl space-y-4">
         <div>
