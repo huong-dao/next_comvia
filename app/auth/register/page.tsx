@@ -12,6 +12,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAlertModal } from "@/components/ui/alert-modal";
 import { createDefaultOtpExpiredAt, createOtpRequestId, savePendingOtpContext } from "@/lib/otp-context";
 import { getComviaApiBaseUrl } from "@/lib/comviaFetch";
+import { getInvitationReturnPath } from "@/lib/post-auth-return";
 
 type RegisterErrors = {
   fullName?: string;
@@ -31,6 +32,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function RegisterPage() {
   const router = useRouter();
+  const returnTo = typeof window === "undefined" ? null : getInvitationReturnPath(new URLSearchParams(window.location.search).get("returnTo"));
   const { showAlert } = useAlertModal();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -110,7 +112,8 @@ export default function RegisterPage() {
         expiredAt: registerData?.expiredAt || createDefaultOtpExpiredAt(),
       });
 
-      router.push(`/auth/verify-otp?otpRequestId=${encodeURIComponent(otpRequestId)}`);
+      const verifyPath = `/auth/verify-otp?otpRequestId=${encodeURIComponent(otpRequestId)}`;
+      router.push(returnTo ? `${verifyPath}&returnTo=${encodeURIComponent(returnTo)}` : verifyPath);
     } catch (error) {
       const message =
         error instanceof Error
@@ -257,7 +260,7 @@ export default function RegisterPage() {
 
           <p className="mt-7 text-center text-[16px] text-muted-foreground">
             Đã có tài khoản?{" "}
-            <Link href="/auth/login" className="font-semibold text-primary hover:text-primary-hover">
+            <Link href={returnTo ? `/auth/login?returnTo=${encodeURIComponent(returnTo)}` : "/auth/login"} className="font-semibold text-primary hover:text-primary-hover">
               Đăng nhập
             </Link>
           </p>

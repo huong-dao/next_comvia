@@ -6,9 +6,8 @@ import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { isWorkspaceOwner, useWorkspaceContext } from "@/components/workspace/workspace-gate";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
-import { Input, Select } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { SimpleTable } from "@/components/ui/simple-table";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
@@ -39,10 +38,8 @@ export default function MembersPage() {
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId), fetcher);
 
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [inviteType, setInviteType] = useState<"EMAIL" | "PHONE">("EMAIL");
   const [inviteValue, setInviteValue] = useState("");
   const [inviteBusy, setInviteBusy] = useState(false);
-  const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
 
   async function invite() {
@@ -50,22 +47,20 @@ export default function MembersPage() {
     if (!token) return;
     setInviteBusy(true);
     setMsg(null);
-    setInviteToken(null);
     try {
-      const res = await comviaFetch<{ token?: string; id?: string }>(
+      await comviaFetch<{ id?: string; expiredAt?: string }>(
         `/workspaces/${workspaceId}/invitations`,
         {
           method: "POST",
           token,
           body: JSON.stringify({
-            inviteType,
+            inviteType: "EMAIL",
             inviteValue: inviteValue.trim(),
             role: "MEMBER",
           }),
         },
       );
-      setInviteToken(res.token ?? null);
-      setMsg("Đã tạo lời mời.");
+      setMsg("Đã gửi email mời thành viên.");
       void refetch();
     } catch (e) {
       setMsg(e instanceof ComviaApiError ? e.message : "Không mời được.");
@@ -159,22 +154,13 @@ export default function MembersPage() {
           </>
         }
       >
-        <Select value={inviteType} onChange={(e) => setInviteType(e.target.value as "EMAIL" | "PHONE")}>
-          <option value="EMAIL">Email</option>
-          <option value="PHONE">Số điện thoại</option>
-        </Select>
         <Input
-          placeholder={inviteType === "EMAIL" ? "email@company.com" : "84901234567"}
+          type="email"
+          placeholder="email@company.com"
           value={inviteValue}
           onChange={(e) => setInviteValue(e.target.value)}
         />
         {msg ? <p className="text-sm text-muted-foreground">{msg}</p> : null}
-        {inviteToken ? (
-          <Card className="bg-surface-muted p-3">
-            <p className="text-xs font-semibold uppercase text-muted-foreground">Token mời (demo)</p>
-            <p className="mt-1 break-all font-mono text-xs">{inviteToken}</p>
-          </Card>
-        ) : null}
       </Modal>
     </div>
   );

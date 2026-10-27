@@ -12,6 +12,7 @@ import { useAlertModal } from "@/components/ui/alert-modal";
 import { saveAuthSession } from "@/lib/auth";
 import { resolvePostLoginPath } from "@/lib/post-login-redirect";
 import { getComviaApiBaseUrl } from "@/lib/comviaFetch";
+import { getInvitationReturnPath } from "@/lib/post-auth-return";
 import {
   clearPendingOtpContext,
   createDefaultOtpExpiredAt,
@@ -39,6 +40,7 @@ function VerifyOtpContent() {
   const { showAlert } = useAlertModal();
 
   const otpRequestId = searchParams.get("otpRequestId") ?? "";
+  const returnTo = getInvitationReturnPath(searchParams.get("returnTo"));
   const [email, setEmail] = useState("");
   const [purpose, setPurpose] = useState("REGISTER");
   const [otpCode, setOtpCode] = useState("");
@@ -168,7 +170,7 @@ function VerifyOtpContent() {
       });
       clearPendingOtpContext(otpRequestId);
 
-      router.push(await resolvePostLoginPath(data.user?.role, data.accessToken));
+      router.push(returnTo ?? await resolvePostLoginPath(data.user?.role, data.accessToken));
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Không thể kết nối server. Kiểm tra backend ở localhost:3000.";
@@ -349,7 +351,7 @@ function VerifyOtpContent() {
               </Button>
 
               <div className="flex justify-center">
-                <Link href="/auth/register">
+                <Link href={returnTo ? `/auth/register?returnTo=${encodeURIComponent(returnTo)}` : "/auth/register"}>
                   <Button variant="ghost" className="text-primary hover:text-primary-hover">
                     <HiOutlinePencil className="size-4" />
                     Đổi email đăng ký
@@ -361,7 +363,7 @@ function VerifyOtpContent() {
 
           <p className="mt-6 text-base text-muted-foreground">
             Quay lại{" "}
-            <Link href="/auth/login" className="font-semibold text-primary hover:text-primary-hover">
+            <Link href={returnTo ? `/auth/login?returnTo=${encodeURIComponent(returnTo)}` : "/auth/login"} className="font-semibold text-primary hover:text-primary-hover">
               Đăng nhập
             </Link>
           </p>

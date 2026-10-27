@@ -15,6 +15,7 @@ import { getAccessToken, getStoredUser, saveAuthSession } from "@/lib/auth";
 import { createDefaultOtpExpiredAt, createOtpRequestId, savePendingOtpContext } from "@/lib/otp-context";
 import { resolvePostLoginPath } from "@/lib/post-login-redirect";
 import { getComviaApiBaseUrl } from "@/lib/comviaFetch";
+import { getInvitationReturnPath } from "@/lib/post-auth-return";
 
 type LoginErrors = {
   email?: string;
@@ -44,6 +45,7 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function LoginPage() {
   const router = useRouter();
+  const returnTo = typeof window === "undefined" ? null : getInvitationReturnPath(new URLSearchParams(window.location.search).get("returnTo"));
   const { showAlert } = useAlertModal();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -58,13 +60,13 @@ export default function LoginPage() {
     if (token) {
       let cancelled = false;
       void resolvePostLoginPath(getStoredUser()?.role, token).then((path) => {
-        if (!cancelled) router.replace(path);
+        if (!cancelled) router.replace(returnTo ?? path);
       });
       return () => {
         cancelled = true;
       };
     }
-  }, [router]);
+  }, [returnTo, router]);
 
   function validate(nextEmail: string, nextPassword: string) {
     const nextErrors: LoginErrors = {};
@@ -190,7 +192,7 @@ export default function LoginPage() {
         remember,
       });
 
-      router.push(await resolvePostLoginPath(data.user?.role, data.accessToken));
+      router.push(returnTo ?? await resolvePostLoginPath(data.user?.role, data.accessToken));
     } catch (error) {
       const message =
         error instanceof Error
@@ -356,7 +358,7 @@ export default function LoginPage() {
 
           <p className="mt-7 text-center text-[16px] text-muted-foreground dark:text-[#b7c3dc]">
             Chưa có tài khoản?{" "}
-            <Link href="/auth/register" className="font-semibold text-primary hover:text-primary-hover">
+            <Link href={returnTo ? `/auth/register?returnTo=${encodeURIComponent(returnTo)}` : "/auth/register"} className="font-semibold text-primary hover:text-primary-hover">
               Đăng ký ngay
             </Link>
           </p>
