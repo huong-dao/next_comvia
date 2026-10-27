@@ -84,6 +84,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
   const status = (data?.status ?? "").toUpperCase();
   const requiresOwnerRevision = Boolean(data?.requiresOwnerRevision);
   const editable = status === "DRAFT" || (status === "SUBMITTED" && requiresOwnerRevision);
+  const formDisabled = saving || !editable;
   const canSubmit = owner && editable;
   const canDisable = owner && status !== "DISABLED";
 
@@ -166,23 +167,10 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
   if (loading) return <PageLoading message="Đang tải mẫu tin…" />;
   if (error && !data) return <PageError message={error} onRetry={() => void refetch()} />;
   if (!data) return null;
-  if (!editable) {
-    return (
-      <div className="space-y-4 pb-4">
-        <p className="text-sm text-muted-foreground">Mẫu tin đang được Staff hoặc Zalo xử lý nên chưa thể chỉnh sửa.</p>
-        {message ? <p className="text-sm text-danger">{message}</p> : null}
-        {canDisable ? (
-          <Button type="button" variant="outline" icon={<HiLockClosed className="size-4" />} disabled={saving} onClick={() => void disableTemplate()}>
-            {saving ? "Đang khóa…" : "Khóa (Chủ Workspace)"}
-          </Button>
-        ) : null}
-      </div>
-    );
-  }
-
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,600px)]">
       <Card className="min-w-0 space-y-4">
+        {!editable ? <p className="text-sm text-muted-foreground">Mẫu tin ở chế độ chỉ xem; nội dung đã được duyệt hoặc đang xử lý nên không thể chỉnh sửa.</p> : null}
         {requiresOwnerRevision ? (
           <div className="rounded-xl border border-border bg-surface-muted/60 p-3 text-sm">
             <p className="font-semibold text-foreground">Zalo yêu cầu chỉnh sửa mẫu tin</p>
@@ -192,15 +180,15 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
         ) : null}
         <div>
           <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tên mẫu tin</label>
-          <Input value={name} disabled={saving} onChange={(event) => setName(event.target.value)} />
+          <Input value={name} disabled={formDisabled} onChange={(event) => setName(event.target.value)} />
         </div>
         <div>
           <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung</label>
-          <Textarea rows={12} value={content} disabled={saving} onChange={(event) => setContent(event.target.value)} />
+          <Textarea rows={12} value={content} disabled={formDisabled} onChange={(event) => setContent(event.target.value)} />
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Các trường thông tin</p>
-          <Button type="button" variant="outline" size="sm" icon={<HiOutlinePlus className="size-4" />} disabled={saving} onClick={() => setPlaceholderRows((rows) => [...rows, newPlaceholderRow()])}>
+          <Button type="button" variant="outline" size="sm" icon={<HiOutlinePlus className="size-4" />} disabled={formDisabled} onClick={() => setPlaceholderRows((rows) => [...rows, newPlaceholderRow()])}>
             Thêm trường
           </Button>
         </div>
@@ -210,29 +198,29 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
             <li key={row.id} className="grid gap-2 rounded-xl border border-border/60 bg-surface-muted/40 p-3 sm:grid-cols-[1fr_1fr_1fr_auto]">
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">Nhãn</label>
-                <Input value={row.label} disabled={saving} onChange={(event) => updateRow(row.id, { label: event.target.value })} placeholder="vd: Họ và tên" />
+                <Input value={row.label} disabled={formDisabled} onChange={(event) => updateRow(row.id, { label: event.target.value })} placeholder="vd: Họ và tên" />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">Biến</label>
-                <Input value={row.slug} disabled={saving} onChange={(event) => updateRow(row.id, { slug: event.target.value })} placeholder="vd: name" className="font-mono text-sm" aria-invalid={row.slug.trim().length > 0 && !slugLooksValid(row.slug.trim())} />
+                <Input value={row.slug} disabled={formDisabled} onChange={(event) => updateRow(row.id, { slug: event.target.value })} placeholder="vd: name" className="font-mono text-sm" aria-invalid={row.slug.trim().length > 0 && !slugLooksValid(row.slug.trim())} />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">Giá trị mẫu</label>
-                <Input value={row.defaultValue} disabled={saving} onChange={(event) => updateRow(row.id, { defaultValue: event.target.value })} placeholder="vd: Nguyễn Văn A" />
+                <Input value={row.defaultValue} disabled={formDisabled} onChange={(event) => updateRow(row.id, { defaultValue: event.target.value })} placeholder="vd: Nguyễn Văn A" />
               </div>
               <div className="flex items-end justify-end sm:justify-center">
-                <Button type="button" variant="ghost" size="sm" disabled={saving} className="shrink-0 px-2 text-muted-foreground hover:text-danger" title="Xóa trường" aria-label="Xóa trường" icon={<HiOutlineTrash className="size-4" />} onClick={() => removeRow(row.id)} />
+                <Button type="button" variant="ghost" size="sm" disabled={formDisabled} className="shrink-0 px-2 text-muted-foreground hover:text-danger" title="Xóa trường" aria-label="Xóa trường" icon={<HiOutlineTrash className="size-4" />} onClick={() => removeRow(row.id)} />
               </div>
             </li>
           ))}
         </ul>
         {!placeholdersParsed.ok ? <p className="text-xs text-danger">{placeholdersParsed.message}</p> : null}
-        <TemplateCtaFields buttons={ctaButtons} onChange={setCtaButtons} disabled={saving} />
+        <TemplateCtaFields buttons={ctaButtons} onChange={setCtaButtons} disabled={formDisabled} />
         {message ? <p className="text-sm text-danger">{message}</p> : null}
         <div className="flex flex-wrap gap-2">
-          <Button type="button" icon={<HiOutlineDocumentCheck className="size-4" />} disabled={saving} onClick={() => void save()}>
+          {editable ? <Button type="button" icon={<HiOutlineDocumentCheck className="size-4" />} disabled={saving} onClick={() => void save()}>
             {saving ? "Đang lưu…" : "Lưu thay đổi"}
-          </Button>
+          </Button> : null}
           {canSubmit ? (
             <Button type="button" variant="accent" icon={<HiOutlineDocumentArrowUp className="size-4" />} disabled={saving} onClick={() => void submitTemplate()}>
               {saving ? "Đang xử lý…" : requiresOwnerRevision ? "Gửi lại Staff xử lý" : "Gửi Staff xử lý"}
