@@ -3,16 +3,12 @@
 import { useCallback } from "react";
 import Link from "next/link";
 import {
-  HiOutlineBolt,
-  HiOutlineChatBubbleLeftRight,
   HiOutlineClipboardDocumentList,
-  HiOutlineCog6Tooth,
   HiOutlineCreditCard,
   HiOutlineCurrencyDollar,
   HiOutlineRectangleStack,
   HiOutlineShoppingCart,
   HiOutlineUsers,
-  HiOutlineWrenchScrewdriver,
 } from "react-icons/hi2";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
@@ -54,36 +50,6 @@ const adminLinks = [
     href: "/admin/audit-logs",
     icon: HiOutlineClipboardDocumentList,
   },
-  // {
-  //   title: "Quick Chat Agents",
-  //   description: "Quản lý agent nội bộ dành cho quick chat admin.",
-  //   href: "/admin/quick-chat/agents",
-  //   icon: HiOutlineCog6Tooth,
-  // },
-  // {
-  //   title: "Quick Chat Tools",
-  //   description: "Tra cứu danh sách tool name và sao chép nhanh.",
-  //   href: "/admin/quick-chat/tools",
-  //   icon: HiOutlineWrenchScrewdriver,
-  // },
-  // {
-  //   title: "Internal Quick Chat",
-  //   description: "Playground nội bộ cho session, message và confirm action.",
-  //   href: "/admin/internal-quick-chat",
-  //   icon: HiOutlineChatBubbleLeftRight,
-  // },
-  // {
-  //   title: "Dev Payment Webhook",
-  //   description: "Form mock webhook nạp tiền cho dev/demo.",
-  //   href: "/admin/dev/payment-webhook",
-  //   icon: HiOutlineCreditCard,
-  // },
-  // {
-  //   title: "Staff Review Queue",
-  //   description: "Chức năng review template nội bộ nằm ở khu STAFF.",
-  //   href: "/staff/templates-review/submitted",
-  //   icon: HiOutlineBolt,
-  // },
   {
     title: "Đơn hàng",
     description: "Danh sách đơn toàn hệ thống, phân trang và lọc theo admin API.",
@@ -129,11 +95,6 @@ export default function AdminOverviewPage() {
           <PageHeader
             title="Tổng quan quản lý nội bộ"
             description="Trung tâm vận hành nội bộ."
-            // actions={
-            //   <Button asChild icon={<HiOutlineChatBubbleLeftRight className="size-4" />}>
-            //     <Link href="/admin/internal-quick-chat">Mở Internal Quick Chat</Link>
-            //   </Button>
-            // }
           />
           <div className="grid gap-4 md:grid-cols-3">
             <Card className="space-y-2">

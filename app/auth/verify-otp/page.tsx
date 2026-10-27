@@ -11,6 +11,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAlertModal } from "@/components/ui/alert-modal";
 import { saveAuthSession } from "@/lib/auth";
 import { resolvePostLoginPath } from "@/lib/post-login-redirect";
+import { getComviaApiBaseUrl } from "@/lib/comviaFetch";
 import {
   clearPendingOtpContext,
   createDefaultOtpExpiredAt,
@@ -123,7 +124,7 @@ function VerifyOtpContent() {
     setIsSubmitting(true);
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || "http://localhost:3000";
+      const baseUrl = getComviaApiBaseUrl();
 
       const response = await fetch(`${baseUrl}/auth/otp/verify`, {
         method: "POST",
@@ -183,7 +184,7 @@ function VerifyOtpContent() {
     setIsResending(true);
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || "http://localhost:3000";
+      const baseUrl = getComviaApiBaseUrl();
       const response = await fetch(`${baseUrl}/auth/otp/resend`, {
         method: "POST",
         headers: {
@@ -247,11 +248,15 @@ function VerifyOtpContent() {
           <Image
               src="/images/comvia_light_logo.png"
               alt="COMVIA"
+              width={176}
+              height={46}
               className="cv-light-logo h-[46px] block dark:hidden"
             />
             <Image
               src="/images/comvia_dark_logo.png"
               alt="COMVIA"
+              width={176}
+              height={46}
               className="cv-dark-logo h-[46px] hidden dark:block"
             />
           </Link>

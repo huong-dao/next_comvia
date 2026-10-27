@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAlertModal } from "@/components/ui/alert-modal";
 import { createDefaultOtpExpiredAt, createOtpRequestId, savePendingOtpContext } from "@/lib/otp-context";
+import { getComviaApiBaseUrl } from "@/lib/comviaFetch";
 
 type RegisterErrors = {
   fullName?: string;
@@ -68,7 +69,7 @@ export default function RegisterPage() {
     setErrors({});
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || "http://localhost:3000";
+      const baseUrl = getComviaApiBaseUrl();
 
       const response = await fetch(`${baseUrl}/auth/register`, {
         method: "POST",
@@ -141,11 +142,15 @@ export default function RegisterPage() {
           <Image
               src="/images/comvia_light_logo.png"
               alt="COMVIA"
+              width={176}
+              height={46}
               className="cv-light-logo h-[46px] block dark:hidden"
             />
             <Image
               src="/images/comvia_dark_logo.png"
               alt="COMVIA"
+              width={176}
+              height={46}
               className="cv-dark-logo h-[46px] hidden dark:block"
             />
           </Link>

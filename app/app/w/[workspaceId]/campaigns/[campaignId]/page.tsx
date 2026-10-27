@@ -628,6 +628,7 @@ export default function CampaignDetailPage() {
 
       {editRow ? (
         <CampaignRowEditModal
+          key={editRow.id}
           open={Boolean(editRow)}
           placeholderKeys={placeholderKeys}
           initialPhone={editRow.phoneNumber ?? ""}

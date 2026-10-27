@@ -7,9 +7,9 @@ import { PageForbidden } from "@/components/app/page-state";
 import { isWorkspaceOwner, useWorkspaceContext } from "@/components/workspace/workspace-gate";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input, Select, Textarea } from "@/components/ui/input";
+import { Input, Select } from "@/components/ui/input";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
-import { getAccessToken, getStoredUser } from "@/lib/auth";
+import { getAccessToken } from "@/lib/auth";
 import { formatVND } from "@/lib/utils";
 import { HiQrCode } from "react-icons/hi2";
 
@@ -46,13 +46,6 @@ export default function TopupPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  const [whProvider, setWhProvider] = useState("mock_gateway");
-  const [whEvent, setWhEvent] = useState("EVT_DEMO_1");
-  const [whCode, setWhCode] = useState("");
-  const [whAmount, setWhAmount] = useState("110000");
-  const [whBusy, setWhBusy] = useState(false);
-  const [whMsg, setWhMsg] = useState<string | null>(null);
-
   const [moneyAccounts, setMoneyAccounts] = useState<MoneyAccountRow[]>([]);
   const [moneyAccountId, setMoneyAccountId] = useState("");
 
@@ -65,12 +58,6 @@ export default function TopupPage() {
     const n = Number(amount.replace(/\D/g, "")) || 0;
     return n + vat;
   }, [amount, vat]);
-
-  const isAdmin = (getStoredUser()?.role ?? "").toUpperCase() === "ADMIN";
-
-  if (!owner) {
-    return <PageForbidden message="Chỉ Owner mới được tạo QR nạp tiền." backHref={`/app/w/${workspaceId}/wallet`} />;
-  }
 
   const fetchMoneyAccounts = async () => {
     try {
@@ -90,6 +77,10 @@ export default function TopupPage() {
   useEffect(() => {
     void fetchMoneyAccounts();
   }, []);
+
+  if (!owner) {
+    return <PageForbidden message="Chỉ Owner mới được tạo QR nạp tiền." backHref={`/app/w/${workspaceId}/wallet`} />;
+  }
 
   async function createQr() {
     const token = getAccessToken();
@@ -112,36 +103,10 @@ export default function TopupPage() {
         body: JSON.stringify({ amountExclVat: n, moneyAccountId: moneyAccountId }),
       });
       setQr(res);
-      setWhCode(res.topupCode ?? "");
     } catch (e) {
       setErr(e instanceof ComviaApiError ? e.message : "Không tạo được QR.");
     } finally {
       setBusy(false);
-    }
-  }
-
-  async function sendWebhook(success: boolean) {
-    const token = getAccessToken();
-    if (!token) return;
-    setWhBusy(true);
-    setWhMsg(null);
-    try {
-      await comviaFetch(`/topups/webhook`, {
-        method: "POST",
-        token,
-        body: JSON.stringify({
-          provider: whProvider,
-          eventId: whEvent,
-          topupCode: whCode,
-          status: success ? "success" : "failed",
-          amountInclVat: Number(whAmount.replace(/\D/g, "")) || 0,
-        }),
-      });
-      setWhMsg(success ? "Webhook success đã gửi." : "Webhook failed đã gửi.");
-    } catch (e) {
-      setWhMsg(e instanceof ComviaApiError ? e.message : "Webhook lỗi (cần role ADMIN).");
-    } finally {
-      setWhBusy(false);
     }
   }
 
@@ -251,30 +216,6 @@ export default function TopupPage() {
         </Card>
       </div>
 
-      {isAdmin ? (
-        <Card className="mt-6 space-y-4">
-          <p className="text-sm font-semibold text-foreground">Mô phỏng webhook (ADMIN)</p>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Input value={whProvider} onChange={(e) => setWhProvider(e.target.value)} placeholder="provider" />
-            <Input value={whEvent} onChange={(e) => setWhEvent(e.target.value)} placeholder="eventId" />
-            <Input value={whCode} onChange={(e) => setWhCode(e.target.value)} placeholder="topupCode" />
-            <Input value={whAmount} onChange={(e) => setWhAmount(e.target.value)} placeholder="amountInclVat" />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="secondary" disabled={whBusy} onClick={() => void sendWebhook(true)}>
-              Webhook success
-            </Button>
-            <Button type="button" variant="outline" disabled={whBusy} onClick={() => void sendWebhook(false)}>
-              Webhook failed
-            </Button>
-          </div>
-          {whMsg ? <p className="text-sm text-muted-foreground">{whMsg}</p> : null}
-        </Card>
-      ) : (
-        <p className="mt-4 text-xs text-muted-foreground">
-          Vui lòng liên hệ số điện thoại 0909090909 nếu có bất kỳ lỗi liên quan đến nạp tiền.
-        </p>
-      )}
     </div>
   );
 }

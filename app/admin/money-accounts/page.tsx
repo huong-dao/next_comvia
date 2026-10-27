@@ -1,14 +1,12 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { HiOutlineXMark, HiOutlinePlus, HiOutlinePencilSquare, HiOutlineCheckCircle } from "react-icons/hi2";
+import { HiOutlineXMark, HiOutlinePlus, HiOutlineCheckCircle } from "react-icons/hi2";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { AdminRoleGate } from "@/components/admin/role-gate";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
-import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { SimpleTable } from "@/components/ui/simple-table";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
@@ -30,7 +28,9 @@ type MoneyAccountRow = {
 export default function AdminMoneyAccountPage() {
     const fetcher = useCallback((token: string) => comviaFetch<MoneyAccountRow[]>("/money-accounts/all", { token }), []);
     const { data, loading, error, refetch } = useComviaQuery(true, fetcher);
-    const rows: MoneyAccountRow[] = (data as any)?.data || [];
+    const rows: MoneyAccountRow[] = Array.isArray(data)
+      ? data
+      : (data as unknown as { data?: MoneyAccountRow[] } | undefined)?.data ?? [];
 
     const [editingId, setEditingId] = useState<string | null>(null);
 

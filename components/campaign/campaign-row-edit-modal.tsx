@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,12 +24,6 @@ export function CampaignRowEditModal({
 }) {
   const [phone, setPhone] = useState(initialPhone);
   const [fields, setFields] = useState<Record<string, string>>(initialPayload);
-
-  useEffect(() => {
-    if (!open) return;
-    setPhone(initialPhone);
-    setFields(initialPayload);
-  }, [open, initialPhone, initialPayload]);
 
   return (
     <Modal

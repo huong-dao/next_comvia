@@ -27,7 +27,7 @@ function OaOAuthCallbackContent() {
 
     const workspaceId = result.workspaceId ?? consumeOaOAuthWorkspace();
     if (!workspaceId) {
-      setMissingWorkspace(true);
+      queueMicrotask(() => setMissingWorkspace(true));
       return;
     }
 

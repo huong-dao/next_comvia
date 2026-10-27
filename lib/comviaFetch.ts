@@ -36,7 +36,9 @@ function parseErrorMessage(data: ComviaApiErrorBody | null, fallback: string) {
 
 /** Cùng quy ước với trang auth: ưu tiên env, dev fallback localhost backend Nest mặc định. */
 export function getComviaApiBaseUrl() {
-  return process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || "http://localhost:3000";
+  const configured = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || "http://localhost:3000";
+  const baseUrl = configured.replace(/\/$/, "");
+  return /\/api\/v\d+$/.test(baseUrl) ? baseUrl : `${baseUrl}/api/v1`;
 }
 
 /**

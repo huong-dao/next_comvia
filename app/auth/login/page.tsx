@@ -14,6 +14,7 @@ import { cn } from "@/lib/cn";
 import { getAccessToken, getStoredUser, saveAuthSession } from "@/lib/auth";
 import { createDefaultOtpExpiredAt, createOtpRequestId, savePendingOtpContext } from "@/lib/otp-context";
 import { resolvePostLoginPath } from "@/lib/post-login-redirect";
+import { getComviaApiBaseUrl } from "@/lib/comviaFetch";
 
 type LoginErrors = {
   email?: string;
@@ -134,7 +135,7 @@ export default function LoginPage() {
     setErrors({});
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim() || "http://localhost:3000";
+      const baseUrl = getComviaApiBaseUrl();
 
       const response = await fetch(`${baseUrl}/auth/login`, {
         method: "POST",
@@ -228,11 +229,15 @@ export default function LoginPage() {
             <Image
               src="/images/comvia_light_logo.png"
               alt="COMVIA"
+              width={176}
+              height={46}
               className="cv-light-logo h-[46px] block dark:hidden"
             />
             <Image
               src="/images/comvia_dark_logo.png"
               alt="COMVIA"
+              width={176}
+              height={46}
               className="cv-dark-logo h-[46px] hidden dark:block"
             />
           </Link>

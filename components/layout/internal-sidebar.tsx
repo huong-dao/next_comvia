@@ -66,30 +66,6 @@ const adminNav: NavItem[] = [
     href: "/admin/config/message-pricing",
     match: (p) => p.startsWith("/admin/config/message-pricing"),
   },
-  // {
-  //   label: "QC — Agents",
-  //   icon: HiOutlineCog6Tooth,
-  //   href: "/admin/quick-chat/agents",
-  //   match: (p) => p.startsWith("/admin/quick-chat/agents"),
-  // },
-  // {
-  //   label: "QC — Tools",
-  //   icon: HiOutlineWrenchScrewdriver,
-  //   href: "/admin/quick-chat/tools",
-  //   match: (p) => p.startsWith("/admin/quick-chat/tools"),
-  // },
-  // {
-  //   label: "Internal Quick Chat",
-  //   icon: HiOutlineChatBubbleLeftRight,
-  //   href: "/admin/internal-quick-chat",
-  //   match: (p) => p.startsWith("/admin/internal-quick-chat"),
-  // },
-  // {
-  //   label: "Dev — Webhook nạp tiền",
-  //   icon: HiOutlineCreditCard,
-  //   href: "/admin/dev/payment-webhook",
-  //   match: (p) => p.startsWith("/admin/dev/payment-webhook"),
-  // },
 ];
 
 const staffNav: NavItem[] = [
@@ -132,11 +108,15 @@ export function InternalSidebar({
             <Image
                 src="/images/comvia_light_logo.png"
                 alt="COMVIA"
+                width={176}
+                height={46}
                 className="cv-light-logo h-[46px] block dark:hidden"
               />
               <Image
                 src="/images/comvia_dark_logo.png"
                 alt="COMVIA"
+                width={176}
+                height={46}
                 className="cv-dark-logo h-[46px] hidden dark:block"
               />
             </div>
