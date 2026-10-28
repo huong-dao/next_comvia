@@ -253,8 +253,7 @@ export default function SendSinglePage() {
         {selected ? (
           <Card className="flex min-w-0 flex-col gap-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Xem trước</p>
-            <div className="overflow-auto rounded-xl bg-surface-muted p-4">
-              <TemplatePreview
+            <TemplatePreview
                 type={toPreviewType(selected.type)}
                 title={selected.title ?? ""}
                 content={selected.content ?? ""}
@@ -264,7 +263,6 @@ export default function SendSinglePage() {
                 minutes={String(selected.otpExpiryMinutes ?? 5)}
                 ctaButtons={(selected.ctaButtons ?? []).map((b) => ({ ...b, label: b.label ?? "", target: b.target ?? "" }))}
               />
-            </div>
           </Card>
         ) : null}
       </div>
