@@ -223,6 +223,9 @@ export default function ApiKeysPage() {
           <Card className="bg-surface-muted p-3">
             <p className="text-xs font-semibold uppercase text-danger">Lưu ngay — chỉ hiện một lần</p>
             <p className="mt-1 break-all font-mono text-xs">{rawKey}</p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Bạn sẽ không xem lại được key này sau khi đóng. Nếu mất key, hãy tạo lại key mới.
+            </p>
           </Card>
         ) : null}
       </Modal>
@@ -264,8 +267,11 @@ export default function ApiKeysPage() {
         <p className="text-sm text-muted-foreground">Key cũ sẽ mất hiệu lực sau khi tạo lại thành công.</p>
         {rawKey ? (
           <Card className="bg-surface-muted p-3">
-            <p className="text-xs font-semibold uppercase text-danger">Key mới</p>
+            <p className="text-xs font-semibold uppercase text-danger">Key mới — lưu ngay, chỉ hiện một lần</p>
             <p className="mt-1 break-all font-mono text-xs">{rawKey}</p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Bạn sẽ không xem lại được key này sau khi đóng. Nếu mất key, hãy tạo lại key mới.
+            </p>
           </Card>
         ) : null}
       </Modal>
