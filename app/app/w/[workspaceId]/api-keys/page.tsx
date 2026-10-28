@@ -121,6 +121,7 @@ export default function ApiKeysPage() {
     setCreateOpen(false);
     setName("");
     setHint("");
+    setRawKey(null);
   }
 
   if (loading) return <PageLoading />;
@@ -208,9 +209,11 @@ export default function ApiKeysPage() {
                 Copy API Key
               </Button>
             ) : null}
-            <Button icon={<HiCheck className="size-4" />} type="button" disabled={busy} onClick={() => void createKey()}>
-              {busy ? "Đang tạo…" : "Tạo"}
-            </Button>
+            {!rawKey ? (
+              <Button icon={<HiCheck className="size-4" />} type="button" disabled={busy} onClick={() => void createKey()}>
+                {busy ? "Đang tạo…" : "Tạo"}
+              </Button>
+            ) : null}
           </>
         }
       >
