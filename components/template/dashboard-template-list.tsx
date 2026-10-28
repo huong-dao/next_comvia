@@ -15,6 +15,7 @@ import { TemplateEditForm } from "@/components/template/template-edit-form";
 import { useToast } from "@/components/ui/toast";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { workspacePath } from "@/lib/paths";
+import { TEMPLATE_STATUS_LABELS } from "@/lib/status-labels";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { formatDate } from "@/lib/utils";
 
@@ -145,7 +146,7 @@ export function DashboardTemplateList({ className }: { className?: string }) {
               },
               {
                 key: "code",
-                header: "Mã template",
+                header: "Mã mẫu tin",
                 cell: (r) => <span className="font-mono text-xs">{r.code ?? "—"}</span>,
               },
               {
@@ -157,7 +158,12 @@ export function DashboardTemplateList({ className }: { className?: string }) {
               {
                 key: "status",
                 header: "Trạng thái",
-                cell: (r) => (r.status ? <EntityStatusBadge value={r.status} /> : "—"),
+                cell: (r) =>
+                  r.status ? (
+                    <EntityStatusBadge value={r.status} label={TEMPLATE_STATUS_LABELS[r.status.toUpperCase()]} />
+                  ) : (
+                    "—"
+                  ),
               },
               {
                 key: "updated",
