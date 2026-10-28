@@ -804,7 +804,6 @@ Field mới (BR-05):
 | `content` | string | Bắt buộc khi `TEXT`/`TABLE`; bỏ khi `OTP` |
 | `secondaryContent` | string | Chỉ dùng khi `type = TABLE` ("nội dung phụ") |
 | `otpExpiryMinutes` | int ≥ 1 | Bắt buộc khi `type = OTP` |
-| `placeholderLabels` | object `{ slug: nhãn }` | Không. Nhãn hiển thị cho từng key trong `placeholdersJson`; không thay đổi `placeholdersJson` |
 
 Ghi chú:
 - `code` do backend gán khi tạo: chuỗi **6 chữ số**, random trong khoảng **100000–999999**, **unique trong workspace**. Frontend lấy `code` từ **response** của `POST` (cùng các field như list/get).
@@ -833,7 +832,7 @@ Mỗi phần tử gồm các field:
 | `secondaryContent` | string \| null | Chỉ có ý nghĩa với `TABLE` |
 | `otpExpiryMinutes` | int \| null | Chỉ có với `OTP` |
 | `placeholdersJson` | object \| null | Định nghĩa placeholder; `data` khi send phải khớp field này |
-| `placeholderLabels` | object \| null | Nhãn hiển thị theo key của `placeholdersJson`; `null` khi chưa có nhãn |
+| `placeholder_labels` | object \| null | Nhãn hiển thị theo slug placeholder, ví dụ `{ "name": "Tên khách" }`. `null` (template cũ) nghĩa là FE dùng slug làm nhãn |
 | `status` | enum | Trạng thái duyệt (ví dụ `DRAFT`, `SUBMITTED`, `APPROVED`, `DISABLED`) |
 | `createdAt` / `updatedAt` | datetime | |
 | `requiresOwnerRevision` | boolean | `true` khi staff trả về để Owner sửa |
@@ -850,14 +849,16 @@ Ghi chú:
 ### 7.3 Get template
 - `GET /workspaces/:workspaceId/templates/:templateId`
 
+Response có thêm `placeholder_labels` (xem bảng field ở mục 7.2).
+
 ### 7.4 Update template
 - `PATCH /workspaces/:workspaceId/templates/:templateId`
 
 Ghi chú:
 - Chỉ sửa nội dung khi `DRAFT` hoặc `SUBMITTED` có `requiresOwnerRevision=true`; các trạng thái khác trả `409`. `APPROVED` chỉ cho ADMIN cập nhật riêng giá theo whitelist của service, không sửa nội dung.
 - STAFF không được sửa nội dung template. `code` của USER bị chặn `403`; quyền đổi code vẫn chịu kiểm tra trạng thái và vai trò ở service.
+- `placeholder_labels`: gửi object `{ "<slug>": "<nhãn>" }` để cập nhật; mọi value phải là string, nếu không trả `400`. Gửi `null` để xóa nhãn về `NULL` (FE dùng slug). Bỏ qua field thì giữ nguyên. Chịu cùng quy tắc sửa nội dung ở trên. Không đổi `placeholdersJson`.
 - `unitPricePerMessage` (VND/tin): chỉ `ADMIN` set; nếu null thì dùng giá mặc định từ `GET /admin/config/message-pricing`.
-- `placeholderLabels` (object `{ slug: nhãn }`, không bắt buộc): gửi kèm khi sửa nội dung để lưu nhãn placeholder; cùng quy tắc trạng thái với `placeholdersJson`.
 
 ### 7.5 Submit template
 - `POST /workspaces/:workspaceId/templates/:templateId/submit`
