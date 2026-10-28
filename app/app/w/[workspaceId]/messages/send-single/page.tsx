@@ -34,6 +34,12 @@ type WalletBalance = { balance?: string };
 
 const PHONE_PATTERN = /^84\d{8,10}$/;
 
+/** Chỉ giữ chữ số; số bắt đầu bằng 0 được đổi thành mã quốc gia 84. */
+function normalizePhoneInput(value: string) {
+  const digits = value.replace(/\D/g, "");
+  return digits.startsWith("0") ? `84${digits.slice(1)}` : digits;
+}
+
 function fieldKeysOf(template?: TemplateRow): string[] {
   if (!template) return [];
   const keys = Object.keys(template.placeholdersJson ?? {});
@@ -214,7 +220,7 @@ export default function SendSinglePage() {
             </label>
             <Input
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => setPhone(normalizePhoneInput(e.target.value))}
               placeholder="84901234567"
               inputMode="numeric"
             />
