@@ -88,7 +88,7 @@ export function DashboardTemplateList({ className }: { className?: string }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
           <HiOutlineDocumentText className="size-5 text-primary" aria-hidden />
-          Danh sách mẫu tin ZBS Template
+          Danh sách mẫu tin ZBS
         </h2>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" size="sm" icon={<HiOutlineArrowRight className="size-4" />} asChild>
