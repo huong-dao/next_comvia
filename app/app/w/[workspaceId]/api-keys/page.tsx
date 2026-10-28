@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useCallback, useState } from "react";
+import { ApiUsageGuide } from "@/components/api-key/api-usage-guide";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageForbidden, PageLoading } from "@/components/app/page-state";
 import { isWorkspaceOwner, useWorkspaceContext } from "@/components/workspace/workspace-gate";
@@ -189,6 +190,8 @@ export default function ApiKeysPage() {
           },
         ]}
       />
+
+      <ApiUsageGuide workspaceId={workspaceId} className="mt-6" />
 
       <Modal
         open={createOpen}
