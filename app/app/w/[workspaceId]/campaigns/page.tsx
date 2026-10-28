@@ -43,7 +43,7 @@ export default function CampaignsListPage() {
     <div>
       <PageHeader
         title="Chiến dịch Zalo"
-        description="Gửi tin ZNS hàng loạt theo mẫu đã duyệt — tải CSV, upload danh sách và thực hiện gửi."
+        description="Gửi tin ZBS hàng loạt theo mẫu đã duyệt."
         actions={
           <Button icon={<HiMiniPlus className="size-4" />} asChild>
             <Link href={workspacePath(workspaceId, "campaigns", "new")}>Tạo chiến dịch</Link>
