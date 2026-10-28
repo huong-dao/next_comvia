@@ -4,6 +4,13 @@ export const MEMBER_STATUS_LABELS: Record<string, string> = {
   DISABLED: "ĐÃ VÔ HIỆU HÓA",
 };
 
+/** Nhãn tiếng Việt của trạng thái API key (ApiKeyStatus). */
+export const API_KEY_STATUS_LABELS: Record<string, string> = {
+  ACTIVE: "ĐANG HOẠT ĐỘNG",
+  DISABLED: "ĐÃ VÔ HIỆU HÓA",
+  REVOKED: "ĐÃ THU HỒI",
+};
+
 /** Nhãn tiếng Việt của trạng thái chiến dịch (CampaignStatus). */
 export const CAMPAIGN_STATUS_LABELS: Record<string, string> = {
   DRAFT: "BẢN NHÁP",

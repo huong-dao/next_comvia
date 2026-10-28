@@ -13,6 +13,7 @@ import { Modal } from "@/components/ui/modal";
 import { SimpleTable } from "@/components/ui/simple-table";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
+import { API_KEY_STATUS_LABELS } from "@/lib/status-labels";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { HiArrowPath, HiLockClosed, HiMiniPlus, HiOutlineXMark, HiCheck } from "react-icons/hi2";
 
@@ -80,7 +81,7 @@ export default function ApiKeysPage() {
       await comviaFetch(`/workspaces/${workspaceId}/api-keys/${id}/disable`, { method: "PATCH", token });
       void refetch();
     } catch (e) {
-      alert(e instanceof ComviaApiError ? e.message : "Lỗi disable");
+      alert(e instanceof ComviaApiError ? e.message : "Không vô hiệu hóa được API key.");
     }
   }
 
@@ -98,7 +99,7 @@ export default function ApiKeysPage() {
       setRawKey(res.apiKey ?? null);
       void refetch();
     } catch (e) {
-      alert(e instanceof ComviaApiError ? e.message : "Lỗi regenerate");
+      alert(e instanceof ComviaApiError ? e.message : "Không tạo lại được API key.");
     } finally {
       setBusy(false);
     }
@@ -137,7 +138,12 @@ export default function ApiKeysPage() {
           {
             key: "s",
             header: "Trạng thái",
-            cell: (r) => (r.status ? <EntityStatusBadge value={r.status} /> : "—"),
+            cell: (r) =>
+              r.status ? (
+                <EntityStatusBadge value={r.status} label={API_KEY_STATUS_LABELS[r.status.toUpperCase()]} />
+              ) : (
+                "—"
+              ),
           },
           {
             key: "lu",
@@ -150,7 +156,7 @@ export default function ApiKeysPage() {
             cell: (r) => (
               <div className="flex flex-wrap gap-1">
                 <Button icon={<HiLockClosed className="size-4" />} type="button" variant="outline" size="sm" onClick={() => void disableKey(r.id)}>
-                  Disable
+                  Vô hiệu hóa
                 </Button>
                 <Button
                   type="button"
@@ -163,7 +169,7 @@ export default function ApiKeysPage() {
                     setRegenOpen(true);
                   }}
                 >
-                  Regenerate
+                  Tạo lại key
                 </Button>
               </div>
             ),
@@ -198,7 +204,7 @@ export default function ApiKeysPage() {
 
       <Modal
         open={regenOpen}
-        title="Regenerate API key?"
+        title="Tạo lại API key?"
         onClose={() => setRegenOpen(false)}
         footer={
           <>
@@ -213,12 +219,12 @@ export default function ApiKeysPage() {
               Đóng
             </Button>
             <Button type="button" disabled={busy} onClick={() => void regenerate()}>
-              {rawKey ? "Đã tạo key mới" : "Xác nhận regenerate"}
+              {rawKey ? "Đã tạo key mới" : "Xác nhận tạo lại"}
             </Button>
           </>
         }
       >
-        <p className="text-sm text-muted-foreground">Key cũ sẽ mất hiệu lực sau khi regenerate thành công.</p>
+        <p className="text-sm text-muted-foreground">Key cũ sẽ mất hiệu lực sau khi tạo lại thành công.</p>
         {rawKey ? (
           <Card className="bg-surface-muted p-3">
             <p className="text-xs font-semibold uppercase text-danger">Key mới</p>
