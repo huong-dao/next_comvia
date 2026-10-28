@@ -34,7 +34,8 @@ const TONE_MAP: Record<string, "active" | "pending" | "error" | "neutral"> = {
   RECONNECT_REQUIRED: "pending",
 };
 
-export function EntityStatusBadge({ value }: { value: string }) {
+/** `label` thay chữ hiển thị (vd bản dịch tiếng Việt), màu vẫn theo `value`. */
+export function EntityStatusBadge({ value, label }: { value: string; label?: string }) {
   const tone = TONE_MAP[value] ?? "neutral";
-  return <StatusBadge tone={tone}>{value.replace(/_/g, " ")}</StatusBadge>;
+  return <StatusBadge tone={tone}>{label ?? value.replace(/_/g, " ")}</StatusBadge>;
 }

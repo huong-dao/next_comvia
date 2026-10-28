@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { FilterCard, FilterField } from "@/components/app/filter-card";
@@ -24,6 +24,20 @@ type LogRow = {
 
 /** BE giới hạn limit là số nguyên trong khoảng 1–100. */
 const LIMIT_OPTIONS = ["20", "50", "100"];
+
+const STATUS_LABELS: Record<string, string> = {
+  SUCCESS: "THÀNH CÔNG",
+  FAILED: "THẤT BẠI",
+  PENDING: "ĐANG XỬ LÝ",
+};
+
+const SEND_TYPE_LABELS: Record<string, string> = {
+  SINGLE: "ĐƠN LẺ",
+  CAMPAIGN: "CHIẾN DỊCH",
+  TEST: "GỬI THỬ",
+};
+
+type TemplateOption = { id: string; name?: string; code?: string };
 
 type Filters = { status: string; sendType: string; limit: string };
 const INITIAL_FILTERS: Filters = { status: "", sendType: "", limit: "50" };
@@ -49,6 +63,16 @@ export default function MessageLogsPage() {
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId), fetcher);
   const rows = data ?? [];
 
+  const templatesFetcher = useCallback(
+    (token: string) => comviaFetch<TemplateOption[]>(`/workspaces/${workspaceId}/templates`, { token }),
+    [workspaceId],
+  );
+  const { data: templates } = useComviaQuery(Boolean(workspaceId), templatesFetcher);
+  const templateNames = useMemo(
+    () => new Map((templates ?? []).map((t) => [t.id, t.name ?? t.code ?? t.id])),
+    [templates],
+  );
+
   return (
     <div>
       <PageHeader
@@ -65,8 +89,8 @@ export default function MessageLogsPage() {
             onChange={(e) => setDraft((value) => ({ ...value, status: e.target.value }))}
           >
             <option value="">Mọi trạng thái</option>
-            <option value="SUCCESS">SUCCESS</option>
-            <option value="FAILED">FAILED</option>
+            <option value="SUCCESS">Thành công</option>
+            <option value="FAILED">Thất bại</option>
           </Select>
         </FilterField>
         <FilterField label="Loại gửi" htmlFor="logs-send-type" className="sm:w-48">
@@ -76,9 +100,9 @@ export default function MessageLogsPage() {
             onChange={(e) => setDraft((value) => ({ ...value, sendType: e.target.value }))}
           >
             <option value="">Mọi loại</option>
-            <option value="SINGLE">SINGLE</option>
-            <option value="TEST">TEST</option>
-            <option value="CAMPAIGN">CAMPAIGN</option>
+            <option value="SINGLE">Đơn lẻ</option>
+            <option value="TEST">Gửi thử</option>
+            <option value="CAMPAIGN">Chiến dịch</option>
           </Select>
         </FilterField>
         <FilterField label="Số dòng" htmlFor="logs-limit" className="sm:w-36">
@@ -110,15 +134,27 @@ export default function MessageLogsPage() {
               cell: (r) => (r.sentAt ? new Date(r.sentAt).toLocaleString() : "—"),
             },
             { key: "phone", header: "SĐT", cell: (r) => r.phoneNumber ?? "—" },
-            { key: "tpl", header: "Template", cell: (r) => r.templateId ?? "—" },
-            { key: "type", header: "Loại", cell: (r) => r.sendType ?? "—" },
+            {
+              key: "tpl",
+              header: "Mẫu tin",
+              cell: (r) => {
+                if (!r.templateId) return "—";
+                if (!templates) return "…";
+                return templateNames.get(r.templateId) ?? "Không xác định";
+              },
+            },
+            {
+              key: "type",
+              header: "Loại",
+              cell: (r) => (r.sendType ? (SEND_TYPE_LABELS[r.sendType] ?? r.sendType) : "—"),
+            },
             {
               key: "st",
               header: "Trạng thái",
-              cell: (r) => (r.status ? <EntityStatusBadge value={r.status} /> : "—"),
+              cell: (r) =>
+                r.status ? <EntityStatusBadge value={r.status} label={STATUS_LABELS[r.status]} /> : "—",
             },
             { key: "cost", header: "Chi phí", cell: (r) => r.costAtTime ?? "—" },
-            { key: "mid", header: "Provider ID", cell: (r) => r.providerMessageId ?? "—" },
           ]}
         />
       ) : null}
