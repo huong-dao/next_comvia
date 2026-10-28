@@ -9,7 +9,6 @@ import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comvia
 import { getAccessToken } from "@/lib/auth";
 import {
   newPlaceholderRow,
-  rowsToPlaceholderLabels,
   rowsToPlaceholders,
   slugLooksValid,
   type PlaceholderRow,
@@ -65,7 +64,6 @@ type CreateTemplateBody = {
   secondaryContent?: string;
   otpExpiryMinutes?: number;
   placeholdersJson?: Record<string, string>;
-  placeholderLabels?: Record<string, string>;
   ctaButtons?: ReturnType<typeof normalizeCtaButtons>;
 };
 
@@ -212,7 +210,6 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
     }
     body.content = content;
     body.placeholdersJson = ph.data;
-    body.placeholderLabels = rowsToPlaceholderLabels(placeholderRows);
     if (type === "bang" && secondaryContent.trim()) {
       body.secondaryContent = secondaryContent.trim();
     }

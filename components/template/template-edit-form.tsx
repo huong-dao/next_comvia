@@ -28,7 +28,7 @@ type EditableTemplate = {
   revisionReason?: string | null;
   returnedForRevisionAt?: string | null;
   placeholdersJson?: Record<string, string>;
-  placeholderLabels?: Record<string, string> | null;
+  placeholder_labels?: Record<string, string> | null;
   ctaButtons?: TemplateCtaButton[];
 };
 type OaPreviewAsset = { logoLightUrl?: string | null };
@@ -67,7 +67,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
     if (!data) return;
     setName(data.name ?? "");
     setContent(data.content ?? "");
-    setPlaceholderRows(recordToPlaceholderRows(data.placeholdersJson, data.placeholderLabels));
+    setPlaceholderRows(recordToPlaceholderRows(data.placeholdersJson, data.placeholder_labels));
     setCtaButtons((data.ctaButtons ?? []).map(({ id, type, label, target, position }) => ({
       id, type, label: label ?? "", target: target ?? "", position,
     })));
@@ -116,7 +116,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
           name: name.trim() || data.name,
           content: content.trim() || data.content,
           placeholdersJson: placeholders.data,
-          placeholderLabels: rowsToPlaceholderLabels(placeholderRows),
+          placeholder_labels: rowsToPlaceholderLabels(placeholderRows),
           ctaButtons: normalizeCtaButtons(ctaButtons),
         }),
       });
