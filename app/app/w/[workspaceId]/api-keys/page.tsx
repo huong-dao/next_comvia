@@ -11,11 +11,12 @@ import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { SimpleTable } from "@/components/ui/simple-table";
+import { useToast } from "@/components/ui/toast";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
 import { API_KEY_STATUS_LABELS } from "@/lib/status-labels";
 import { useComviaQuery } from "@/lib/use-comvia-query";
-import { HiArrowPath, HiLockClosed, HiMiniPlus, HiOutlineXMark, HiCheck } from "react-icons/hi2";
+import { HiArrowPath, HiLockClosed, HiMiniPlus, HiOutlineClipboardDocument, HiOutlineXMark, HiCheck } from "react-icons/hi2";
 
 type KeyRow = {
   id: string;
@@ -46,6 +47,7 @@ export default function ApiKeysPage() {
   const [rawKey, setRawKey] = useState<string | null>(null);
   const [regenOpen, setRegenOpen] = useState(false);
   const [regenId, setRegenId] = useState<string | null>(null);
+  const { showToast } = useToast();
 
   if (!owner) {
     return <PageForbidden message="Chỉ Owner quản lý API key." backHref={`/app/w/${workspaceId}/dashboard`} />;
@@ -102,6 +104,16 @@ export default function ApiKeysPage() {
       alert(e instanceof ComviaApiError ? e.message : "Không tạo lại được API key.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function copyRawKey() {
+    if (!rawKey) return;
+    try {
+      await navigator.clipboard.writeText(rawKey);
+      showToast({ type: "success", message: "Đã sao chép API key." });
+    } catch {
+      showToast({ type: "error", message: "Không sao chép được. Hãy chọn key và sao chép thủ công." });
     }
   }
 
@@ -218,6 +230,16 @@ export default function ApiKeysPage() {
             >
               Đóng
             </Button>
+            {rawKey ? (
+              <Button
+                type="button"
+                variant="outline"
+                icon={<HiOutlineClipboardDocument className="size-4" />}
+                onClick={() => void copyRawKey()}
+              >
+                Copy API Key
+              </Button>
+            ) : null}
             <Button type="button" disabled={busy} onClick={() => void regenerate()}>
               {rawKey ? "Đã tạo key mới" : "Xác nhận tạo lại"}
             </Button>
