@@ -60,6 +60,19 @@ type OaStatus = { status?: string; oaName?: string };
 
 type MessagePricingConfig = { defaultMessageUnitPrice?: number | string };
 
+type ReconcileResult = { campaignId?: string; updated?: number; unchanged?: number; pendingRows?: number };
+
+const MAX_CSV_ERRORS_SHOWN = 20;
+
+/** Danh sách lỗi theo dòng/row_id từ body 400 của import-csv và import-csv/reconcile. */
+function csvErrorsOf(e: unknown): string[] {
+  if (!(e instanceof ComviaApiError)) return [];
+  const details = e.details;
+  if (!details || typeof details !== "object" || !("errors" in details)) return [];
+  const errors = (details as { errors?: unknown }).errors;
+  return Array.isArray(errors) ? errors.filter((x): x is string => typeof x === "string") : [];
+}
+
 const ROW_FILTERS = [
   { value: "", label: "Tất cả" },
   { value: "PENDING", label: "Chờ gửi" },
@@ -91,6 +104,7 @@ export default function CampaignDetailPage() {
   const [rowFilter, setRowFilter] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [csvErrors, setCsvErrors] = useState<string[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [preflightOpen, setPreflightOpen] = useState(false);
   const [preflightData, setPreflightData] = useState<CampaignPreflightData | null>(null);
@@ -128,6 +142,20 @@ export default function CampaignDetailPage() {
     refetch: refetchRows,
   } = useComviaQuery(Boolean(workspaceId && campaignId), rowsFetcher);
 
+  const pendingFetcher = useCallback(
+    (token: string) =>
+      comviaFetch<CampaignDataRow[]>(
+        `/workspaces/${workspaceId}/campaigns/${campaignId}/rows?status=PENDING&limit=500`,
+        { token },
+      ),
+    [workspaceId, campaignId],
+  );
+
+  const { data: pendingRows, refetch: refetchPending } = useComviaQuery(
+    Boolean(workspaceId && campaignId),
+    pendingFetcher,
+  );
+
   const rowList = useMemo(() => rows ?? [], [rows]);
   const placeholderKeys = useMemo(
     () => Object.keys(campaign?.template?.placeholdersJson ?? {}),
@@ -135,10 +163,12 @@ export default function CampaignDetailPage() {
   );
 
   const hasExecuted = Boolean(campaign?.lastRunAt);
-  const canImportCsv = !hasExecuted;
   const statusUpper = (campaign?.status ?? "").toUpperCase();
-  const canExecute =
-    rowList.length > 0 && !["RUNNING", "CANCELLED"].includes(statusUpper);
+  const isLocked = ["RUNNING", "CANCELLED"].includes(statusUpper);
+  const pendingCount = pendingRows?.length ?? 0;
+  const canImportCsv = !hasExecuted;
+  const canReconcileCsv = hasExecuted && !isLocked;
+  const canExecute = pendingCount > 0 && !isLocked;
 
   const failedSelectable = useMemo(
     () => rowList.filter((r) => (r.status ?? "").toUpperCase() === "FAILED"),
@@ -183,17 +213,30 @@ export default function CampaignDetailPage() {
     fd.append("file", file);
     setBusy(true);
     setMsg(null);
+    setCsvErrors([]);
     try {
-      await comviaMultipartFetch(`/workspaces/${workspaceId}/campaigns/${campaignId}/import-csv`, {
-        token,
-        formData: fd,
-      });
-      setMsg("Đã import CSV — danh sách đã được thay thế.");
+      if (hasExecuted) {
+        const res = await comviaMultipartFetch<ReconcileResult>(
+          `/workspaces/${workspaceId}/campaigns/${campaignId}/import-csv/reconcile`,
+          { token, formData: fd },
+        );
+        setMsg(
+          `Đã cập nhật ${res?.updated ?? 0} dòng, giữ nguyên ${res?.unchanged ?? 0} dòng. ${res?.pendingRows ?? 0} dòng chờ gửi.`,
+        );
+      } else {
+        await comviaMultipartFetch(`/workspaces/${workspaceId}/campaigns/${campaignId}/import-csv`, {
+          token,
+          formData: fd,
+        });
+        setMsg("Đã import CSV — danh sách đã được thay thế.");
+      }
       setSelectedIds(new Set());
       void refetchCampaign();
       void refetchRows();
+      void refetchPending();
     } catch (e) {
       setMsg(formatComviaError(e, "Import CSV thất bại."));
+      setCsvErrors(csvErrorsOf(e));
     } finally {
       setBusy(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -217,12 +260,11 @@ export default function CampaignDetailPage() {
       const wallet = walletRes ?? {};
 
       const fromCampaign = Number(campaign.rowCount ?? campaign.totalData ?? 0);
-      const count =
-        Number.isFinite(fromCampaign) && fromCampaign > 0
+      const count = hasExecuted
+        ? pendingCount
+        : Number.isFinite(fromCampaign) && fromCampaign > 0
           ? fromCampaign
-          : rowFilter
-            ? rowList.length
-            : rowList.length;
+          : rowList.length;
 
       setPreflightData({
         templateName: campaign.template?.name ?? campaign.template?.code,
@@ -259,6 +301,7 @@ export default function CampaignDetailPage() {
       setSelectedIds(new Set());
       void refetchCampaign();
       void refetchRows();
+      void refetchPending();
     } catch (e) {
       setMsg(formatComviaError(e, "Không thực hiện được gửi chiến dịch."));
     } finally {
@@ -286,6 +329,7 @@ export default function CampaignDetailPage() {
       setSelectedIds(new Set());
       void refetchCampaign();
       void refetchRows();
+      void refetchPending();
     } catch (e) {
       setMsg(formatComviaError(e, "Gửi lại thất bại."));
     } finally {
@@ -311,6 +355,7 @@ export default function CampaignDetailPage() {
       });
       void refetchCampaign();
       void refetchRows();
+      void refetchPending();
     } catch (e) {
       setMsg(formatComviaError(e, "Không xóa được dòng."));
     } finally {
@@ -332,6 +377,7 @@ export default function CampaignDetailPage() {
       });
       setEditRow(null);
       void refetchRows();
+      void refetchPending();
     } catch (e) {
       setMsg(formatComviaError(e, "Không lưu được dòng."));
     } finally {
@@ -451,9 +497,9 @@ export default function CampaignDetailPage() {
             disabled={busy}
             onClick={() => void downloadCsvTemplate()}
           >
-            Tải CSV mẫu
+            {hasExecuted ? "Tải CSV hiện tại" : "Tải CSV mẫu"}
           </Button>
-          {canImportCsv ? (
+          {canImportCsv || canReconcileCsv ? (
             <>
               <input
                 ref={fileRef}
@@ -472,12 +518,14 @@ export default function CampaignDetailPage() {
                 disabled={busy}
                 onClick={() => fileRef.current?.click()}
               >
-                Upload CSV
+                {hasExecuted ? "Upload CSV sửa lỗi" : "Upload CSV"}
               </Button>
             </>
           ) : (
             <p className="text-xs text-muted-foreground self-center">
-              Đã gửi ít nhất một lần — không thể upload thay toàn bộ. Tạo chiến dịch mới để thêm data.
+              {statusUpper === "RUNNING"
+                ? "Chiến dịch đang gửi — chờ hoàn tất rồi mới upload lại CSV."
+                : "Chiến dịch đã hủy — không thể upload CSV."}
             </p>
           )}
           <Button
@@ -500,7 +548,24 @@ export default function CampaignDetailPage() {
             </Button>
           ) : null}
         </div>
+        {canReconcileCsv ? (
+          <p className="text-xs text-muted-foreground">
+            Để gửi lại các dòng thất bại: tải CSV hiện tại, sửa số điện thoại hoặc dữ liệu của dòng thất bại (giữ
+            nguyên cột <code>row_id</code>), upload CSV sửa lỗi rồi bấm Thực hiện gửi. Dòng đã gửi thành công không
+            bị gửi lại.
+          </p>
+        ) : null}
         {msg ? <p className="text-sm text-muted-foreground">{msg}</p> : null}
+        {csvErrors.length > 0 ? (
+          <ul className="list-disc space-y-0.5 pl-5 text-sm text-danger">
+            {csvErrors.slice(0, MAX_CSV_ERRORS_SHOWN).map((line, index) => (
+              <li key={`${index}-${line}`}>{line}</li>
+            ))}
+            {csvErrors.length > MAX_CSV_ERRORS_SHOWN ? (
+              <li>…và {csvErrors.length - MAX_CSV_ERRORS_SHOWN} lỗi khác.</li>
+            ) : null}
+          </ul>
+        ) : null}
       </Card>
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
