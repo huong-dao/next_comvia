@@ -43,8 +43,19 @@ export function rowsToPlaceholders(rows: PlaceholderRow[]):
   return { ok: true, data };
 }
 
+/** Nhãn hiển thị theo slug, chỉ gồm dòng có slug hợp lệ và nhãn không rỗng. */
+export function rowsToPlaceholderLabels(rows: PlaceholderRow[]): Record<string, string> {
+  const labels: Record<string, string> = {};
+  for (const row of rows) {
+    const slug = row.slug.trim();
+    const label = row.label.trim();
+    if (slug && slugLooksValid(slug) && label) labels[slug] = label;
+  }
+  return labels;
+}
+
 /** Load API object vào danh sách dòng chỉnh sửa. */
-export function recordToPlaceholderRows(record: unknown): PlaceholderRow[] {
+export function recordToPlaceholderRows(record: unknown, labels?: Record<string, string> | null): PlaceholderRow[] {
   if (record === null || typeof record !== "object" || Array.isArray(record)) {
     return [newPlaceholderRow()];
   }
@@ -52,7 +63,7 @@ export function recordToPlaceholderRows(record: unknown): PlaceholderRow[] {
   if (entries.length === 0) return [newPlaceholderRow()];
   return entries.map(([slug, raw]) => ({
     id: crypto.randomUUID(),
-    label: slug,
+    label: labels?.[slug] ?? slug,
     slug,
     defaultValue: raw === undefined || raw === null ? "" : String(raw),
   }));

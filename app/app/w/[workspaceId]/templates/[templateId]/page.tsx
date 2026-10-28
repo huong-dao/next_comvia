@@ -18,6 +18,7 @@ import {
   newPlaceholderRow,
   previewTemplateContent,
   recordToPlaceholderRows,
+  rowsToPlaceholderLabels,
   rowsToPlaceholders,
   slugLooksValid,
   type PlaceholderRow,
@@ -37,6 +38,7 @@ type TemplateDetail = {
   revisionReason?: string | null;
   returnedForRevisionAt?: string | null;
   placeholdersJson?: Record<string, string>;
+  placeholderLabels?: Record<string, string> | null;
   unitPricePerMessage?: number | string | null;
   ctaButtons?: TemplateCtaButton[];
   updatedAt?: string;
@@ -78,7 +80,7 @@ export default function TemplateDetailPage() {
     if (!data) return;
     setName(data.name ?? "");
     setContent(data.content ?? "");
-    setPlaceholderRows(recordToPlaceholderRows(data.placeholdersJson));
+    setPlaceholderRows(recordToPlaceholderRows(data.placeholdersJson, data.placeholderLabels));
     setUnitPrice(
       data.unitPricePerMessage != null && data.unitPricePerMessage !== ""
         ? String(data.unitPricePerMessage)
@@ -156,6 +158,7 @@ export default function TemplateDetailPage() {
           name: name || data.name,
           content: content || data.content,
           placeholdersJson: ph.data,
+          placeholderLabels: rowsToPlaceholderLabels(placeholderRows),
           ctaButtons: normalizeCtaButtons(ctaButtons),
         }),
       });

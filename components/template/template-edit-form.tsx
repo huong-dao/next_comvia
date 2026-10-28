@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Input, Textarea } from "@/components/ui/input";
 import { getAccessToken } from "@/lib/auth";
 import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
-import { newPlaceholderRow, recordToPlaceholderRows, rowsToPlaceholders, slugLooksValid, type PlaceholderRow } from "@/lib/template-placeholders";
+import { newPlaceholderRow, recordToPlaceholderRows, rowsToPlaceholderLabels, rowsToPlaceholders, slugLooksValid, type PlaceholderRow } from "@/lib/template-placeholders";
 import { normalizeCtaButtons, validateCtaButtons, type TemplateCtaButton, type TemplateCtaDraft } from "@/lib/template-cta";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { isWorkspaceOwner, useWorkspaceContext } from "@/components/workspace/workspace-gate";
@@ -28,6 +28,7 @@ type EditableTemplate = {
   revisionReason?: string | null;
   returnedForRevisionAt?: string | null;
   placeholdersJson?: Record<string, string>;
+  placeholderLabels?: Record<string, string> | null;
   ctaButtons?: TemplateCtaButton[];
 };
 type OaPreviewAsset = { logoLightUrl?: string | null };
@@ -66,7 +67,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
     if (!data) return;
     setName(data.name ?? "");
     setContent(data.content ?? "");
-    setPlaceholderRows(recordToPlaceholderRows(data.placeholdersJson));
+    setPlaceholderRows(recordToPlaceholderRows(data.placeholdersJson, data.placeholderLabels));
     setCtaButtons((data.ctaButtons ?? []).map(({ id, type, label, target, position }) => ({
       id, type, label: label ?? "", target: target ?? "", position,
     })));
@@ -115,6 +116,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
           name: name.trim() || data.name,
           content: content.trim() || data.content,
           placeholdersJson: placeholders.data,
+          placeholderLabels: rowsToPlaceholderLabels(placeholderRows),
           ctaButtons: normalizeCtaButtons(ctaButtons),
         }),
       });
