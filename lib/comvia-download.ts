@@ -21,7 +21,7 @@ function filenameFromDisposition(header: string | null, fallback: string) {
 /** Tải file binary (CSV, …) từ API Comvia. */
 export async function comviaDownloadBlob(
   path: string,
-  init: { token: string; method?: string; fallbackFilename?: string },
+  init: { token: string; method?: string; filename?: string; fallbackFilename?: string },
 ) {
   const baseUrl = getComviaApiBaseUrl();
   const url = `${baseUrl.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
@@ -40,10 +40,9 @@ export async function comviaDownloadBlob(
   }
 
   const blob = await res.blob();
-  const name = filenameFromDisposition(
-    res.headers.get("content-disposition"),
-    init.fallbackFilename ?? "download.csv",
-  );
+  const name =
+    init.filename ??
+    filenameFromDisposition(res.headers.get("content-disposition"), init.fallbackFilename ?? "download.csv");
   const objectUrl = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = objectUrl;

@@ -68,6 +68,18 @@ const ROW_FILTERS = [
   { value: "SKIPPED", label: "Bỏ qua" },
 ] as const;
 
+/** Tên file không dấu: "Chiến dịch test" → "Chien_dich_test". */
+function toAsciiFileSlug(name: string) {
+  return name
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .replace(/[^A-Za-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 40);
+}
+
 export default function CampaignDetailPage() {
   const params = useParams();
   const workspaceId = params.workspaceId as string;
@@ -152,10 +164,10 @@ export default function CampaignDetailPage() {
     setBusy(true);
     setMsg(null);
     try {
-      const slug = (campaign?.name ?? "campaign").replace(/[^\w\-]+/g, "_").slice(0, 40);
+      const slug = toAsciiFileSlug(campaign?.name ?? "") || "campaign";
       await comviaDownloadBlob(
         `/workspaces/${workspaceId}/campaigns/${campaignId}/csv-template`,
-        { token, fallbackFilename: `${slug}-mau.csv` },
+        { token, filename: `${slug}-mau.csv` },
       );
     } catch (e) {
       setMsg(formatComviaError(e, "Không tải được file CSV mẫu."));
