@@ -50,7 +50,13 @@ const navItems: NavItem[] = [
     label: "Gửi tin",
     icon: HiOutlineChatBubbleLeftRight,
     href: (w) => workspacePath(w, "messages", "send-single"),
-    isActive: (p, w) => p.startsWith(workspacePath(w, "messages")),
+    isActive: (p, w) => p.startsWith(workspacePath(w, "messages", "send-single")),
+  },
+  {
+    label: "Nhật ký tin",
+    icon: HiOutlineDocumentText,
+    href: (w) => workspacePath(w, "messages", "logs"),
+    isActive: (p, w) => p.startsWith(workspacePath(w, "messages", "logs")),
   },
   // {
   //   label: "Zalo OA",
