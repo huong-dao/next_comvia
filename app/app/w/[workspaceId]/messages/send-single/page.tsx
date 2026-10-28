@@ -6,17 +6,41 @@ import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
 import { useComviaQuery } from "@/lib/use-comvia-query";
-import { formatVND } from "@/lib/utils";
 import { HiOutlinePaperAirplane } from "react-icons/hi2";
 
-type TemplateRow = { id: string; name?: string; code?: string; status?: string; placeholdersJson?: Record<string, string> };
+type TemplateRow = {
+  id: string;
+  type?: string;
+  name?: string;
+  code?: string;
+  status?: string;
+  otpExpiryMinutes?: number | null;
+  placeholdersJson?: Record<string, string>;
+};
 type OaStatus = { status?: string };
 type WalletBalance = { balance?: string };
+
+const PHONE_PATTERN = /^84\d{8,10}$/;
+
+function fieldKeysOf(template?: TemplateRow): string[] {
+  if (!template) return [];
+  const keys = Object.keys(template.placeholdersJson ?? {});
+  if (template.type?.toUpperCase() === "OTP") return Array.from(new Set([...keys, "otp", "phut"]));
+  return keys;
+}
+
+function initialValuesOf(template?: TemplateRow): Record<string, string> {
+  const values: Record<string, string> = {};
+  for (const key of fieldKeysOf(template)) values[key] = "";
+  if (template?.type?.toUpperCase() === "OTP" && template.otpExpiryMinutes != null) {
+    values.phut = String(template.otpExpiryMinutes);
+  }
+  return values;
+}
 
 export default function SendSinglePage() {
   const params = useParams();
@@ -47,31 +71,69 @@ export default function SendSinglePage() {
 
   const [templateId, setTemplateId] = useState("");
   const [phone, setPhone] = useState("");
-  const [dataJson, setDataJson] = useState("{}");
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [jsonText, setJsonText] = useState("{}");
+  const [jsonError, setJsonError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 
   const selected = approved.find((t) => t.id === templateId);
-  const keys = Object.keys(selected?.placeholdersJson ?? {});
+  const fieldKeys = fieldKeysOf(selected);
 
   if (loading) return <PageLoading />;
   if (error && !data) return <PageError message={error} onRetry={() => void refetch()} />;
+
+  function chooseTemplate(id: string) {
+    const next = initialValuesOf(approved.find((t) => t.id === id));
+    setTemplateId(id);
+    setValues(next);
+    setJsonText(JSON.stringify(next, null, 2));
+    setJsonError(null);
+    setResult(null);
+  }
+
+  function updateValue(key: string, value: string) {
+    const next = { ...values, [key]: value };
+    setValues(next);
+    setJsonText(JSON.stringify(next, null, 2));
+    setJsonError(null);
+  }
+
+  function updateJson(text: string) {
+    setJsonText(text);
+    try {
+      const parsed: unknown = JSON.parse(text || "{}");
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("not an object");
+      setValues(Object.fromEntries(Object.entries(parsed).map(([k, v]) => [k, String(v)])));
+      setJsonError(null);
+    } catch {
+      setJsonError('JSON không hợp lệ — phải có dạng { "tên_biến": "giá trị" }.');
+    }
+  }
 
   async function send() {
     setResult(null);
     const token = getAccessToken();
     if (!token) return;
-    let payload: Record<string, string> = {};
-    try {
-      payload = JSON.parse(dataJson || "{}") as Record<string, string>;
-    } catch {
-      setResult("Dữ liệu biến phải là JSON object.");
+    if (!templateId) {
+      setResult("Chọn mẫu tin nhắn.");
       return;
     }
-    if (!templateId || !phone.trim()) {
-      setResult("Chọn template và nhập số điện thoại.");
+    const phoneNumber = phone.replace(/\s/g, "");
+    if (!PHONE_PATTERN.test(phoneNumber)) {
+      setResult("Số điện thoại phải bắt đầu bằng 84, gồm 10–12 chữ số (ví dụ 84901234567).");
       return;
     }
+    if (jsonError) {
+      setResult(jsonError);
+      return;
+    }
+    const missing = fieldKeys.filter((key) => !(values[key] ?? "").trim());
+    if (missing.length) {
+      setResult(`Chưa nhập: ${missing.join(", ")}.`);
+      return;
+    }
+    const payload = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, v.trim()]));
     setSending(true);
     try {
       const res = await comviaFetch<{ status?: string; providerMessageId?: string; messageLogId?: string }>(
@@ -81,7 +143,7 @@ export default function SendSinglePage() {
           token,
           body: JSON.stringify({
             templateId,
-            phoneNumber: phone.trim(),
+            phoneNumber,
             data: payload,
           }),
         },
@@ -107,7 +169,7 @@ export default function SendSinglePage() {
           <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Mẫu tin nhắn
           </label>
-          <Select value={templateId} onChange={(e) => setTemplateId(e.target.value)}>
+          <Select value={templateId} onChange={(e) => chooseTemplate(e.target.value)}>
             <option value="">— Chọn —</option>
             {approved.map((t) => (
               <option key={t.id} value={t.id}>
@@ -115,22 +177,60 @@ export default function SendSinglePage() {
               </option>
             ))}
           </Select>
-          {keys.length ? (
-            <p className="mt-2 text-xs text-muted-foreground">Biến: {keys.join(", ")}</p>
-          ) : null}
         </div>
         <div>
           <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Số điện thoại nhận
           </label>
-          <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="84901234567" />
+          <Input
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder="84901234567"
+            inputMode="numeric"
+          />
         </div>
-        <div>
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Dữ liệu biến (JSON)
-          </label>
-          <Textarea rows={6} value={dataJson} onChange={(e) => setDataJson(e.target.value)} />
-        </div>
+        {selected ? (
+          <div className="space-y-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung biến</p>
+            {fieldKeys.length ? (
+              fieldKeys.map((key) => (
+                <div key={key}>
+                  <label className="mb-2 block text-sm text-foreground">
+                    <code>{key}</code>
+                  </label>
+                  <Input
+                    value={values[key] ?? ""}
+                    onChange={(e) => updateValue(key, e.target.value)}
+                    placeholder={selected.placeholdersJson?.[key] ? `VD: ${selected.placeholdersJson[key]}` : ""}
+                  />
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">Mẫu này không có biến cần nhập.</p>
+            )}
+            {selected.type?.toUpperCase() === "OTP" ? (
+              <p className="text-xs text-muted-foreground">
+                Mẫu OTP: <code>phut</code> lấy từ thời hạn OTP của mẫu.
+              </p>
+            ) : null}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">Chọn mẫu tin nhắn để nhập nội dung biến.</p>
+        )}
+        <details className="text-sm">
+          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Nâng cao: nhập dữ liệu dạng JSON
+          </summary>
+          <div className="mt-2">
+            <Textarea
+              rows={6}
+              value={jsonText}
+              onChange={(e) => updateJson(e.target.value)}
+              invalid={Boolean(jsonError)}
+              errorMessage={jsonError ?? undefined}
+            />
+          </div>
+        </details>
         <Button icon={<HiOutlinePaperAirplane className="size-4" />} type="button" disabled={sending} onClick={() => void send()}>
           {sending ? "Đang gửi…" : "Gửi tin"}
         </Button>
