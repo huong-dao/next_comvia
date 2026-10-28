@@ -7,8 +7,10 @@ import { PageError, PageLoading } from "@/components/app/page-state";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input, Select, Textarea } from "@/components/ui/input";
+import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
+import { type TemplateCtaButton } from "@/lib/template-cta";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { HiOutlinePaperAirplane } from "react-icons/hi2";
 
@@ -17,9 +19,13 @@ type TemplateRow = {
   type?: string;
   name?: string;
   code?: string;
+  title?: string | null;
+  content?: string | null;
+  secondaryContent?: string | null;
   status?: string;
   otpExpiryMinutes?: number | null;
   placeholdersJson?: Record<string, string>;
+  ctaButtons?: TemplateCtaButton[];
 };
 type OaStatus = { status?: string };
 type WalletBalance = { balance?: string };
@@ -40,6 +46,12 @@ function initialValuesOf(template?: TemplateRow): Record<string, string> {
     values.phut = String(template.otpExpiryMinutes);
   }
   return values;
+}
+
+function toPreviewType(type?: string): TemplateMessageType {
+  if (type?.toUpperCase() === "TEXT") return "van_ban";
+  if (type?.toUpperCase() === "OTP") return "otp";
+  return "bang";
 }
 
 export default function SendSinglePage() {
@@ -164,78 +176,96 @@ export default function SendSinglePage() {
         description="Chỉ được sử dụng các mẫu tin đã được duyệt."
       />
 
-      <Card className="max-w-2xl space-y-4">
-        <div>
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Mẫu tin nhắn
-          </label>
-          <Select value={templateId} onChange={(e) => chooseTemplate(e.target.value)}>
-            <option value="">— Chọn —</option>
-            {approved.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name ?? t.code ?? t.id}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div>
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Số điện thoại nhận
-          </label>
-          <Input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder="84901234567"
-            inputMode="numeric"
-          />
-        </div>
-        {selected ? (
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung biến</p>
-            {fieldKeys.length ? (
-              fieldKeys.map((key) => (
-                <div key={key}>
-                  <label className="mb-2 block text-sm text-foreground">
-                    <code>{key}</code>
-                  </label>
-                  <Input
-                    value={values[key] ?? ""}
-                    onChange={(e) => updateValue(key, e.target.value)}
-                    placeholder={selected.placeholdersJson?.[key] ? `VD: ${selected.placeholdersJson[key]}` : ""}
-                  />
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground">Mẫu này không có biến cần nhập.</p>
-            )}
-            {selected.type?.toUpperCase() === "OTP" ? (
-              <p className="text-xs text-muted-foreground">
-                Mẫu OTP: <code>phut</code> lấy từ thời hạn OTP của mẫu.
-              </p>
-            ) : null}
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <Card className="space-y-4">
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Mẫu tin nhắn
+            </label>
+            <Select value={templateId} onChange={(e) => chooseTemplate(e.target.value)}>
+              <option value="">— Chọn —</option>
+              {approved.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name ?? t.code ?? t.id}
+                </option>
+              ))}
+            </Select>
           </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">Chọn mẫu tin nhắn để nhập nội dung biến.</p>
-        )}
-        <details className="text-sm">
-          <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Nâng cao: nhập dữ liệu dạng JSON
-          </summary>
-          <div className="mt-2">
-            <Textarea
-              rows={6}
-              value={jsonText}
-              onChange={(e) => updateJson(e.target.value)}
-              invalid={Boolean(jsonError)}
-              errorMessage={jsonError ?? undefined}
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Số điện thoại nhận
+            </label>
+            <Input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="84901234567"
+              inputMode="numeric"
             />
           </div>
-        </details>
-        <Button icon={<HiOutlinePaperAirplane className="size-4" />} type="button" disabled={sending} onClick={() => void send()}>
-          {sending ? "Đang gửi…" : "Gửi tin"}
-        </Button>
-        {result ? <p className="text-sm text-muted-foreground">{result}</p> : null}
-      </Card>
+          {selected ? (
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung biến</p>
+              {fieldKeys.length ? (
+                fieldKeys.map((key) => (
+                  <div key={key}>
+                    <label className="mb-2 block text-sm text-foreground">
+                      <code>{key}</code>
+                    </label>
+                    <Input
+                      value={values[key] ?? ""}
+                      onChange={(e) => updateValue(key, e.target.value)}
+                      placeholder={selected.placeholdersJson?.[key] ? `VD: ${selected.placeholdersJson[key]}` : ""}
+                    />
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">Mẫu này không có biến cần nhập.</p>
+              )}
+              {selected.type?.toUpperCase() === "OTP" ? (
+                <p className="text-xs text-muted-foreground">
+                  Mẫu OTP: <code>phut</code> lấy từ thời hạn OTP của mẫu.
+                </p>
+              ) : null}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">Chọn mẫu tin nhắn để nhập nội dung biến.</p>
+          )}
+          <details className="text-sm">
+            <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Nâng cao: nhập dữ liệu dạng JSON
+            </summary>
+            <div className="mt-2">
+              <Textarea
+                rows={6}
+                value={jsonText}
+                onChange={(e) => updateJson(e.target.value)}
+                invalid={Boolean(jsonError)}
+                errorMessage={jsonError ?? undefined}
+              />
+            </div>
+          </details>
+          <Button icon={<HiOutlinePaperAirplane className="size-4" />} type="button" disabled={sending} onClick={() => void send()}>
+            {sending ? "Đang gửi…" : "Gửi tin"}
+          </Button>
+          {result ? <p className="text-sm text-muted-foreground">{result}</p> : null}
+        </Card>
+        {selected ? (
+          <Card className="flex min-w-0 flex-col gap-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Xem trước</p>
+            <div className="overflow-auto rounded-xl bg-surface-muted p-4">
+              <TemplatePreview
+                type={toPreviewType(selected.type)}
+                title={selected.title ?? ""}
+                content={selected.content ?? ""}
+                placeholders={values}
+                secondaryContent={selected.secondaryContent ?? ""}
+                minutes={String(selected.otpExpiryMinutes ?? 5)}
+                ctaButtons={(selected.ctaButtons ?? []).map((b) => ({ ...b, label: b.label ?? "", target: b.target ?? "" }))}
+              />
+            </div>
+          </Card>
+        ) : null}
+      </div>
     </div>
   );
 }
