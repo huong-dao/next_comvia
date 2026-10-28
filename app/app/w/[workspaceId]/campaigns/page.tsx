@@ -11,6 +11,7 @@ import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { SimpleTable } from "@/components/ui/simple-table";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { workspacePath } from "@/lib/paths";
+import { CAMPAIGN_STATUS_LABELS } from "@/lib/status-labels";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
 type CampaignRow = {
@@ -78,7 +79,12 @@ export default function CampaignsListPage() {
             {
               key: "status",
               header: "Trạng thái",
-              cell: (r) => (r.status ? <EntityStatusBadge value={r.status} /> : "—"),
+              cell: (r) =>
+                r.status ? (
+                  <EntityStatusBadge value={r.status} label={CAMPAIGN_STATUS_LABELS[r.status.toUpperCase()]} />
+                ) : (
+                  "—"
+                ),
             },
             {
               key: "rows",
