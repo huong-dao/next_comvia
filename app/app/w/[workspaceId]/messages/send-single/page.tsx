@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
-import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
+import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
 import { type TemplateCtaButton } from "@/lib/template-cta";
 import { useComviaQuery } from "@/lib/use-comvia-query";
@@ -29,6 +29,7 @@ type TemplateRow = {
   ctaButtons?: TemplateCtaButton[];
 };
 type OaStatus = { status?: string };
+type OaPreviewAsset = { logoLightUrl?: string | null };
 type WalletBalance = { balance?: string };
 
 const PHONE_PATTERN = /^84\d{8,10}$/;
@@ -76,6 +77,19 @@ export default function SendSinglePage() {
   );
 
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId), bundleFetcher);
+
+  const oaPreviewFetcher = useCallback(
+    async (token: string): Promise<OaPreviewAsset | null> => {
+      try {
+        return await comviaFetch<OaPreviewAsset>(`/workspaces/${workspaceId}/oa`, { token });
+      } catch (fetchError) {
+        if (fetchError instanceof ComviaApiError && fetchError.statusCode === 404) return null;
+        throw fetchError;
+      }
+    },
+    [workspaceId],
+  );
+  const { data: oa } = useComviaQuery(Boolean(workspaceId), oaPreviewFetcher);
 
   const approved = useMemo(
     () => (data?.templates ?? []).filter((t) => (t.status ?? "").toUpperCase() === "APPROVED"),
@@ -261,6 +275,7 @@ export default function SendSinglePage() {
                 placeholderLabels={placeholderLabels}
                 secondaryContent={selected.secondaryContent ?? ""}
                 minutes={String(selected.otpExpiryMinutes ?? 5)}
+                logoUrl={resolvePublicAssetUrl(oa?.logoLightUrl)}
                 ctaButtons={(selected.ctaButtons ?? []).map((b) => ({ ...b, label: b.label ?? "", target: b.target ?? "" }))}
               />
           </Card>
