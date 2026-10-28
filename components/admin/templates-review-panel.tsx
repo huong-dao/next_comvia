@@ -9,10 +9,10 @@ import {
   HiOutlineClock,
   HiOutlineNoSymbol,
 } from "react-icons/hi2";
+import { FilterCard, FilterField } from "@/components/app/filter-card";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input, Select } from "@/components/ui/input";
 import { SimpleTable } from "@/components/ui/simple-table";
@@ -41,6 +41,9 @@ type InternalTemplateItem = {
     status?: string;
   };
 };
+
+type Filters = { keyword: string; workspaceId: string; oaId: string; limit: string };
+const INITIAL_FILTERS: Filters = { keyword: "", workspaceId: "", oaId: "", limit: "20" };
 
 const staffStatuses = [
   {
@@ -76,20 +79,18 @@ export function TemplatesReviewPanel({
   title?: string;
   status: (typeof staffStatuses)[number]["value"];
 }) {
-  const [keyword, setKeyword] = useState("");
-  const [workspaceId, setWorkspaceId] = useState("");
-  const [oaId, setOaId] = useState("");
-  const [limit, setLimit] = useState("20");
+  const [draft, setDraft] = useState<Filters>(INITIAL_FILTERS);
+  const [applied, setApplied] = useState<Filters>(INITIAL_FILTERS);
 
   const queryString = useMemo(() => {
     const qs = new URLSearchParams();
     if (status) qs.set("status", status);
-    if (keyword.trim()) qs.set("keyword", keyword.trim());
-    if (workspaceId.trim()) qs.set("workspaceId", workspaceId.trim());
-    if (oaId.trim()) qs.set("oaId", oaId.trim());
-    if (limit.trim()) qs.set("limit", limit.trim());
+    if (applied.keyword.trim()) qs.set("keyword", applied.keyword.trim());
+    if (applied.workspaceId.trim()) qs.set("workspaceId", applied.workspaceId.trim());
+    if (applied.oaId.trim()) qs.set("oaId", applied.oaId.trim());
+    if (applied.limit.trim()) qs.set("limit", applied.limit.trim());
     return qs.toString();
-  }, [status, keyword, workspaceId, oaId, limit]);
+  }, [status, applied]);
 
   const fetcher = useCallback(
     (token: string) =>
@@ -130,33 +131,47 @@ export function TemplatesReviewPanel({
         ))}
       </div>
 
-      <Card className="mb-6 space-y-4 p-4">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <div>
-            <label className="text-xs font-semibold uppercase text-muted-foreground">Keyword</label>
-            <Input className="mt-1" value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="Tên template hoặc code" />
-          </div>
-          <div>
-            <label className="text-xs font-semibold uppercase text-muted-foreground">Workspace filter</label>
-            <Input className="mt-1" value={workspaceId} onChange={(e) => setWorkspaceId(e.target.value)} placeholder="workspaceId" />
-          </div>
-          <div>
-            <label className="text-xs font-semibold uppercase text-muted-foreground">OA filter</label>
-            <Input className="mt-1" value={oaId} onChange={(e) => setOaId(e.target.value)} placeholder="oaId" />
-          </div>
-          <div>
-            <label className="text-xs font-semibold uppercase text-muted-foreground">Limit</label>
-            <Select value={limit} onChange={(e) => setLimit(e.target.value)}>
-              <option value="20">20</option>
-              <option value="50">50</option>
-              <option value="100">100</option>
-            </Select>
-          </div>
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Staff dùng queue toàn cục nội bộ, không gắn membership workspace. Filter `workspace` và `oa` hiện áp dụng ở FE trên dữ liệu trả về từ API.
-        </p>
-      </Card>
+      <FilterCard
+        onApply={() => setApplied({ ...draft })}
+        onRefresh={() => void refetch()}
+        note="Staff dùng queue toàn cục nội bộ, không gắn membership workspace. Filter `workspace` và `oa` hiện áp dụng ở FE trên dữ liệu trả về từ API."
+      >
+        <FilterField label="Keyword" htmlFor="review-keyword" className="grow">
+          <Input
+            id="review-keyword"
+            value={draft.keyword}
+            onChange={(e) => setDraft((value) => ({ ...value, keyword: e.target.value }))}
+            placeholder="Tên template hoặc code"
+          />
+        </FilterField>
+        <FilterField label="Workspace filter" htmlFor="review-workspace" className="grow">
+          <Input
+            id="review-workspace"
+            value={draft.workspaceId}
+            onChange={(e) => setDraft((value) => ({ ...value, workspaceId: e.target.value }))}
+            placeholder="workspaceId"
+          />
+        </FilterField>
+        <FilterField label="OA filter" htmlFor="review-oa" className="grow">
+          <Input
+            id="review-oa"
+            value={draft.oaId}
+            onChange={(e) => setDraft((value) => ({ ...value, oaId: e.target.value }))}
+            placeholder="oaId"
+          />
+        </FilterField>
+        <FilterField label="Limit" htmlFor="review-limit" className="sm:w-28">
+          <Select
+            id="review-limit"
+            value={draft.limit}
+            onChange={(e) => setDraft((value) => ({ ...value, limit: e.target.value }))}
+          >
+            <option value="20">20</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </Select>
+        </FilterField>
+      </FilterCard>
 
       {loading ? <PageLoading message="Đang tải queue review…" /> : null}
       {error && !data ? <PageError message={error} onRetry={() => void refetch()} /> : null}

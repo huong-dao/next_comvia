@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useState } from "react";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
-import { Button } from "@/components/ui/button";
+import { FilterCard, FilterField } from "@/components/app/filter-card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Select } from "@/components/ui/input";
 import { SimpleTable } from "@/components/ui/simple-table";
@@ -25,17 +25,19 @@ type LogRow = {
 /** BE giới hạn limit là số nguyên trong khoảng 1–100. */
 const LIMIT_OPTIONS = ["20", "50", "100"];
 
+type Filters = { status: string; sendType: string; limit: string };
+const INITIAL_FILTERS: Filters = { status: "", sendType: "", limit: "50" };
+
 export default function MessageLogsPage() {
   const params = useParams();
   const workspaceId = params.workspaceId as string;
-  const [status, setStatus] = useState("");
-  const [sendType, setSendType] = useState("");
-  const [limit, setLimit] = useState("50");
+  const [draft, setDraft] = useState<Filters>(INITIAL_FILTERS);
+  const [applied, setApplied] = useState<Filters>(INITIAL_FILTERS);
 
   const qs = new URLSearchParams();
-  if (status) qs.set("status", status);
-  if (sendType) qs.set("sendType", sendType);
-  if (limit) qs.set("limit", limit);
+  if (applied.status) qs.set("status", applied.status);
+  if (applied.sendType) qs.set("sendType", applied.sendType);
+  if (applied.limit) qs.set("limit", applied.limit);
   const query = qs.toString();
 
   const fetcher = useCallback(
@@ -53,33 +55,46 @@ export default function MessageLogsPage() {
         eyebrow="Messaging"
         title="Nhật ký gửi tin"
         description="Lọc theo trạng thái và loại gửi (query API)."
-        actions={
-          <Button type="button" variant="outline" size="sm" onClick={() => void refetch()}>
-            Làm mới
-          </Button>
-        }
       />
 
-      <div className="mb-4 flex flex-wrap gap-3">
-        <Select value={status} onChange={(e) => setStatus(e.target.value)} className="w-44">
-          <option value="">Mọi trạng thái</option>
-          <option value="SUCCESS">SUCCESS</option>
-          <option value="FAILED">FAILED</option>
-        </Select>
-        <Select value={sendType} onChange={(e) => setSendType(e.target.value)} className="w-44">
-          <option value="">Mọi loại</option>
-          <option value="SINGLE">SINGLE</option>
-          <option value="TEST">TEST</option>
-          <option value="CAMPAIGN">CAMPAIGN</option>
-        </Select>
-        <Select value={limit} onChange={(e) => setLimit(e.target.value)} className="w-32">
-          {LIMIT_OPTIONS.map((n) => (
-            <option key={n} value={n}>
-              {n} dòng
-            </option>
-          ))}
-        </Select>
-      </div>
+      <FilterCard onApply={() => setApplied({ ...draft })} onRefresh={() => void refetch()}>
+        <FilterField label="Trạng thái" htmlFor="logs-status" className="sm:w-48">
+          <Select
+            id="logs-status"
+            value={draft.status}
+            onChange={(e) => setDraft((value) => ({ ...value, status: e.target.value }))}
+          >
+            <option value="">Mọi trạng thái</option>
+            <option value="SUCCESS">SUCCESS</option>
+            <option value="FAILED">FAILED</option>
+          </Select>
+        </FilterField>
+        <FilterField label="Loại gửi" htmlFor="logs-send-type" className="sm:w-48">
+          <Select
+            id="logs-send-type"
+            value={draft.sendType}
+            onChange={(e) => setDraft((value) => ({ ...value, sendType: e.target.value }))}
+          >
+            <option value="">Mọi loại</option>
+            <option value="SINGLE">SINGLE</option>
+            <option value="TEST">TEST</option>
+            <option value="CAMPAIGN">CAMPAIGN</option>
+          </Select>
+        </FilterField>
+        <FilterField label="Số dòng" htmlFor="logs-limit" className="sm:w-36">
+          <Select
+            id="logs-limit"
+            value={draft.limit}
+            onChange={(e) => setDraft((value) => ({ ...value, limit: e.target.value }))}
+          >
+            {LIMIT_OPTIONS.map((n) => (
+              <option key={n} value={n}>
+                {n} dòng
+              </option>
+            ))}
+          </Select>
+        </FilterField>
+      </FilterCard>
 
       {loading ? <PageLoading /> : null}
       {!loading && error && !data ? <PageError message={error} onRetry={() => void refetch()} /> : null}
