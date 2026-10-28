@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { Button } from "@/components/ui/button";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
-import { Input, Select } from "@/components/ui/input";
+import { Select } from "@/components/ui/input";
 import { SimpleTable } from "@/components/ui/simple-table";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { useComviaQuery } from "@/lib/use-comvia-query";
@@ -21,6 +21,9 @@ type LogRow = {
   providerMessageId?: string;
   costAtTime?: string;
 };
+
+/** BE giới hạn limit là số nguyên trong khoảng 1–100. */
+const LIMIT_OPTIONS = ["20", "50", "100"];
 
 export default function MessageLogsPage() {
   const params = useParams();
@@ -43,9 +46,6 @@ export default function MessageLogsPage() {
 
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId), fetcher);
   const rows = data ?? [];
-
-  if (loading) return <PageLoading />;
-  if (error && !data) return <PageError message={error} onRetry={() => void refetch()} />;
 
   return (
     <div>
@@ -72,35 +72,41 @@ export default function MessageLogsPage() {
           <option value="TEST">TEST</option>
           <option value="CAMPAIGN">CAMPAIGN</option>
         </Select>
-        <Input
-          className="w-24"
-          value={limit}
-          onChange={(e) => setLimit(e.target.value)}
-          placeholder="limit"
-        />
+        <Select value={limit} onChange={(e) => setLimit(e.target.value)} className="w-32">
+          {LIMIT_OPTIONS.map((n) => (
+            <option key={n} value={n}>
+              {n} dòng
+            </option>
+          ))}
+        </Select>
       </div>
 
-      <SimpleTable
-        rows={rows}
-        getRowKey={(r, i) => r.id ?? String(i)}
-        columns={[
-          {
-            key: "sent",
-            header: "Gửi lúc",
-            cell: (r) => (r.sentAt ? new Date(r.sentAt).toLocaleString() : "—"),
-          },
-          { key: "phone", header: "SĐT", cell: (r) => r.phoneNumber ?? "—" },
-          { key: "tpl", header: "Template", cell: (r) => r.templateId ?? "—" },
-          { key: "type", header: "Loại", cell: (r) => r.sendType ?? "—" },
-          {
-            key: "st",
-            header: "Trạng thái",
-            cell: (r) => (r.status ? <EntityStatusBadge value={r.status} /> : "—"),
-          },
-          { key: "cost", header: "Chi phí", cell: (r) => r.costAtTime ?? "—" },
-          { key: "mid", header: "Provider ID", cell: (r) => r.providerMessageId ?? "—" },
-        ]}
-      />
+      {loading ? <PageLoading /> : null}
+      {!loading && error && !data ? <PageError message={error} onRetry={() => void refetch()} /> : null}
+
+      {!loading && !(error && !data) ? (
+        <SimpleTable
+          rows={rows}
+          getRowKey={(r, i) => r.id ?? String(i)}
+          columns={[
+            {
+              key: "sent",
+              header: "Gửi lúc",
+              cell: (r) => (r.sentAt ? new Date(r.sentAt).toLocaleString() : "—"),
+            },
+            { key: "phone", header: "SĐT", cell: (r) => r.phoneNumber ?? "—" },
+            { key: "tpl", header: "Template", cell: (r) => r.templateId ?? "—" },
+            { key: "type", header: "Loại", cell: (r) => r.sendType ?? "—" },
+            {
+              key: "st",
+              header: "Trạng thái",
+              cell: (r) => (r.status ? <EntityStatusBadge value={r.status} /> : "—"),
+            },
+            { key: "cost", header: "Chi phí", cell: (r) => r.costAtTime ?? "—" },
+            { key: "mid", header: "Provider ID", cell: (r) => r.providerMessageId ?? "—" },
+          ]}
+        />
+      ) : null}
     </div>
   );
 }
