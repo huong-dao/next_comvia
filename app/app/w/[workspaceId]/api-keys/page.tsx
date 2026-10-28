@@ -198,6 +198,16 @@ export default function ApiKeysPage() {
             <Button icon={<HiOutlineXMark className="size-4" />} variant="ghost" onClick={handleCloseCreateModal}>
               Đóng
             </Button>
+            {rawKey ? (
+              <Button
+                type="button"
+                variant="outline"
+                icon={<HiOutlineClipboardDocument className="size-4" />}
+                onClick={() => void copyRawKey()}
+              >
+                Copy API Key
+              </Button>
+            ) : null}
             <Button icon={<HiCheck className="size-4" />} type="button" disabled={busy} onClick={() => void createKey()}>
               {busy ? "Đang tạo…" : "Tạo"}
             </Button>
