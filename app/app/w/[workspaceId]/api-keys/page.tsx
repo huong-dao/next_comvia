@@ -253,9 +253,11 @@ export default function ApiKeysPage() {
                 Copy API Key
               </Button>
             ) : null}
-            <Button type="button" disabled={busy} onClick={() => void regenerate()}>
-              {rawKey ? "Đã tạo key mới" : "Xác nhận tạo lại"}
-            </Button>
+            {!rawKey ? (
+              <Button type="button" disabled={busy} onClick={() => void regenerate()}>
+                {busy ? "Đang tạo lại…" : "Xác nhận tạo lại"}
+              </Button>
+            ) : null}
           </>
         }
       >
