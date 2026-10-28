@@ -25,6 +25,7 @@ type TemplateRow = {
   status?: string;
   otpExpiryMinutes?: number | null;
   placeholdersJson?: Record<string, string>;
+  placeholder_labels?: Record<string, string> | null;
   ctaButtons?: TemplateCtaButton[];
 };
 type OaStatus = { status?: string };
@@ -91,6 +92,8 @@ export default function SendSinglePage() {
 
   const selected = approved.find((t) => t.id === templateId);
   const fieldKeys = fieldKeysOf(selected);
+  const labelOf = (key: string) => selected?.placeholder_labels?.[key]?.trim() || key;
+  const placeholderLabels = Object.fromEntries(fieldKeys.map((key) => [key, labelOf(key)]));
 
   if (loading) return <PageLoading />;
   if (error && !data) return <PageError message={error} onRetry={() => void refetch()} />;
@@ -142,7 +145,7 @@ export default function SendSinglePage() {
     }
     const missing = fieldKeys.filter((key) => !(values[key] ?? "").trim());
     if (missing.length) {
-      setResult(`Chưa nhập: ${missing.join(", ")}.`);
+      setResult(`Chưa nhập: ${missing.map(labelOf).join(", ")}.`);
       return;
     }
     const payload = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, v.trim()]));
@@ -208,9 +211,7 @@ export default function SendSinglePage() {
               {fieldKeys.length ? (
                 fieldKeys.map((key) => (
                   <div key={key}>
-                    <label className="mb-2 block text-sm text-foreground">
-                      <code>{key}</code>
-                    </label>
+                    <label className="mb-2 block text-sm text-foreground">{labelOf(key)}</label>
                     <Input
                       value={values[key] ?? ""}
                       onChange={(e) => updateValue(key, e.target.value)}
@@ -258,6 +259,7 @@ export default function SendSinglePage() {
                 title={selected.title ?? ""}
                 content={selected.content ?? ""}
                 placeholders={values}
+                placeholderLabels={placeholderLabels}
                 secondaryContent={selected.secondaryContent ?? ""}
                 minutes={String(selected.otpExpiryMinutes ?? 5)}
                 ctaButtons={(selected.ctaButtons ?? []).map((b) => ({ ...b, label: b.label ?? "", target: b.target ?? "" }))}
