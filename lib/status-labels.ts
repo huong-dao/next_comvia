@@ -1,3 +1,9 @@
+/** Nhãn tiếng Việt của trạng thái thành viên workspace (WorkspaceMemberStatus). */
+export const MEMBER_STATUS_LABELS: Record<string, string> = {
+  ACTIVE: "ĐANG HOẠT ĐỘNG",
+  DISABLED: "ĐÃ VÔ HIỆU HÓA",
+};
+
 /** Nhãn tiếng Việt của trạng thái chiến dịch (CampaignStatus). */
 export const CAMPAIGN_STATUS_LABELS: Record<string, string> = {
   DRAFT: "BẢN NHÁP",

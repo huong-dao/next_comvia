@@ -12,6 +12,7 @@ import { Modal } from "@/components/ui/modal";
 import { SimpleTable } from "@/components/ui/simple-table";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
+import { MEMBER_STATUS_LABELS } from "@/lib/status-labels";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { HiOutlineXMark, HiOutlinePaperAirplane } from "react-icons/hi2";
 
@@ -116,7 +117,12 @@ export default function MembersPage() {
           {
             key: "st",
             header: "Trạng thái",
-            cell: (r) => (r.status ? <EntityStatusBadge value={r.status} /> : "—"),
+            cell: (r) =>
+              r.status ? (
+                <EntityStatusBadge value={r.status} label={MEMBER_STATUS_LABELS[r.status.toUpperCase()]} />
+              ) : (
+                "—"
+              ),
           },
           {
             key: "joined",
