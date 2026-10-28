@@ -104,7 +104,7 @@ export function CampaignPreflightModal({
           </dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt className="text-muted-foreground">Tổng trừ ví Owner (ước tính)</dt>
+          <dt className="text-muted-foreground">Tổng trừ ví (ước tính)</dt>
           <dd className="font-semibold tabular-nums">
             {total != null ? formatVND(total) : "—"}
           </dd>
@@ -141,7 +141,7 @@ export function CampaignPreflightModal({
         </p>
       ) : null}
       {sufficient === true ? (
-        <p className="text-sm text-muted-foreground">Đủ số dư — có thể bắt đầu gửi. Tin thất bại sẽ được hoàn tiền vào ví Owner.</p>
+        <p className="text-sm text-muted-foreground">Đủ số dư — có thể bắt đầu gửi. Tin thất bại sẽ được hoàn tiền vào ví.</p>
       ) : null}
     </Modal>
   );
