@@ -40,7 +40,7 @@ function sampleDataOf(template?: TemplateRow): Record<string, SampleValue> {
 
 function buildCurl(url: string, templateCode: string, data: Record<string, SampleValue>) {
   const json = JSON.stringify(
-    { api_key: "YOUR_API_KEY", templateCode, phoneNumber: SAMPLE_PHONE, data },
+    { templateCode, phoneNumber: SAMPLE_PHONE, data },
     null,
     2,
   )
@@ -170,11 +170,6 @@ export function ApiUsageGuide({ workspaceId, className }: { workspaceId: string;
                 <td className="whitespace-nowrap px-4 py-2 align-top font-mono text-xs">x-api-key</td>
                 <td className="whitespace-nowrap px-4 py-2 align-top text-xs text-muted-foreground">Header</td>
                 <td className="px-4 py-2 text-muted-foreground">API key của bạn.</td>
-              </tr>
-              <tr>
-                <td className="whitespace-nowrap px-4 py-2 align-top font-mono text-xs">api_key</td>
-                <td className="whitespace-nowrap px-4 py-2 align-top text-xs text-muted-foreground">Body</td>
-                <td className="px-4 py-2 text-muted-foreground">Cùng giá trị với <code>x-api-key</code>; cần gửi cả hai.</td>
               </tr>
               <tr>
                 <td className="whitespace-nowrap px-4 py-2 align-top font-mono text-xs">templateCode</td>
