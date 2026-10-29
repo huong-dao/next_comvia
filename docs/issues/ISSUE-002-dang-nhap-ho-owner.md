@@ -1,6 +1,6 @@
 # ISSUE-002: Nút "Đăng nhập Owner" trên trang admin/workspaces (impersonate)
 
-**Trạng thái:** Mới
+**Trạng thái:** BE đã triển khai xong (2026-10-29) — chờ FE làm theo contract bên dưới
 **Phân loại:** Missing Spec (tính năng mới, chưa có rule/API)
 **Màn hình/route liên quan:** `app/admin/workspaces/page.tsx` — bảng danh sách workspace, cột hành động (dòng 93-109, cạnh nút "Ngừng kích hoạt")
 
@@ -52,4 +52,16 @@ GIẢ ĐỊNH: Mỗi workspace có đúng 1 Owner (theo field `ownerUserId` hi�
 4. Thêm banner cố định trong layout workspace khi đang ở phiên impersonate (nhận biết qua token/flag riêng), kèm nút thoát về `/admin`.
 
 ## Xử lý
-Chờ BE xác nhận các câu hỏi mở trước khi bắt đầu code FE/BE.
+
+**BE — đã triển khai (2026-10-29):**
+- `POST /admin/workspaces/:workspaceId/impersonate` (role `ADMIN`) — xem contract đầy đủ ở `docs/FRONTEND_ADMIN_ROUTER_API_MAP.mdc` mục 3.
+- `GET /auth/me` trả thêm `isImpersonation` + `impersonatedByAdmin` để FE dựng banner — xem `docs/FRONTEND_API_GUIDE_NEXTJS.mdc` mục 3.4.
+- Audit log action `workspace.admin_impersonated` ghi mỗi lần gọi thành công.
+
+**Trả lời các CÂU HỎI MỞ (quyết định của BE khi code, có thể PO xem lại):**
+1. *Workspace nhiều owner?* — Không áp dụng: mỗi workspace vẫn đúng 1 owner qua `Workspace.ownerUserId`, token impersonate luôn ứng với user đó.
+2. *Thời hạn token, có refresh không?* — **20 phút, không refresh.** Hết hạn thì API trả `401`, FE phải điều hướng tab đó về trang đăng nhập (không tự gọi lại impersonate). Token cũng tự vô hiệu ngay nếu owner đổi/reset mật khẩu trong lúc đang bị impersonate (dùng chung cơ chế `tokenVersion`).
+3. *Audit log field gì?* — Action `workspace.admin_impersonated`, ghi `actorUserId` (admin), `workspaceId`, `resourceId` (= workspaceId), `metadataJson: { targetOwnerUserId, targetOwnerEmail, expiresInMinutes }`.
+4. *Giới hạn hành động nhạy cảm trong lúc impersonate?* — **CHƯA.** Phase 1 cố tình giữ đơn giản: phiên impersonate có đầy đủ quyền y như owner tự đăng nhập (đổi billing, xóa workspace, submit template, tạo topup...), không có guard/giới hạn riêng. Đây là giới hạn đã biết, không phải bị bỏ sót — **cần PO xác nhận lại** nếu muốn hạn chế thêm trước khi FE release tính năng này cho người dùng thật.
+
+**FE — làm theo contract ở trên** (sửa `lib/auth.ts`, trang nhận token, nút "Đăng nhập Owner", banner impersonate) như đề xuất ở mục "Hướng xử lý đề xuất" phía trên.

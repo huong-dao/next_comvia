@@ -2,8 +2,11 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { HiOutlineArrowLeftOnRectangle } from "react-icons/hi2";
 import { PageForbidden, PageLoading } from "@/components/app/page-state";
+import { Button } from "@/components/ui/button";
+import { clearImpersonationSession, getImpersonationMeta, isImpersonating } from "@/lib/auth";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { APP_PATHS } from "@/lib/paths";
 import { useComviaQuery } from "@/lib/use-comvia-query";
@@ -39,9 +42,37 @@ export function isWorkspaceOwner(role: string | null | undefined) {
   return role === "OWNER";
 }
 
+/** Banner cố định báo đang ở phiên "đăng nhập hộ" (ISSUE-002) — token chỉ sống trong tab này. */
+function ImpersonationBanner() {
+  const router = useRouter();
+  const meta = useMemo(() => getImpersonationMeta(), []);
+
+  function exitImpersonation() {
+    clearImpersonationSession();
+    if (window.opener) {
+      window.close();
+      return;
+    }
+    router.replace("/auth/login");
+  }
+
+  return (
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-400/60 bg-amber-50 px-4 py-2.5 text-sm text-amber-900">
+      <p>
+        Đang đăng nhập hộ <strong>{meta?.workspaceName ?? "workspace này"}</strong>
+        {meta?.adminEmail ? <> — thực hiện bởi admin <strong>{meta.adminEmail}</strong></> : null}. Phiên tự hết hạn sau 20 phút kể từ lúc mở.
+      </p>
+      <Button type="button" size="sm" variant="outline" icon={<HiOutlineArrowLeftOnRectangle className="size-4" />} onClick={exitImpersonation}>
+        Thoát chế độ đăng nhập hộ
+      </Button>
+    </div>
+  );
+}
+
 export function WorkspaceGate({ children }: { children: ReactNode }) {
   const params = useParams();
   const workspaceId = params.workspaceId as string;
+  const impersonating = isImpersonating();
 
   const fetcher = useCallback(
     (token: string) => comviaFetch<WorkspaceRow[]>("/workspaces", { token }),
@@ -97,5 +128,10 @@ export function WorkspaceGate({ children }: { children: ReactNode }) {
     refetchWorkspaces: refetch,
   };
 
-  return <WorkspaceRoleContext.Provider value={value}>{children}</WorkspaceRoleContext.Provider>;
+  return (
+    <WorkspaceRoleContext.Provider value={value}>
+      {impersonating ? <ImpersonationBanner /> : null}
+      {children}
+    </WorkspaceRoleContext.Provider>
+  );
 }

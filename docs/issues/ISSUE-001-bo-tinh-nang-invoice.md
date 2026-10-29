@@ -1,6 +1,6 @@
 # ISSUE-001: Bỏ toàn bộ tính năng Invoice — topup chỉ tạo Order, dừng lại ở đó
 
-**Trạng thái:** Đang xử lý (PO đã chốt câu trả lời cho BE — xem mục "Xử lý")
+**Trạng thái:** BE đã code xong trên `dev2`, chờ migrate DB + deploy (xem mục "Xử lý")
 **Phân loại:** Change Request
 **Màn hình/route liên quan:**
 - `app/app/w/[workspaceId]/invoices/page.tsx`, `app/app/w/[workspaceId]/invoices/[invoiceId]/page.tsx`
@@ -84,4 +84,12 @@ CÂU HỎI MỞ còn lại: Đây là thay đổi rule ở `docs/MAIN_RULES.mdc`
 
 ## Xử lý
 - FE: đã xóa toàn bộ trang/code invoice trên branch `dev` (xem commit `985e4e5` và các commit liên quan).
-- BE: chờ triển khai theo mục "BE — việc cần làm" ở trên (PO đã chốt câu trả lời, không cần hỏi lại FE/PO về phạm vi này nữa). Sau khi BE deploy xong, FE sẽ gỡ nốt field `invoice`/`invoiceId` optional còn sót trong type (nếu có) và đồng bộ lại docs.
+- BE: đã code xong trên branch `dev2` (2026-10-29), theo đúng mục "BE — việc cần làm" ở trên:
+  1. `TopupsService.creditTopupIfPending` ngừng tạo Invoice/InvoiceItem — chỉ còn tạo Order + OrderItem.
+  2. Xóa toàn bộ endpoint invoice: `OrdersInvoicesController` (admin) và `WorkspaceFinanceController` (workspace) chỉ còn route `orders`; xóa `InvoicePdfVerificationService`, `InvoicePdfStorageService`, `GeminiInvoicePdfService` và DTO liên quan.
+  3. `getOrderForAdmin`/`listOrdersForOwner`/`getOrderForOwner` không còn `include: { invoice: true }` — response order detail hết field `invoice`.
+  4. Billing Profile (`invoiceEmail`, mã số thuế, loại hình cá nhân/tổ chức...) giữ nguyên hoàn toàn, không đổi gì.
+  5. Xóa audit action `invoice.issued_via_pdf`, `invoice.pdf_verification_failed` khỏi `AUDIT_ACTIONS`/`AUDIT_RESOURCE_TYPES` — không còn nơi nào ghi 2 action này.
+  6. Đã cập nhật `docs/business/business-rules.md` (bỏ BR-INVOICE-01/02/03, BR-ADMIN-04 Accountant, sửa Module 8/BR-CORE-02/04/09/BR-NOTI-01/BR-JOB-01), `docs/business/change-log.md`, `docs/FRONTEND_API_GUIDE_NEXTJS.mdc`, `docs/FRONTEND_ADMIN_ROUTER_API_MAP.mdc`.
+  - Ngoài phạm vi yêu cầu nhưng cùng dọn luôn: model Prisma `Invoice`/`InvoiceItem`/enum `InvoiceStatus` đã xóa khỏi schema (migration `20261029160000_remove_invoice_feature` — **chưa apply vào DB thật**, môi trường code không có kết nối DB để chạy `prisma migrate dev`, cần DevOps chạy `prisma migrate deploy` khi release); script `migrate:legacy-invoice-pdfs` và `scripts/migrate-legacy-invoice-pdfs.cjs` cũng xóa vì không còn invoice PDF nào để migrate.
+- **Còn lại trước khi đóng issue:** DevOps chạy migration DB khi deploy `dev2`. Sau đó FE gỡ nốt field `invoice`/`invoiceId` optional còn sót trong type (nếu có) — theo xác nhận BE ở trên là response order detail đã không còn field này.
