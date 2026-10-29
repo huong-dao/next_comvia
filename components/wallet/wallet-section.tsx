@@ -97,6 +97,7 @@ type TxRow = {
   type?: string;
   status?: string;
   amount?: string;
+  balanceAfter?: string;
   createdAt?: string;
 };
 
@@ -349,16 +350,25 @@ export function WalletSection() {
                   {
                     key: "amt",
                     header: "Số tiền",
-                    cell: (r) =>
-                      r.amount != null ? (
-                        <span
-                          className={cn(
-                            "font-semibold tabular-nums",
-                            Number(r.amount) < 0 ? "text-danger" : "text-success",
-                          )}
-                        >
-                          {formatVND(Number(r.amount))}
+                    cell: (r) => {
+                      if (r.amount == null) return "—";
+                      // Chỉ "Nạp tiền" (TOPUP_CREDIT) hiện số dương/xanh; mọi loại khác (trừ phí, tạm giữ...) hiện âm/đỏ.
+                      const isCredit = r.type === "TOPUP_CREDIT";
+                      const amount = Math.abs(Number(r.amount));
+                      return (
+                        <span className={cn("font-semibold tabular-nums", isCredit ? "text-success" : "text-danger")}>
+                          {isCredit ? "" : "-"}
+                          {formatVND(amount)}
                         </span>
+                      );
+                    },
+                  },
+                  {
+                    key: "bal",
+                    header: "Số dư sau giao dịch",
+                    cell: (r) =>
+                      r.balanceAfter != null ? (
+                        <span className="tabular-nums">{formatVND(Number(r.balanceAfter))}</span>
                       ) : (
                         "—"
                       ),

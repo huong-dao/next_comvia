@@ -1,6 +1,6 @@
 # ISSUE-004: GET /admin/workspaces chưa hỗ trợ filter/phân trang phía BE
 
-**Trạng thái:** Mới
+**Trạng thái:** BE đã triển khai xong (2026-10-29) — FE đổi fetcher theo contract mới
 **Phân loại:** Missing Spec (gap kỹ thuật, không phải rule nghiệp vụ)
 **Màn hình/route liên quan:** `app/admin/workspaces/page.tsx` — trang danh sách workspace cho admin
 
@@ -44,4 +44,15 @@ GIẢ ĐỊNH: Trong lúc chờ BE, giải pháp lọc/phân trang client-side t
 2. Khi BE xong: đổi fetcher sang gọi kèm query string + đọc `meta` để phân trang server-side, bỏ logic lọc client-side — theo đúng pattern đã có ở `app/admin/orders/page.tsx`.
 
 ## Xử lý
-Chờ BE xác nhận ưu tiên và contract. FE đã tạm thời xử lý ở client để không chặn nhu cầu tìm kiếm trước mắt.
+
+**BE — đã triển khai (2026-10-29):** `GET /admin/workspaces` giờ nhận `page`, `limit`, `keyword`, `status`, `ownerUserId` và trả `{ data, meta }` — contract đầy đủ ở `docs/FRONTEND_ADMIN_ROUTER_API_MAP.mdc` mục 3.
+
+**Trả lời 2 CÂU HỎI MỞ:**
+1. *Theo đúng shape `{ data, meta }` giống `/admin/orders`?* — Đúng, dùng y hệt shape đó (`page`, `limit`, `total`, `totalPages`), không có pattern phân trang nào khác đang chuẩn hóa riêng cho `/admin/*`.
+2. *Có cần filter theo khoảng ngày tạo không?* — Chưa làm, theo đúng giả định trong issue ("chỉ cần `keyword` + `status` là đủ"). Nếu sau này cần lọc theo `createdAt`, thêm 2 param `createdAtFrom`/`createdAtTo` tương tự `/admin/orders` là đủ, không phải thiết kế lại.
+
+**Lưu ý:** đây là **breaking change** — response cũ trả thẳng mảng, giờ trả `{ data, meta }`. FE phải đổi fetcher cùng lúc với lúc BE deploy, không thể để FE cũ chạy song song với BE mới (FE cũ sẽ đọc nhầm object `{ data, meta }` như một workspace hoặc lỗi runtime tùy cách code).
+
+**Chưa làm `GET /admin/users`** (gợi ý "nhân tiện" trong issue) — giữ đúng phạm vi ticket này. Nếu muốn làm, nên mở issue/ticket riêng vì cùng pattern nhưng là 1 thay đổi breaking riêng biệt.
+
+**FE:** đổi `app/admin/workspaces/page.tsx` từ lọc/phân trang client-side sang gọi kèm query string + đọc `meta`, bỏ logic lọc client-side tạm thời — theo đúng pattern đã có ở `app/admin/orders/page.tsx`.

@@ -7,7 +7,6 @@ import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { AdminRoleGate } from "@/components/admin/role-gate";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input, Select } from "@/components/ui/input";
 import { PaginationBar } from "@/components/ui/pagination-bar";
@@ -16,7 +15,7 @@ import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken, getStoredUser, type ImpersonationMeta, type StoredUser } from "@/lib/auth";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 30;
 const STATUS_OPTIONS = [
   { value: "", label: "Tất cả" },
   { value: "ACTIVE", label: "ACTIVE" },
@@ -34,6 +33,11 @@ type WsRow = {
   createdAt?: string;
 };
 
+type WsListResponse = {
+  data: WsRow[];
+  meta: { page: number; limit: number; total: number; totalPages: number };
+};
+
 type ImpersonateResponse = {
   accessToken: string;
   tokenType?: string;
@@ -42,38 +46,37 @@ type ImpersonateResponse = {
   owner: { id: string; email?: string; fullName?: string };
 };
 
+type AppliedFilters = { keyword: string; status: string; ownerUserId: string };
+
+const initialFilters = (): AppliedFilters => ({ keyword: "", status: "", ownerUserId: "" });
+
 export default function AdminWorkspacesPage() {
-  const fetcher = useCallback((token: string) => comviaFetch<WsRow[]>("/admin/workspaces", { token }), []);
-  const { data, loading, error, refetch } = useComviaQuery(true, fetcher);
+  const [page, setPage] = useState(1);
+  const [applied, setApplied] = useState<AppliedFilters>(initialFilters);
+  const [draft, setDraft] = useState<AppliedFilters>(initialFilters);
   const [busy, setBusy] = useState<string | null>(null);
   const [impersonating, setImpersonating] = useState<string | null>(null);
-  const rows = useMemo(() => data ?? [], [data]);
-  const activeCount = rows.filter((item) => (item.status ?? "").toUpperCase() === "ACTIVE").length;
 
-  // GET /admin/workspaces chưa hỗ trợ filter/phân trang phía BE — lọc và phân trang
-  // ngay trên danh sách đã tải để vẫn tìm kiếm được khi số lượng workspace tăng lên.
-  const [keywordDraft, setKeywordDraft] = useState("");
-  const [statusDraft, setStatusDraft] = useState("");
-  const [applied, setApplied] = useState({ keyword: "", status: "" });
-  const [page, setPage] = useState(1);
+  const qs = useMemo(() => {
+    const p = new URLSearchParams();
+    p.set("page", String(page));
+    p.set("limit", String(PAGE_SIZE));
+    if (applied.keyword.trim()) p.set("keyword", applied.keyword.trim());
+    if (applied.status) p.set("status", applied.status);
+    if (applied.ownerUserId.trim()) p.set("ownerUserId", applied.ownerUserId.trim());
+    return p.toString();
+  }, [page, applied]);
 
-  const filteredRows = useMemo(() => {
-    const keyword = applied.keyword.trim().toLowerCase();
-    return rows.filter((row) => {
-      if (applied.status && (row.status ?? "").toUpperCase() !== applied.status) return false;
-      if (!keyword) return true;
-      return [row.name, row.slug, row.ownerUserId, row.id].some((field) =>
-        (field ?? "").toLowerCase().includes(keyword),
-      );
-    });
-  }, [rows, applied]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const pageRows = filteredRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const fetcher = useCallback(
+    (token: string) => comviaFetch<WsListResponse>(`/admin/workspaces?${qs}`, { token }),
+    [qs],
+  );
+  const { data, loading, error, refetch } = useComviaQuery(true, fetcher);
+  const rows = data?.data ?? [];
+  const meta = data?.meta;
 
   function applyFilters() {
-    setApplied({ keyword: keywordDraft, status: statusDraft });
+    setApplied({ ...draft });
     setPage(1);
   }
 
@@ -163,41 +166,36 @@ export default function AdminWorkspacesPage() {
 
   return (
     <AdminRoleGate>
-      {loading ? <PageLoading /> : null}
+      {loading && !data ? <PageLoading /> : null}
       {error && !data ? <PageError message={error} onRetry={() => void refetch()} /> : null}
       {data ? (
         <div>
           <PageHeader title="Workspaces" />
-          <div className="mb-6 grid gap-4 md:grid-cols-3">
-            <Card className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Tổng workspaces</p>
-              <p className="text-3xl font-semibold text-foreground">{rows.length}</p>
-            </Card>
-            <Card className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Đang kích hoạt</p>
-              <p className="text-3xl font-semibold text-foreground">{activeCount}</p>
-            </Card>
-            <Card className="space-y-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Chưa kích hoạt</p>
-              <p className="text-3xl font-semibold text-foreground">{rows.length - activeCount}</p>
-            </Card>
-          </div>
 
           <FilterCard onApply={applyFilters} onRefresh={() => void refetch()}>
-            <FilterField label="Tìm kiếm" htmlFor="ws-filter-keyword" className="grow">
+            <FilterField label="Tên hoặc slug" htmlFor="ws-filter-keyword" className="grow">
               <Input
                 id="ws-filter-keyword"
-                value={keywordDraft}
-                onChange={(e) => setKeywordDraft(e.target.value)}
-                placeholder="Tên, slug hoặc ID chủ workspace"
+                value={draft.keyword}
+                onChange={(e) => setDraft((d) => ({ ...d, keyword: e.target.value }))}
+                placeholder="Tìm theo tên hoặc slug"
                 className="max-w-md"
+              />
+            </FilterField>
+            <FilterField label="ID chủ workspace" htmlFor="ws-filter-owner">
+              <Input
+                id="ws-filter-owner"
+                value={draft.ownerUserId}
+                onChange={(e) => setDraft((d) => ({ ...d, ownerUserId: e.target.value }))}
+                placeholder="Khớp chính xác"
+                className="max-w-[220px]"
               />
             </FilterField>
             <FilterField label="Trạng thái" htmlFor="ws-filter-status">
               <Select
                 id="ws-filter-status"
-                value={statusDraft}
-                onChange={(e) => setStatusDraft(e.target.value)}
+                value={draft.status}
+                onChange={(e) => setDraft((d) => ({ ...d, status: e.target.value }))}
                 className="max-w-[180px]"
               >
                 {STATUS_OPTIONS.map((opt) => (
@@ -210,7 +208,7 @@ export default function AdminWorkspacesPage() {
           </FilterCard>
 
           <SimpleTable
-            rows={pageRows}
+            rows={rows}
             getRowKey={(r) => r.id}
             columns={[
               { key: "n", header: "Tên", cell: (r) => r.name ?? "—" },
@@ -265,15 +263,14 @@ export default function AdminWorkspacesPage() {
           <div className="mt-4 space-y-4 border-t border-border/60 pt-4">
             <p className="text-center text-sm text-muted-foreground">
               Hiển thị{" "}
-              {filteredRows.length > 0
-                ? `${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, filteredRows.length)}`
+              {meta && meta.total > 0
+                ? `${(meta.page - 1) * meta.limit + 1}–${Math.min(meta.page * meta.limit, meta.total)}`
                 : "0"}{" "}
-              trong {filteredRows.length} workspace
-              {filteredRows.length !== rows.length ? ` (lọc từ ${rows.length})` : ""}
+              trong {meta?.total ?? 0} workspace
             </p>
             <PaginationBar
-              currentPage={currentPage}
-              totalPages={totalPages}
+              currentPage={page}
+              totalPages={meta?.totalPages ?? 0}
               onPageChange={setPage}
               ariaLabel="Phân trang danh sách workspace"
             />
