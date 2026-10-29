@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
+import { useAlertModal } from "@/components/ui/alert-modal";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input, Select, Textarea } from "@/components/ui/input";
@@ -83,6 +84,7 @@ export default function SendSinglePage() {
   );
 
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId), bundleFetcher);
+  const { showAlert } = useAlertModal();
 
   const oaPreviewFetcher = useCallback(
     async (token: string): Promise<OaPreviewAsset | null> => {
@@ -108,7 +110,6 @@ export default function SendSinglePage() {
   const [jsonText, setJsonText] = useState("{}");
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
 
   const selected = approved.find((t) => t.id === templateId);
   const fieldKeys = fieldKeysOf(selected);
@@ -124,7 +125,6 @@ export default function SendSinglePage() {
     setValues(next);
     setJsonText(JSON.stringify(next, null, 2));
     setJsonError(null);
-    setResult(null);
   }
 
   function updateValue(key: string, value: string) {
@@ -147,25 +147,27 @@ export default function SendSinglePage() {
   }
 
   async function send() {
-    setResult(null);
     const token = getAccessToken();
     if (!token) return;
     if (!templateId) {
-      setResult("Chọn mẫu tin nhắn.");
+      showAlert({ type: "error", message: "Chọn mẫu tin nhắn." });
       return;
     }
     const phoneNumber = phone.replace(/\s/g, "");
     if (!PHONE_PATTERN.test(phoneNumber)) {
-      setResult("Số điện thoại phải bắt đầu bằng 84, gồm 10–12 chữ số (ví dụ 84901234567).");
+      showAlert({
+        type: "error",
+        message: "Số điện thoại phải bắt đầu bằng 84, gồm 10–12 chữ số (ví dụ 84901234567).",
+      });
       return;
     }
     if (jsonError) {
-      setResult(jsonError);
+      showAlert({ type: "error", message: jsonError });
       return;
     }
     const missing = fieldKeys.filter((key) => !(values[key] ?? "").trim());
     if (missing.length) {
-      setResult(`Chưa nhập: ${missing.map(labelOf).join(", ")}.`);
+      showAlert({ type: "error", message: `Chưa nhập: ${missing.map(labelOf).join(", ")}.` });
       return;
     }
     const payload = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, v.trim()]));
@@ -183,9 +185,17 @@ export default function SendSinglePage() {
           }),
         },
       );
-      setResult(`Trạng thái: ${res.status ?? "OK"} — providerMessageId: ${res.providerMessageId ?? "—"}`);
+      showAlert({
+        type: "success",
+        message: `Trạng thái: ${res.status ?? "OK"} — providerMessageId: ${res.providerMessageId ?? "—"}`,
+      });
+      setTemplateId("");
+      setPhone("");
+      setValues({});
+      setJsonText("{}");
+      setJsonError(null);
     } catch (e) {
-      setResult(e instanceof ComviaApiError ? e.message : "Gửi thất bại.");
+      showAlert({ type: "error", message: e instanceof ComviaApiError ? e.message : "Gửi thất bại." });
     } finally {
       setSending(false);
     }
@@ -268,7 +278,6 @@ export default function SendSinglePage() {
           <Button icon={<HiOutlinePaperAirplane className="size-4" />} type="button" disabled={sending} onClick={() => void send()}>
             {sending ? "Đang gửi…" : "Gửi tin"}
           </Button>
-          {result ? <p className="text-sm text-muted-foreground">{result}</p> : null}
         </Card>
         {selected ? (
           <Card className="flex min-w-0 flex-col gap-3">
