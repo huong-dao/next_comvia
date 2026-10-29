@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { HiMiniPlus, HiOutlineArrowRight, HiOutlineDocumentText } from "react-icons/hi2";
+import { HiMiniPlus, HiOutlineDocumentText } from "react-icons/hi2";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
@@ -14,7 +13,6 @@ import { TemplateForm } from "@/components/template/template-form";
 import { TemplateEditForm } from "@/components/template/template-edit-form";
 import { useToast } from "@/components/ui/toast";
 import { comviaFetch } from "@/lib/comviaFetch";
-import { workspacePath } from "@/lib/paths";
 import { TEMPLATE_STATUS_LABELS } from "@/lib/status-labels";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { formatDate } from "@/lib/utils";
@@ -32,7 +30,7 @@ type TemplateRow = {
   updatedAt?: string;
 };
 
-/** Số dòng hiển thị rút gọn trên dashboard (xem đầy đủ qua "Xem tất cả"). */
+/** Số dòng hiển thị rút gọn trên dashboard. */
 const PREVIEW_LIMIT = 5;
 
 const STATUS_FILTERS = [
@@ -46,7 +44,7 @@ const STATUS_FILTERS = [
 
 /**
  * Box phải của section OA trên dashboard (TICKET-014, hình 2):
- * danh sách mẫu tin rút gọn + "Xem tất cả" + "Tạo mẫu tin" (popup dùng TemplateForm).
+ * danh sách mẫu tin rút gọn + "Tạo mẫu tin" (popup dùng TemplateForm).
  * Tạo xong refetch danh sách. Component tự lấy `workspaceId` (useParams) để
  * dashboard page sửa tối thiểu (pattern giống WalletSection/OaInfoBox).
  */
@@ -92,9 +90,6 @@ export function DashboardTemplateList({ className }: { className?: string }) {
           Danh sách mẫu tin ZBS
         </h2>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" icon={<HiOutlineArrowRight className="size-4" />} asChild>
-            <Link href={workspacePath(workspaceId, "templates")}>Xem tất cả</Link>
-          </Button>
           <Button size="sm" icon={<HiMiniPlus className="size-4" />} onClick={() => setCreateOpen(true)}>
             Tạo mẫu tin
           </Button>
