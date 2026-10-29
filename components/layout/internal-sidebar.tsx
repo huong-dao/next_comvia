@@ -8,7 +8,6 @@ import {
   HiOutlineClipboardDocumentList,
   HiOutlineCreditCard,
   HiOutlineCurrencyDollar,
-  HiOutlineDocumentText,
   HiOutlineHome,
   HiOutlineRectangleStack,
   HiOutlineShoppingCart,
@@ -47,12 +46,6 @@ const adminNav: NavItem[] = [
     icon: HiOutlineShoppingCart,
     href: "/admin/orders",
     match: (p) => p.startsWith("/admin/orders"),
-  },
-  {
-    label: "Hóa đơn",
-    icon: HiOutlineDocumentText,
-    href: "/admin/invoices",
-    match: (p) => p.startsWith("/admin/invoices"),
   },
   {
     label: "Lịch sử hoạt động",

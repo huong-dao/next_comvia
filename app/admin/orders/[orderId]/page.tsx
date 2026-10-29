@@ -10,7 +10,6 @@ import { AdminRoleGate } from "@/components/admin/role-gate";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
-import { SimpleTable } from "@/components/ui/simple-table";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { formatVND } from "@/lib/utils";
@@ -50,21 +49,6 @@ type AdminOrderDetail = {
   topupRequestId?: string | null;
   createdAt?: string;
   items?: OrderItemRow[];
-  invoice?: {
-    id?: string;
-    billingSnapshotJson?: {
-      companyName?: string;
-      fullName?: string;
-      address?: string;
-      taxCode?: string;
-      invoiceEmail?: string;
-    };
-    invoiceCode?: string;
-    status?: string;
-    workspaceId?: string;
-    orderId?: string;
-    updatedAt?: string;
-  } | null;
 };
 
 function fmt(v: number | string | undefined) {
@@ -140,45 +124,6 @@ export default function AdminOrderDetailPage() {
               <p className="text-sm">{data.createdAt ? new Date(data.createdAt).toLocaleString("vi-VN") : "—"}</p>
             </div>
           </Card>
-
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Hóa đơn</p>
-          <SimpleTable
-            rows={[data.invoice ?? {}]}
-            getRowKey={(r, i) => r.id ?? String(i)}
-            columns={[
-              {
-                key: "n",
-                header: "Mã hóa đơn",
-                cell: (r) =>
-                  r.id ? (
-                    <Button variant="ghost" size="sm" className="h-auto px-2 text-sm" asChild>
-                      <Link href={`/admin/invoices/${r.id}`}>{r.invoiceCode ?? r.id}</Link>
-                    </Button>
-                  ) : (
-                    (r.invoiceCode ?? "—")
-                  ),
-              },
-              {
-                key: "id",
-                header: "Thông tin xuất HĐ",
-                cell: (r) => {
-                  const billingInfo = r.billingSnapshotJson ?? null;
-                  return billingInfo && (billingInfo.companyName || billingInfo.fullName) ? (
-                    <div>
-                      <div className="font-medium">{billingInfo.companyName ?? billingInfo.fullName}</div>
-                      {billingInfo.address ? <div className="text-xs text-muted-foreground">Địa chỉ: {billingInfo.address}</div> : null}
-                      {billingInfo.taxCode ? <div className="text-xs text-muted-foreground">Mã số thuế: {billingInfo.taxCode}</div> : null}
-                      {billingInfo.invoiceEmail ? <div className="text-xs text-muted-foreground">Email: {billingInfo.invoiceEmail}</div> : null}
-                    </div>
-                  ) : (
-                    "—"
-                  );
-                },
-              },
-              { key: "p", header: "Tình trạng", cell: (r) => r.status ? <EntityStatusBadge value={r.status} /> : "—" },
-              { key: "t", header: "Ngày tạo", cell: (r) => r.updatedAt ? new Date(r.updatedAt).toLocaleString("vi-VN") : "—" },
-            ]}
-          />
         </div>
       ) : null}
     </AdminRoleGate>

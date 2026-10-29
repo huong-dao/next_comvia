@@ -52,7 +52,7 @@ export function getComviaOriginUrl() {
 
 /**
  * Ghép domain gốc (không phải base URL của API) với path tĩnh tương đối backend trả về
- * (vd `avatarUrl`/`logoLightUrl`/`invoicePdfUrl` dạng `/public/...`). URL tuyệt đối giữ nguyên.
+ * (vd `avatarUrl`/`logoLightUrl` dạng `/public/...`). URL tuyệt đối giữ nguyên.
  */
 export function resolvePublicAssetUrl(url?: string | null): string | null {
   const u = url?.trim();

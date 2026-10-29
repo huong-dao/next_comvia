@@ -22,7 +22,6 @@ type OrderDetail = {
   totalVatAmount?: string;
   totalAmountInclVat?: string;
   paidAt?: string;
-  invoiceId?: string;
   items?: Array<{
     id?: string;
     name?: string;
@@ -49,8 +48,6 @@ export default function OrderDetailPage() {
   if (loading) return <PageLoading />;
   if (error && !data) return <PageError message={error} onRetry={() => void refetch()} />;
   if (!data) return null;
-
-  const invId = data.invoiceId;
 
   return (
     <div>
@@ -89,13 +86,6 @@ export default function OrderDetailPage() {
           <p className="text-xs uppercase text-muted-foreground">Paid at</p>
           <p className="text-sm">{data.paidAt ? new Date(data.paidAt).toLocaleString() : "—"}</p>
         </div>
-        {invId ? (
-          <div className="sm:col-span-2">
-            <Button variant="secondary" size="sm" asChild>
-              <Link href={workspacePath(workspaceId, "invoices", invId)}>Mở hóa đơn liên kết</Link>
-            </Button>
-          </div>
-        ) : null}
       </Card>
 
       <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Order items</p>

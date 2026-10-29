@@ -127,7 +127,6 @@ const adminItems: Array<{
   { label: "ZBS Templates", href: "/admin/templates", icon: HiOutlineDocumentText },
   { label: "T\u00e0i kho\u1ea3n c\u00f4ng ty", href: "/admin/money-accounts", icon: HiOutlineCreditCard },
   { label: "\u0110\u01a1n h\u00e0ng", href: "/admin/orders", icon: HiOutlineShoppingCart },
-  { label: "H\u00f3a \u0111\u01a1n", href: "/admin/invoices", icon: HiOutlineDocumentText },
   { label: "L\u1ecbch s\u1eed ho\u1ea1t \u0111\u1ed9ng", href: "/admin/audit-logs", icon: HiOutlineClipboardDocumentList },
   { label: "C\u1ea5u h\u00ecnh chung", href: "/admin/config", icon: HiOutlineCog6Tooth },
 ];
