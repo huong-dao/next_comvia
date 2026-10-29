@@ -12,7 +12,7 @@ import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
-import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
+import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
 import {
   newPlaceholderRow,
@@ -42,12 +42,14 @@ type TemplateDetail = {
   revisionReason?: string | null;
   placeholdersJson?: Record<string, string>;
   placeholder_labels?: Record<string, string> | null;
+  placeholderLabels?: Record<string, string> | null;
   unitPricePerMessage?: number | string | null;
   providerTemplateId?: string | null;
   ctaButtons?: AdminCta[];
   workspace?: { id?: string; name?: string };
   oaConnection?: { id?: string; oaName?: string; name?: string };
 };
+type OaPreviewAsset = { logoLightUrl?: string | null };
 
 type BackendTemplateType = "TABLE" | "TEXT" | "OTP";
 const BACKEND_TO_PREVIEW: Record<BackendTemplateType, TemplateMessageType> = { TABLE: "bang", TEXT: "van_ban", OTP: "otp" };
@@ -75,6 +77,22 @@ export default function AdminTemplateDetailPage() {
   const templateId = params.templateId;
   const fetcher = useCallback((token: string) => comviaFetch<TemplateDetail>("/admin/templates/" + templateId, { token }), [templateId]);
   const { data, loading, error, refetch } = useComviaQuery(Boolean(templateId), fetcher);
+
+  const workspaceId = data?.workspace?.id;
+  const oaFetcher = useCallback(
+    async (token: string): Promise<OaPreviewAsset | null> => {
+      try {
+        return await comviaFetch<OaPreviewAsset>("/workspaces/" + workspaceId + "/oa", { token });
+      } catch (fetchError) {
+        // Endpoint này chỉ cho OWNER/MEMBER của workspace; admin không có quyền thì bỏ qua, preview dùng placeholder "OA".
+        if (fetchError instanceof ComviaApiError && (fetchError.statusCode === 404 || fetchError.statusCode === 403)) return null;
+        throw fetchError;
+      }
+    },
+    [workspaceId],
+  );
+  const { data: oa } = useComviaQuery(Boolean(workspaceId), oaFetcher);
+  const previewLogoUrl = resolvePublicAssetUrl(oa?.logoLightUrl);
 
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
@@ -105,7 +123,7 @@ export default function AdminTemplateDetailPage() {
     setContent(data.content ?? "");
     setSecondaryContent(data.secondaryContent ?? "");
     setOtpMinutes(data.otpExpiryMinutes != null ? String(data.otpExpiryMinutes) : "5");
-    setPlaceholderRows(recordToPlaceholderRows(data.placeholdersJson, data.placeholder_labels));
+    setPlaceholderRows(recordToPlaceholderRows(data.placeholdersJson, data.placeholder_labels ?? data.placeholderLabels));
     setUnitPrice(data.unitPricePerMessage != null ? String(data.unitPricePerMessage) : "");
     setProviderTemplateId(data.providerTemplateId ?? "");
     setStatus((data.status ?? "DRAFT").toUpperCase());
@@ -256,7 +274,6 @@ export default function AdminTemplateDetailPage() {
     <AdminRoleGate>
       <PageHeader
         title={data.name ?? data.code ?? "Mẫu tin ZBS"}
-        description="Admin override — chỉnh sửa mọi trường và mọi trạng thái, bỏ qua giới hạn của chủ workspace."
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {data.status ? <EntityStatusBadge value={data.status} label={TEMPLATE_STATUS_LABELS[data.status.toUpperCase()]} /> : null}
@@ -411,6 +428,7 @@ export default function AdminTemplateDetailPage() {
               placeholderLabels={previewLabels}
               secondaryContent={secondaryContent}
               minutes={otpMinutes}
+              logoUrl={previewLogoUrl}
               ctaButtons={ctaButtons}
             />
           </div>
