@@ -184,16 +184,12 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
     if (!name.trim()) {
       return { ok: false, message: "Tên mẫu là bắt buộc." };
     }
-    const ctaError = validateCtaButtons(ctaButtons, filledSlugs);
-    if (ctaError) return { ok: false, message: ctaError };
-
     const body: CreateTemplateBody = {
       name: name.trim(),
       type: TYPE_TO_BACKEND[type],
     };
     if (title.trim()) body.title = title.trim();
     if (trackingId.trim()) body.trackingId = trackingId.trim();
-    if (ctaButtons.length > 0) body.ctaButtons = normalizeCtaButtons(ctaButtons);
 
     if (type === "otp") {
       const mins = Number(otpMinutes);
@@ -204,6 +200,10 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
       body.placeholdersJson = OTP_PLACEHOLDERS;
       return { ok: true, body };
     }
+
+    const ctaError = validateCtaButtons(ctaButtons, filledSlugs);
+    if (ctaError) return { ok: false, message: ctaError };
+    if (ctaButtons.length > 0) body.ctaButtons = normalizeCtaButtons(ctaButtons);
 
     const ph = rowsToPlaceholders(placeholderRows);
     if (!ph.ok) return ph;
@@ -301,7 +301,15 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
 
         <div>
           <label className={LABEL_CLASS}>Loại tin</label>
-          <Select value={type} onChange={(e) => setType(e.target.value as TemplateMessageType)}>
+          <Select
+            value={type}
+            onChange={(e) => {
+              const nextType = e.target.value as TemplateMessageType;
+              setType(nextType);
+              // OTP không hỗ trợ nút CTA — xóa luôn để không gửi nhầm lên API khi submit.
+              if (nextType === "otp") setCtaButtons([]);
+            }}
+          >
             {TYPE_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
@@ -463,7 +471,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
           </div>
         ) : null}
 
-        <TemplateCtaFields buttons={ctaButtons} onChange={setCtaButtons} />
+        {type !== "otp" ? <TemplateCtaFields buttons={ctaButtons} onChange={setCtaButtons} /> : null}
         </fieldset>
 
         {error ? <p className="text-sm text-danger">{error}</p> : null}
