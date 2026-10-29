@@ -13,10 +13,10 @@ export function PreviewFrame({ children, logoUrl }: { children: ReactNode; logoU
   return (
     <div className="mx-auto w-full max-w-[100%] rounded-2xl border border-zinc-200 bg-white p-4 text-zinc-800 shadow-sm">
       <div className="mb-3 flex items-center justify-between">
-        <div className="flex size-16 items-center justify-center overflow-hidden rounded-lg bg-blue-50 text-[11px] font-bold text-blue-600">
+        <div className="flex items-center justify-center overflow-hidden rounded-lg text-[11px] font-bold text-blue-600">
           {logoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={logoUrl} alt="Logo OA" className="size-full object-contain" />
+            <img src={logoUrl} alt="Logo OA" className="max-h-12 w-auto object-contain" />
           ) : (
             "OA"
           )}
