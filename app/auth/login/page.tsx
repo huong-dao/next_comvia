@@ -24,6 +24,7 @@ type LoginErrors = {
 
 type LoginResponse = {
   accessToken: string;
+  refreshToken?: string;
   tokenType?: string;
   user?: {
     id?: string;
@@ -188,6 +189,7 @@ export default function LoginPage() {
 
       saveAuthSession({
         accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
         user: data.user,
         remember,
       });

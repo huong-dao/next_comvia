@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { HiArrowRightOnRectangle, HiOutlineShieldCheck } from "react-icons/hi2";
 import { Button } from "@/components/ui/button";
-import { clearAuthSession, getStoredUser, type StoredUser } from "@/lib/auth";
+import { clearAuthSession, getAccessToken, getStoredUser, type StoredUser } from "@/lib/auth";
+import { comviaFetch } from "@/lib/comviaFetch";
 import { APP_PATHS } from "@/lib/paths";
 import { clearActiveWorkspace } from "@/lib/workspace-session";
 
@@ -32,10 +33,18 @@ export function SidebarUserCard({
     setUser(getStoredUser());
   }, []);
 
-  function logout() {
-    clearActiveWorkspace();
-    clearAuthSession();
-    router.replace("/auth/login");
+  async function logout() {
+    const token = getAccessToken();
+    try {
+      // ISSUE-003: thu hồi refreshToken phía BE. Lỗi gì cũng vẫn đăng xuất local bên dưới.
+      if (token) await comviaFetch("/auth/logout", { method: "POST", token });
+    } catch {
+      // bỏ qua — accessToken hiện tại tự hết hạn tự nhiên theo thiết kế.
+    } finally {
+      clearActiveWorkspace();
+      clearAuthSession();
+      router.replace("/auth/login");
+    }
   }
 
   const name = user?.fullName ?? user?.email ?? "Tài khoản";
@@ -115,7 +124,7 @@ export function SidebarUserCard({
           variant="ghost"
           icon={<HiArrowRightOnRectangle className="size-4" />}
           className="h-[26px] cursor-pointer hover:text-foreground justify-start pl-2 whitespace-nowrap bg-transparent hover:bg-transparent"
-          onClick={logout}
+          onClick={() => void logout()}
         >
           Đăng xuất
         </Button>

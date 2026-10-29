@@ -1,3 +1,5 @@
+import { clearAuthSession, getRefreshToken, isImpersonating, updateTokenPair } from "@/lib/auth";
+
 export type ComviaApiErrorBody = {
   statusCode?: number;
   message?: string | string[];
@@ -62,6 +64,57 @@ export function resolvePublicAssetUrl(url?: string | null): string | null {
   return `${origin}${u.startsWith("/") ? u : `/${u}`}`;
 }
 
+type RefreshResponse = { accessToken: string; refreshToken: string };
+
+/**
+ * ISSUE-003 — warmup phiên 30 ngày. `refreshPromise` dùng làm mutex: nếu nhiều
+ * request cùng gặp 401 song song, chỉ 1 lần gọi `/auth/refresh` thật sự chạy,
+ * các request còn lại dùng chung kết quả (theo đúng khuyến nghị chống race
+ * condition ở `docs/FRONTEND_API_GUIDE_NEXTJS.mdc` mục 3.3b).
+ */
+let refreshPromise: Promise<string | null> | null = null;
+
+async function refreshAccessToken(): Promise<string | null> {
+  if (refreshPromise) return refreshPromise;
+
+  refreshPromise = (async () => {
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) return null;
+
+    try {
+      const baseUrl = getComviaApiBaseUrl();
+      const res = await fetch(`${baseUrl.replace(/\/$/, "")}/auth/refresh`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      });
+
+      if (!res.ok) {
+        // Refresh token hết hạn/bị rotate/tài khoản khóa/đổi mật khẩu — không retry, buộc đăng nhập lại.
+        clearAuthSession();
+        return null;
+      }
+
+      const data = (await res.json()) as RefreshResponse;
+      updateTokenPair({ accessToken: data.accessToken, refreshToken: data.refreshToken });
+      return data.accessToken;
+    } catch {
+      return null;
+    }
+  })();
+
+  try {
+    return await refreshPromise;
+  } finally {
+    refreshPromise = null;
+  }
+}
+
+/** Token "đăng nhập hộ" (ISSUE-002) không có refreshToken — hết hạn là phải đăng nhập lại, không được lẫn sang refresh token của phiên admin thật đang nằm chung storage. */
+function canAttemptRefresh(path: string, hadToken: boolean) {
+  return hadToken && path !== "/auth/refresh" && !isImpersonating();
+}
+
 export async function comviaFetch<T>(
   path: string,
   init?: RequestInit & { apiKey?: string; token?: string },
@@ -69,18 +122,24 @@ export async function comviaFetch<T>(
   const baseUrl = getComviaApiBaseUrl();
   const url = `${baseUrl.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
 
-  const headers = new Headers(init?.headers);
-  if (!headers.has("Content-Type") && init?.body != null) {
-    headers.set("Content-Type", "application/json");
+  function buildHeaders(token?: string) {
+    const headers = new Headers(init?.headers);
+    if (!headers.has("Content-Type") && init?.body != null) {
+      headers.set("Content-Type", "application/json");
+    }
+    if (token) headers.set("Authorization", `Bearer ${token}`);
+    if (init?.apiKey) headers.set("x-api-key", init.apiKey);
+    return headers;
   }
 
-  if (init?.token) headers.set("Authorization", `Bearer ${init.token}`);
-  if (init?.apiKey) headers.set("x-api-key", init.apiKey);
+  let res = await fetch(url, { ...init, headers: buildHeaders(init?.token) });
 
-  const res = await fetch(url, {
-    ...init,
-    headers,
-  });
+  if (res.status === 401 && canAttemptRefresh(path, Boolean(init?.token))) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      res = await fetch(url, { ...init, headers: buildHeaders(newToken) });
+    }
+  }
 
   if (!res.ok) {
     const data = await readJsonSafe<ComviaApiErrorBody>(res);
@@ -98,7 +157,6 @@ export async function comviaFetch<T>(
 
 /**
  * POST FormData — không được set `Content-Type` thủ công để boundary được set đúng.
- * @see `docs/FRONTEND_ADMIN_ROUTER_API_MAP.mdc` Issue hóa đơn qua PDF.
  */
 export async function comviaMultipartFetch<T>(
   path: string,
@@ -107,18 +165,24 @@ export async function comviaMultipartFetch<T>(
   const { token, formData, headers: hdrs, ...rest } = init;
   const baseUrl = getComviaApiBaseUrl();
   const url = `${baseUrl.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
-  const headers = new Headers(hdrs);
-  if (headers.has("Content-Type")) {
-    headers.delete("Content-Type");
-  }
-  headers.set("Authorization", `Bearer ${token}`);
 
-  const res = await fetch(url, {
-    ...rest,
-    method: init.method ?? "POST",
-    body: formData,
-    headers,
-  });
+  async function send(authToken: string) {
+    const headers = new Headers(hdrs);
+    if (headers.has("Content-Type")) {
+      headers.delete("Content-Type");
+    }
+    headers.set("Authorization", `Bearer ${authToken}`);
+    return fetch(url, { ...rest, method: init.method ?? "POST", body: formData, headers });
+  }
+
+  let res = await send(token);
+
+  if (res.status === 401 && canAttemptRefresh(path, true)) {
+    const newToken = await refreshAccessToken();
+    if (newToken) {
+      res = await send(newToken);
+    }
+  }
 
   const parsed = await readJsonSafe<T>(res);
 

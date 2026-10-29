@@ -1,6 +1,6 @@
 # ISSUE-003: Warmup phiên đăng nhập — gia hạn trượt 30 ngày khi còn hoạt động
 
-**Trạng thái:** Đang xử lý — PO đã chốt chọn Hướng B (refresh token chuẩn), chờ BE trả lời các câu hỏi mở còn lại
+**Trạng thái:** BE đã triển khai xong Hướng B (2026-10-29) — chờ FE code theo contract bên dưới
 **Phân loại:** Missing Spec (tính năng mới, chưa có rule/API)
 **Màn hình/route liên quan:** Toàn bộ app — cơ chế xác thực dùng chung (`lib/auth.ts`, `lib/comviaFetch.ts`), không riêng 1 trang
 
@@ -70,4 +70,24 @@ GIẢ ĐỊNH: Yêu cầu này áp dụng cho phiên đăng nhập thường (us
 3. Không đổi hành vi của token impersonate (ISSUE-002) — vẫn giữ nguyên 20 phút, không refresh, không áp dụng sliding.
 
 ## Xử lý
-PO đã chốt Hướng B. Chờ BE trả lời các câu hỏi mở còn lại và xác nhận contract `POST /auth/refresh` trước khi FE bắt đầu code.
+
+**BE — đã triển khai (2026-10-29):** `POST /auth/refresh` + `POST /auth/logout`, access token rút ngắn, refresh token 30 ngày trượt + rotation. Contract đầy đủ ở `docs/FRONTEND_API_GUIDE_NEXTJS.mdc` mục 3.3b.
+
+**Trả lời các CÂU HỎI MỞ:**
+1. *Access token hiện tại hạn bao lâu?* — Do env `JWT_EXPIRES_IN` quyết định, code fallback `1d` nếu chưa set (trước khi sửa). **Đã đổi fallback thành `1h`.** BE không có quyền truy cập giá trị `JWT_EXPIRES_IN` thật đang chạy trên server production — **cần ops/hạ tầng tự kiểm tra và hạ xuống `1h`** (hoặc ngắn hơn) sau khi deploy, nếu đang set dài hơn, để access token thực sự ngắn hạn đúng mô hình Hướng B. Xem thêm mục "Lưu ý triển khai" bên dưới.
+2. *"Vào lại" tính là gì?* — Chính là mỗi lần FE gọi thành công `POST /auth/refresh` (chủ động trước khi access token hết hạn, hoặc phản ứng khi gặp `401`). Không cần BE phân biệt thao tác thật của user hay gọi ngầm — hễ app còn mở và refresh được là coi như "còn hoạt động", gia hạn thêm 30 ngày là hợp lý.
+3. *Sliding áp dụng khi nào với checkbox "Ghi nhớ đăng nhập"?* — BE cấp `refreshToken` như nhau bất kể remember hay không; **FE** quyết định lưu `localStorage` (remember) hay `sessionStorage` (không remember). Nếu không remember, `sessionStorage` tự mất khi đóng tab → sliding tự nhiên vô hiệu, đúng như PO ngầm hiểu, không cần BE xử lý khác biệt.
+4. *Áp dụng cho mọi role hay giới hạn role nhạy cảm?* — **Mọi role** (Owner/Admin/Staff/User), đúng như PO yêu cầu ban đầu. Không giới hạn riêng cho Admin — rủi ro của riêng phiên "đăng nhập hộ" (ISSUE-002) đã được xử lý tách biệt (token impersonate 20 phút, không refresh, không sliding).
+5. *Refresh token lưu ở đâu?* — Vẫn `localStorage`/`sessionStorage` như access token hiện tại (trả thẳng trong JSON response, không chuyển sang httpOnly cookie). Lý do: giữ nhất quán với kiến trúc hiện có (không có cookie-parser/CORS-credentials sẵn), triển khai nhanh hơn. Đánh đổi: refresh token vẫn lộ qua XSS như access token — nếu PO muốn hạ rủi ro này về sau, chuyển sang httpOnly cookie là một cải tiến riêng, không làm trong lần này.
+
+**Quyết định kỹ thuật không nằm trong câu hỏi mở (BE tự quyết khi code, cần biết để tránh bất ngờ):**
+- **Một tài khoản chỉ có đúng 1 refresh chain đang hoạt động tại một thời điểm** (không phải theo từng thiết bị/trình duyệt). Đăng nhập ở thiết bị mới sẽ làm refresh token của thiết bị cũ vô hiệu ở lần refresh tiếp theo (access token cũ của thiết bị đó vẫn chạy tới khi tự hết hạn, ~1 giờ). Đây là đơn giản hóa có chủ đích cho bản đầu tiên — nếu PO cần nhiều thiết bị cùng giữ phiên 30 ngày song song, cần thiết kế lại theo hướng mỗi thiết bị 1 refresh token riêng (phức tạp hơn, chưa làm).
+- Dùng lại một refresh token đã bị rotate (ví dụ do bị đánh cắp và kẻ tấn công dùng sau khi chủ tài khoản đã refresh) bị coi là **tín hiệu bị lộ**: BE thu hồi toàn bộ refresh chain ngay lập tức (ghi audit `auth.refresh_token_reused`), bắt đăng nhập lại từ đầu — không có cơ chế khôi phục nhẹ nhàng hơn.
+- Không thêm rate-limit riêng cho `/auth/refresh` (codebase hiện chưa có hạ tầng rate-limiting/throttler nào, ví dụ `@nestjs/throttler`) — endpoint này yêu cầu JWT ký hợp lệ nên không brute-force được bằng cách đoán; nếu PO muốn chặn lạm dụng tần suất gọi, cần một ticket riêng để thêm hạ tầng throttle cho toàn bộ app, không chỉ riêng endpoint này.
+
+**Lưu ý triển khai (migration + env, xem thêm phần deploy):**
+- Thêm cột `User.currentRefreshTokenId` (migration `20261029180000_add_user_refresh_token_id`) — không phá dữ liệu cũ, mọi user hiện có mặc định `NULL`, chỉ cần đăng nhập lại 1 lần là có refresh token.
+- Env mới (optional): `JWT_REFRESH_EXPIRES_IN` (mặc định `30d` nếu không set).
+- **Khuyến nghị mạnh:** sau khi deploy, kiểm tra và set `JWT_EXPIRES_IN=1h` nếu server đang để giá trị dài hơn — nếu không, access token sẽ tiếp tục sống lâu như cũ và tính năng sliding-30-ngày coi như vô nghĩa (vì user không bao giờ cần refresh).
+
+**FE — làm theo contract `docs/FRONTEND_API_GUIDE_NEXTJS.mdc` mục 3.3b:** thêm vòng refresh (chủ động trước khi hết hạn hoặc phản ứng khi 401), lưu lại cả 2 token sau mỗi lần refresh, xử lý khi refresh thất bại, không đổi hành vi token impersonate (ISSUE-002).

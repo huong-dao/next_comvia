@@ -25,6 +25,7 @@ import {
 
 type VerifyOtpResponse = {
   accessToken: string;
+  refreshToken?: string;
   user?: {
     id?: string;
     email?: string;
@@ -165,6 +166,7 @@ function VerifyOtpContent() {
 
       saveAuthSession({
         accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
         user: data.user,
         remember: true,
       });

@@ -1,4 +1,5 @@
 export const COMVIA_ACCESS_TOKEN_KEY = "comvia_access_token";
+export const COMVIA_REFRESH_TOKEN_KEY = "comvia_refresh_token";
 export const COMVIA_USER_KEY = "comvia_user";
 
 /**
@@ -30,6 +31,8 @@ export type ImpersonationMeta = {
 
 export function saveAuthSession(payload: {
   accessToken: string;
+  /** ISSUE-003 — bắt buộc để duy trì phiên quá thời hạn accessToken (mặc định ~1h). */
+  refreshToken?: string;
   user?: StoredUser;
   remember: boolean;
 }) {
@@ -40,12 +43,39 @@ export function saveAuthSession(payload: {
   const otherStorage = payload.remember ? window.sessionStorage : window.localStorage;
 
   otherStorage.removeItem(COMVIA_ACCESS_TOKEN_KEY);
+  otherStorage.removeItem(COMVIA_REFRESH_TOKEN_KEY);
   otherStorage.removeItem(COMVIA_USER_KEY);
 
   storage.setItem(COMVIA_ACCESS_TOKEN_KEY, payload.accessToken);
+  if (payload.refreshToken) {
+    storage.setItem(COMVIA_REFRESH_TOKEN_KEY, payload.refreshToken);
+  }
   if (payload.user) {
     storage.setItem(COMVIA_USER_KEY, JSON.stringify(payload.user));
   }
+}
+
+/** ISSUE-003 — đọc refresh token theo đúng thứ tự ưu tiên của `getAccessToken()`. */
+export function getRefreshToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return (
+    window.localStorage.getItem(COMVIA_REFRESH_TOKEN_KEY) ??
+    window.sessionStorage.getItem(COMVIA_REFRESH_TOKEN_KEY)
+  );
+}
+
+/**
+ * Ghi lại cặp token mới sau khi `POST /auth/refresh` thành công — giữ nguyên
+ * đúng storage (`localStorage`/`sessionStorage`) đang chứa token hiện tại,
+ * theo đúng checkbox "Ghi nhớ đăng nhập" lúc đăng nhập.
+ */
+export function updateTokenPair(payload: { accessToken: string; refreshToken: string }) {
+  if (typeof window === "undefined") return;
+  const storage = window.localStorage.getItem(COMVIA_REFRESH_TOKEN_KEY)
+    ? window.localStorage
+    : window.sessionStorage;
+  storage.setItem(COMVIA_ACCESS_TOKEN_KEY, payload.accessToken);
+  storage.setItem(COMVIA_REFRESH_TOKEN_KEY, payload.refreshToken);
 }
 
 /** Lưu phiên "đăng nhập hộ Owner" — chỉ sessionStorage, chỉ cho tab hiện tại. */
@@ -104,8 +134,10 @@ export function clearAuthSession() {
 
   clearImpersonationSession();
   window.localStorage.removeItem(COMVIA_ACCESS_TOKEN_KEY);
+  window.localStorage.removeItem(COMVIA_REFRESH_TOKEN_KEY);
   window.localStorage.removeItem(COMVIA_USER_KEY);
   window.sessionStorage.removeItem(COMVIA_ACCESS_TOKEN_KEY);
+  window.sessionStorage.removeItem(COMVIA_REFRESH_TOKEN_KEY);
   window.sessionStorage.removeItem(COMVIA_USER_KEY);
 }
 
