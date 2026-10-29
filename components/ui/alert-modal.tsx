@@ -53,29 +53,29 @@ const TYPE_CONFIG: Record<
   {
     Icon: React.ComponentType<{ className?: string }>;
     defaultTitle: string;
-    /** Nền + chữ pastel theo type — cùng tông với `--color-success`/`--color-danger` sẵn có. */
+    /** Nền đục (không alpha-blend với nội dung phía sau) để chữ luôn rõ nét. */
     className: string;
   }
 > = {
   success: {
     Icon: HiCheckCircle,
     defaultTitle: "Thành công",
-    className: "bg-success/15 text-success",
+    className: "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300",
   },
   error: {
     Icon: HiXCircle,
     defaultTitle: "Có lỗi xảy ra",
-    className: "bg-danger/15 text-danger",
+    className: "border-red-200 bg-red-50 text-red-800 dark:border-red-800 dark:bg-red-950 dark:text-red-300",
   },
   warning: {
     Icon: HiExclamationTriangle,
     defaultTitle: "Lưu ý",
-    className: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+    className: "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-300",
   },
   info: {
     Icon: HiInformationCircle,
     defaultTitle: "Thông báo",
-    className: "bg-primary/15 text-primary",
+    className: "border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-800 dark:bg-sky-950 dark:text-sky-300",
   },
 };
 
@@ -95,7 +95,7 @@ function AlertCard({ item, onDismiss }: { item: AlertItem; onDismiss: () => void
     <div
       role="alert"
       className={cn(
-        "pointer-events-auto w-full max-w-sm rounded-xl p-4 shadow-[var(--shadow-soft)] transition-all duration-300 ease-out",
+        "pointer-events-auto w-full max-w-sm rounded-xl border p-4 shadow-[var(--shadow-soft)] transition-all duration-300 ease-out",
         className,
         entered ? "translate-x-0 opacity-100" : "translate-x-8 opacity-0",
       )}
@@ -104,7 +104,7 @@ function AlertCard({ item, onDismiss }: { item: AlertItem; onDismiss: () => void
         <Icon className="mt-0.5 size-5 shrink-0" aria-hidden />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold leading-5">{item.title ?? defaultTitle}</p>
-          <p className="mt-0.5 whitespace-pre-line text-sm leading-5 opacity-90">{item.message}</p>
+          <p className="mt-0.5 whitespace-pre-line text-sm leading-5">{item.message}</p>
         </div>
         <button
           type="button"
@@ -172,7 +172,7 @@ export function AlertModalProvider({ children }: { children: React.ReactNode }) 
       {children}
       {mounted &&
         createPortal(
-          <div className="pointer-events-none fixed top-4 right-4 z-50 flex w-full max-w-sm flex-col gap-3">
+          <div className="pointer-events-none fixed top-4 right-4 z-[1000] flex w-full max-w-sm flex-col gap-3">
             {items.map((item) => (
               <AlertCard key={item.id} item={item} onDismiss={() => dismiss(item.id)} />
             ))}
