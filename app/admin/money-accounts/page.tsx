@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { HiOutlineXMark, HiOutlinePlus, HiOutlineCheckCircle } from "react-icons/hi2";
+import { HiOutlineXMark, HiOutlinePlus, HiOutlineCheckCircle, HiOutlinePencil, HiOutlineEye, HiOutlineEyeSlash } from "react-icons/hi2";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { AdminRoleGate } from "@/components/admin/role-gate";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { SimpleTable } from "@/components/ui/simple-table";
+import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
 import { useComviaQuery } from "@/lib/use-comvia-query";
@@ -143,6 +144,29 @@ export default function AdminMoneyAccountPage() {
         }
     };
 
+    const [togglingId, setTogglingId] = useState<string | null>(null);
+
+    // DELETE /money-accounts/:id chỉ là soft-delete (set isActive=false), tương đương PATCH isActive
+    // nên dùng hẳn nút Ẩn/Hiện để không gây hiểu lầm là xóa vĩnh viễn.
+    const handleToggleActive = async (row: MoneyAccountRow) => {
+        setTogglingId(row.id);
+        try {
+            const response = await comviaFetch<{ success: boolean; data: MoneyAccountRow; message: string }>("/money-accounts/" + row.id, {
+                method: "PATCH",
+                body: JSON.stringify({ isActive: !row.isActive }),
+                token: getAccessToken() ?? undefined,
+            });
+            if (!response.success) {
+                throw new Error(response.message);
+            }
+            void refetch();
+        } catch (err) {
+            alert(err instanceof ComviaApiError ? err.message : "Không cập nhật được trạng thái tài khoản.");
+        } finally {
+            setTogglingId(null);
+        }
+    };
+
     return (
     <AdminRoleGate>
         {loading ? <PageLoading /> : null}
@@ -182,6 +206,46 @@ export default function AdminMoneyAccountPage() {
                 //   header: "Pay2S Bank ID",
                 //   cell: (r) => (r as MoneyAccountRow).pay2sBankId ?? "—",
                 // },
+                {
+                  key: "status",
+                  header: "Trạng thái",
+                  cell: (r) => (
+                    <EntityStatusBadge
+                      value={(r as MoneyAccountRow).isActive ? "ACTIVE" : "DISABLED"}
+                      label={(r as MoneyAccountRow).isActive ? "ĐANG HOẠT ĐỘNG" : "ĐÃ ẨN"}
+                    />
+                  ),
+                },
+                {
+                  key: "actions",
+                  header: "Hành động",
+                  cell: (row) => {
+                    const r = row as MoneyAccountRow;
+                    return (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          icon={<HiOutlinePencil className="size-4" />}
+                          onClick={() => handleOpenModal("Sửa tài khoản ngân hàng", r)}
+                        >
+                          Sửa
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={togglingId === r.id}
+                          icon={r.isActive ? <HiOutlineEyeSlash className="size-4" /> : <HiOutlineEye className="size-4" />}
+                          onClick={() => void handleToggleActive(r)}
+                        >
+                          {togglingId === r.id ? "Đang lưu..." : r.isActive ? "Ẩn" : "Hiện"}
+                        </Button>
+                      </div>
+                    );
+                  },
+                },
               ]}
             />
 
