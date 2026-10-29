@@ -1,6 +1,6 @@
 # ISSUE-001: Bỏ toàn bộ tính năng Invoice — topup chỉ tạo Order, dừng lại ở đó
 
-**Trạng thái:** Mới
+**Trạng thái:** Đang xử lý (PO đã chốt câu trả lời cho BE — xem mục "Xử lý")
 **Phân loại:** Change Request
 **Màn hình/route liên quan:**
 - `app/app/w/[workspaceId]/invoices/page.tsx`, `app/app/w/[workspaceId]/invoices/[invoiceId]/page.tsx`
@@ -57,25 +57,31 @@ Theo yêu cầu mới của PO:
 - Audit log action liên quan invoice (`invoice.issued_via_pdf`, `invoice.issued_via_pdf` fail) ở `docs/FRONTEND_API_GUIDE_NEXTJS.mdc` mục 11.3 sẽ không còn phát sinh — cần BE xác nhận có ngừng ghi các action này không.
 
 ## Giả định / Câu hỏi mở
-CÂU HỎI MỞ: Đây là thay đổi rule ở `docs/MAIN_RULES.mdc` mục 10.4–10.8 (tài liệu đồng bộ từ backend) — cần BE xác nhận và cập nhật lại tài liệu, FE không tự sửa `.mdc`.
-CÂU HỎI MỞ: BE có xóa/deprecate hẳn các endpoint `GET /workspaces/:workspaceId/invoices*`, `GET/POST /admin/invoices*` hay chỉ ngừng tạo invoice mới (dữ liệu invoice cũ vẫn còn trong DB cho mục đích tra cứu kế toán nội bộ, không qua FE)? Nếu endpoint còn tồn tại nhưng FE bỏ hết UI gọi tới, cần BE xác nhận không ảnh hưởng gì khác.
-CÂU HỎI MỞ: Billing Profile (`invoiceEmail`, mã số thuế, loại hình cá nhân/tổ chức) ở Workspace Settings có cần đổi tên/giữ nguyên để phục vụ Order (không phải Invoice) không, hay cũng loại bỏ luôn?
+**Đã chốt bởi PO (thay mặt trả lời cho BE), ngày 2026-10-29:**
+1. CÂU HỎI MỞ (đã chốt): *"BE có xóa/deprecate hẳn các endpoint `/invoices*`, `/admin/invoices*` hay giữ lại cho mục đích tra cứu nội bộ?"* → **Không giữ cho mục đích gì hết, bỏ hết.** BE xóa/deprecate toàn bộ endpoint invoice (`GET /workspaces/:workspaceId/invoices*`, `GET/POST /admin/invoices*`, `verify-issue-pdf`, `pdf`), không giữ lại cho tra cứu nội bộ.
+2. CÂU HỎI MỞ (đã chốt): *"Order detail còn trả field `invoice`/`invoiceId` lồng bên trong không?"* → **Không còn trả field `invoice`/`invoiceId` gì hết** trong response order detail (cả `GET /workspaces/:workspaceId/orders/:orderId` và `GET /admin/orders/:orderId`).
+3. CÂU HỎI MỞ (đã chốt): *"Billing Profile (`invoiceEmail`...) có cần đổi tên/giữ nguyên cho Order không, hay bỏ luôn?"* → **Giữ nguyên** Billing Profile (`invoiceEmail`, mã số thuế, loại hình cá nhân/tổ chức...) ở Workspace Settings, dùng cho billing snapshot của Order.
+
 GIẢ ĐỊNH: Order vẫn giữ nguyên toàn bộ vòng đời hiện tại (tạo khi topup paid, trạng thái, danh sách/chi tiết cho khách hàng và admin) — chỉ bỏ phần Invoice gắn theo sau.
+CÂU HỎI MỞ còn lại: Đây là thay đổi rule ở `docs/MAIN_RULES.mdc` mục 10.4–10.8 (tài liệu đồng bộ từ backend) — BE cập nhật lại tài liệu sau khi deploy xong, FE không tự sửa `.mdc`.
 
 ## Hướng xử lý đề xuất
-**FE (chờ BE xác nhận các câu hỏi mở ở trên trước khi merge, nhưng có thể làm trước ở nhánh riêng):**
+**FE — đã làm xong, xem commit trên branch `dev`:**
 1. Xóa trang: `app/app/w/[workspaceId]/invoices/`, `app/admin/invoices/`, `app/staff/invoices/` (toàn bộ thư mục).
 2. Xóa component/lib chỉ phục vụ invoice: `components/admin/issue-invoice-pdf-modal.tsx`, `lib/invoice-pdf-url.ts`, `lib/admin-invoice-mismatch-labels.ts`.
-3. Sửa `app/admin/orders/[orderId]/page.tsx`: bỏ khối UI "Hóa đơn" (dòng ~144-181) và field `invoice` khỏi type `AdminOrderDetail`.
-4. Sửa `app/app/w/[workspaceId]/orders/[orderId]/page.tsx`: bỏ nút "Mở hóa đơn liên kết" (dòng ~92-98) và field `invoiceId` khỏi type `OrderDetail`.
+3. Sửa `app/admin/orders/[orderId]/page.tsx`: bỏ khối UI "Hóa đơn" và field `invoice` khỏi type `AdminOrderDetail`.
+4. Sửa `app/app/w/[workspaceId]/orders/[orderId]/page.tsx`: bỏ nút "Mở hóa đơn liên kết" và field `invoiceId` khỏi type `OrderDetail`.
 5. Sửa `components/layout/internal-sidebar.tsx` và `components/layout/workspace-sidebar.tsx`: xóa mục menu "Hóa đơn".
-6. Giữ nguyên Billing Profile (`invoiceEmail`...) trong `WorkspaceForm`/`app/app/workspaces/page.tsx` cho tới khi BE xác nhận câu hỏi mở ở trên.
+6. Giữ nguyên Billing Profile (`invoiceEmail`...) trong `WorkspaceForm`/`app/app/workspaces/page.tsx` — theo quyết định PO ở mục "Giả định/Câu hỏi mở".
 
-**BE (đề xuất, PO duyệt):**
-1. Ngừng tạo Invoice/Invoice Item khi Order chuyển `paid` (chỉ tạo Order + Order Item, dừng lại).
-2. Xác nhận có deprecate các endpoint `/invoices*`, `/admin/invoices*`, `verify-issue-pdf` hay giữ lại cho mục đích tra cứu nội bộ không qua FE.
-3. Xác nhận field `invoice`/`invoiceId` còn được trả kèm trong response order detail hay không.
-4. Cập nhật `docs/MAIN_RULES.mdc` mục 10.4–10.8, 17.5 và `docs/FRONTEND_API_GUIDE_NEXTJS.mdc`/`docs/FRONTEND_ADMIN_ROUTER_API_MAP.mdc` phần invoice sau khi chốt.
+**BE — việc cần làm (theo quyết định PO ở trên), FE đang chờ:**
+1. Ngừng tạo Invoice/Invoice Item khi Order chuyển `paid` — chỉ tạo Order + Order Item, dừng lại ở đó.
+2. Xóa/deprecate toàn bộ endpoint invoice: `GET /workspaces/:workspaceId/invoices`, `GET /workspaces/:workspaceId/invoices/:invoiceId`, `GET /admin/invoices`, `GET /admin/invoices/:invoiceId`, `GET /admin/invoices/:invoiceId/pdf`, `POST /admin/invoices/:invoiceId/verify-issue-pdf` — không giữ lại cho mục đích nào.
+3. Bỏ field `invoice`/`invoiceId` khỏi response `GET /workspaces/:workspaceId/orders/:orderId` và `GET /admin/orders/:orderId`.
+4. Giữ nguyên các endpoint/field Billing Profile (`invoiceEmail`, mã số thuế, loại hình cá nhân/tổ chức...) ở workspace — vẫn dùng cho billing snapshot của Order.
+5. Ngừng ghi audit log action `invoice.issued_via_pdf` (pass/fail) nếu endpoint liên quan đã bị xóa.
+6. Cập nhật `docs/MAIN_RULES.mdc` mục 10.4–10.8, 17.5 và `docs/FRONTEND_API_GUIDE_NEXTJS.mdc`/`docs/FRONTEND_ADMIN_ROUTER_API_MAP.mdc` phần invoice sau khi deploy xong, để FE đồng bộ lại docs.
 
 ## Xử lý
-Chờ PO/BE xác nhận các câu hỏi mở. FE code removal: xem commit kèm issue này trên branch `dev`.
+- FE: đã xóa toàn bộ trang/code invoice trên branch `dev` (xem commit `985e4e5` và các commit liên quan).
+- BE: chờ triển khai theo mục "BE — việc cần làm" ở trên (PO đã chốt câu trả lời, không cần hỏi lại FE/PO về phạm vi này nữa). Sau khi BE deploy xong, FE sẽ gỡ nốt field `invoice`/`invoiceId` optional còn sót trong type (nếu có) và đồng bộ lại docs.
