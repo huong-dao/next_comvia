@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useState } from "react";
 import {
   HiOutlineArrowTrendingDown,
@@ -23,7 +22,6 @@ import { SimpleTable } from "@/components/ui/simple-table";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { TopupModal } from "@/components/wallet/topup-modal";
 import { comviaFetch } from "@/lib/comviaFetch";
-import { workspacePath } from "@/lib/paths";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { formatDate, formatVND } from "@/lib/utils";
 import { cn } from "@/lib/cn";
@@ -226,9 +224,6 @@ export function WalletSection() {
                     Nạp tiền
                   </Button>
                 ) : null}
-                <Button icon={<HiOutlineDocumentText className="size-4" />} variant="outline" asChild>
-                  <Link href={workspacePath(workspaceId, "wallet")}>Xem lịch sử</Link>
-                </Button>
               </div>
 
               <div className="mt-6">
