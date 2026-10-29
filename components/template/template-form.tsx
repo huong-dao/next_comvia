@@ -128,12 +128,13 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
     () => (showContentFields && placeholdersParsed.ok ? placeholdersParsed.data : {}),
     [showContentFields, placeholdersParsed],
   );
+  // Không fallback label về slug — biến không nhập Nhãn thì bị loại khỏi bảng ở TablePreview.
   const previewPlaceholderLabels = useMemo(
     () =>
       Object.fromEntries(
         placeholderRows
-          .filter((row) => row.slug.trim() && slugLooksValid(row.slug.trim()))
-          .map((row) => [row.slug.trim(), row.label.trim() || row.slug.trim()]),
+          .filter((row) => row.slug.trim() && slugLooksValid(row.slug.trim()) && row.label.trim())
+          .map((row) => [row.slug.trim(), row.label.trim()]),
       ),
     [placeholderRows],
   );

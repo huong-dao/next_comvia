@@ -63,7 +63,9 @@ export function recordToPlaceholderRows(record: unknown, labels?: Record<string,
   if (entries.length === 0) return [newPlaceholderRow()];
   return entries.map(([slug, raw]) => ({
     id: crypto.randomUUID(),
-    label: labels?.[slug] ?? slug,
+    // Không fallback về slug — để trống đúng với thực tế là biến đó chưa từng đặt Nhãn
+    // (TablePreview dựa vào đây để quyết định biến nào hiện trong bảng).
+    label: labels?.[slug] ?? "",
     slug,
     defaultValue: raw === undefined || raw === null ? "" : String(raw),
   }));

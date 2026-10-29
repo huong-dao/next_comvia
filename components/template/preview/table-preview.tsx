@@ -17,7 +17,8 @@ type TablePreviewProps = {
 /** Preview mẫu tin "Dạng bảng" (hình 4): tiêu đề + đoạn mở + bảng key-value + nội dung phụ + CTA. */
 export function TablePreview({ content, placeholders, placeholderLabels, secondaryContent, logoUrl, ctaButtons }: TablePreviewProps) {
   const rendered = previewTemplateContent(content, placeholders);
-  const rows = Object.entries(placeholders);
+  // Chỉ hiện trong bảng những biến có nhập Nhãn — biến chỉ dùng trong content (không có nhãn) thì ẩn khỏi bảng.
+  const rows = Object.entries(placeholders).filter(([slug]) => Boolean(placeholderLabels?.[slug]));
 
   return (
     <PreviewFrame logoUrl={logoUrl}>
