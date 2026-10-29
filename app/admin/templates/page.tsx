@@ -12,6 +12,7 @@ import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input, Select } from "@/components/ui/input";
 import { SimpleTable } from "@/components/ui/simple-table";
 import { comviaFetch } from "@/lib/comviaFetch";
+import { TEMPLATE_STATUS_LABELS } from "@/lib/status-labels";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
 type TemplateRow = {
@@ -63,7 +64,10 @@ export default function AdminTemplatesPage() {
               <div>
                 <label className="mb-1 block text-xs text-muted-foreground">Trạng thái</label>
                 <Select value={draft.status} onChange={(event) => setDraft((value) => ({ ...value, status: event.target.value }))}>
-                  <option value="">Tất cả</option><option value="DRAFT">DRAFT</option><option value="PENDING">PENDING</option><option value="APPROVED">APPROVED</option>
+                  <option value="">Tất cả</option>
+                  {Object.entries(TEMPLATE_STATUS_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>{label}</option>
+                  ))}
                 </Select>
               </div>
               <div>
@@ -89,7 +93,7 @@ export default function AdminTemplatesPage() {
               { key: "code", header: "Mã", cell: (row) => row.code ?? "—" },
               { key: "workspace", header: "Workspace", cell: (row) => row.workspace?.name ?? row.workspace?.id ?? "—" },
               { key: "oa", header: "Zalo OA", cell: (row) => row.oaConnection?.oaName ?? row.oaConnection?.name ?? row.oaConnection?.id ?? "—" },
-              { key: "status", header: "Trạng thái", cell: (row) => row.status ? <EntityStatusBadge value={row.status} /> : "—" },
+              { key: "status", header: "Trạng thái", cell: (row) => row.status ? <EntityStatusBadge value={row.status} label={TEMPLATE_STATUS_LABELS[row.status.toUpperCase()]} /> : "—" },
               { key: "updated", header: "Cập nhật", cell: (row) => row.updatedAt ? new Date(row.updatedAt).toLocaleString("vi-VN") : "—" },
             ]}
           />
