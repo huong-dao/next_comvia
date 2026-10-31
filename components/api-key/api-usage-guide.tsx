@@ -5,7 +5,9 @@ import { HiOutlineClipboardDocument, HiOutlineCodeBracketSquare } from "react-ic
 import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
-import { comviaFetch, getComviaApiBaseUrl } from "@/lib/comviaFetch";
+import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
+import { ComviaApiError, comviaFetch, getComviaApiBaseUrl, resolvePublicAssetUrl } from "@/lib/comviaFetch";
+import { type TemplateCtaButton } from "@/lib/template-cta";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
 type TemplateRow = {
@@ -13,11 +15,23 @@ type TemplateRow = {
   type?: string;
   name?: string;
   code?: string;
+  title?: string | null;
+  content?: string | null;
+  secondaryContent?: string | null;
   status?: string;
   otpExpiryMinutes?: number | null;
   placeholdersJson?: Record<string, string>;
   placeholder_labels?: Record<string, string> | null;
+  ctaButtons?: TemplateCtaButton[];
 };
+
+type OaPreviewAsset = { logoLightUrl?: string | null };
+
+function toPreviewType(type?: string): TemplateMessageType {
+  if (type?.toUpperCase() === "TEXT") return "van_ban";
+  if (type?.toUpperCase() === "OTP") return "otp";
+  return "bang";
+}
 
 type SampleValue = string | number;
 
@@ -95,6 +109,19 @@ export function ApiUsageGuide({ workspaceId, className }: { workspaceId: string;
   );
   const { data: templates } = useComviaQuery(Boolean(workspaceId), fetcher);
 
+  const oaFetcher = useCallback(
+    async (token: string): Promise<OaPreviewAsset | null> => {
+      try {
+        return await comviaFetch<OaPreviewAsset>(`/workspaces/${workspaceId}/oa`, { token });
+      } catch (fetchError) {
+        if (fetchError instanceof ComviaApiError && fetchError.statusCode === 404) return null;
+        throw fetchError;
+      }
+    },
+    [workspaceId],
+  );
+  const { data: oa } = useComviaQuery(Boolean(workspaceId), oaFetcher);
+
   const approved = useMemo(
     () => (templates ?? []).filter((t) => (t.status ?? "").toUpperCase() === "APPROVED"),
     [templates],
@@ -117,7 +144,8 @@ export function ApiUsageGuide({ workspaceId, className }: { workspaceId: string;
   }
 
   return (
-    <Card className={className}>
+    <div className={`grid items-start gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] ${className ?? ""}`}>
+    <Card>
       <div className="flex items-start gap-3">
         <HiOutlineCodeBracketSquare className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
         <div>
@@ -224,5 +252,26 @@ export function ApiUsageGuide({ workspaceId, className }: { workspaceId: string;
         </p>
       </div>
     </Card>
+    <Card className="flex min-w-0 flex-col gap-3">
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Xem trước</p>
+      {selected ? (
+        <TemplatePreview
+          type={toPreviewType(selected.type)}
+          title={selected.title ?? ""}
+          content={selected.content ?? ""}
+          placeholders={Object.fromEntries(variables.map(([k, v]) => [k, String(v)]))}
+          placeholderLabels={Object.fromEntries(
+            variables.map(([k]) => [k, selected?.placeholder_labels?.[k]?.trim() || k]),
+          )}
+          secondaryContent={selected.secondaryContent ?? ""}
+          minutes={String(selected.otpExpiryMinutes ?? 5)}
+          logoUrl={resolvePublicAssetUrl(oa?.logoLightUrl)}
+          ctaButtons={(selected.ctaButtons ?? []).map((b) => ({ ...b, label: b.label ?? "", target: b.target ?? "" }))}
+        />
+      ) : (
+        <p className="text-sm text-muted-foreground">Chọn mẫu tin để xem trước.</p>
+      )}
+    </Card>
+    </div>
   );
 }

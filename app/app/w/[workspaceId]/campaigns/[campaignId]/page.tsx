@@ -12,16 +12,15 @@ import {
   HiOutlinePlay,
   HiOutlineTrash,
 } from "react-icons/hi2";
-import { PageHeader } from "@/components/app/page-header";
 import { PageEmpty, PageError, PageLoading } from "@/components/app/page-state";
 import { CampaignPreflightModal, type CampaignPreflightData } from "@/components/campaign/campaign-preflight-modal";
 import { CampaignRowEditModal } from "@/components/campaign/campaign-row-edit-modal";
+import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
 import { isWorkspaceOwner, useWorkspaceContext } from "@/components/workspace/workspace-gate";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
-import { Input } from "@/components/ui/input";
-import { Modal } from "@/components/ui/modal";
+import { Input, Select } from "@/components/ui/input";
 import { SimpleTable } from "@/components/ui/simple-table";
 import { formatComviaError } from "@/lib/api-message";
 import {
@@ -30,9 +29,10 @@ import {
   type CampaignDataRow,
 } from "@/lib/campaign-row-display";
 import { comviaDownloadBlob } from "@/lib/comvia-download";
-import { ComviaApiError, comviaFetch, comviaMultipartFetch } from "@/lib/comviaFetch";
+import { ComviaApiError, comviaFetch, comviaMultipartFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
 import { getAccessToken, getStoredUser } from "@/lib/auth";
 import { workspacePath } from "@/lib/paths";
+import { type TemplateCtaButton } from "@/lib/template-cta";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
 type CampaignDetail = {
@@ -54,6 +54,23 @@ type CampaignDetail = {
   totalData?: number;
 };
 
+type TemplateOption = {
+  id: string;
+  type?: string;
+  name?: string;
+  code?: string;
+  title?: string | null;
+  content?: string | null;
+  secondaryContent?: string | null;
+  status?: string;
+  otpExpiryMinutes?: number | null;
+  placeholdersJson?: Record<string, string>;
+  placeholder_labels?: Record<string, string> | null;
+  ctaButtons?: TemplateCtaButton[];
+};
+
+type OaPreviewAsset = { logoLightUrl?: string | null };
+
 type WalletBalance = { balance?: string };
 
 type OaStatus = { status?: string; oaName?: string };
@@ -63,6 +80,12 @@ type MessagePricingConfig = { defaultMessageUnitPrice?: number | string };
 type ReconcileResult = { campaignId?: string; updated?: number; unchanged?: number; pendingRows?: number };
 
 const MAX_CSV_ERRORS_SHOWN = 20;
+
+function toPreviewType(type?: string): TemplateMessageType {
+  if (type?.toUpperCase() === "TEXT") return "van_ban";
+  if (type?.toUpperCase() === "OTP") return "otp";
+  return "bang";
+}
 
 /** Danh sách lỗi theo dòng/row_id từ body 400 của import-csv và import-csv/reconcile. */
 function csvErrorsOf(e: unknown): string[] {
@@ -93,6 +116,21 @@ function toAsciiFileSlug(name: string) {
     .slice(0, 40);
 }
 
+function csvCell(value: string) {
+  return /[",\r\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
+}
+
+/** CSV chỉ gồm các dòng FAILED hiện có — dùng cho "Tải CSV dữ liệu gửi lỗi" (tab Thất bại). */
+function buildFailedRowsCsv(rows: CampaignDataRow[], placeholderKeys: string[]) {
+  const headers = ["row_id", "Phone", ...placeholderKeys.map((k) => k.charAt(0).toUpperCase() + k.slice(1))];
+  const lines = [headers.map(csvCell).join(",")];
+  for (const r of rows) {
+    const cells = [r.id, r.phoneNumber ?? "", ...placeholderKeys.map((k) => String(r.payloadData?.[k] ?? ""))];
+    lines.push(cells.map(csvCell).join(","));
+  }
+  return lines.join("\r\n");
+}
+
 export default function CampaignDetailPage() {
   const params = useParams();
   const workspaceId = params.workspaceId as string;
@@ -105,11 +143,11 @@ export default function CampaignDetailPage() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [csvErrors, setCsvErrors] = useState<string[]>([]);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [preflightOpen, setPreflightOpen] = useState(false);
   const [preflightData, setPreflightData] = useState<CampaignPreflightData | null>(null);
-  const [renameOpen, setRenameOpen] = useState(false);
-  const [renameValue, setRenameValue] = useState("");
+  const [editingName, setEditingName] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [templateOverrideId, setTemplateOverrideId] = useState<string | null>(null);
   const [editRow, setEditRow] = useState<CampaignDataRow | null>(null);
 
   const campaignFetcher = useCallback(
@@ -124,6 +162,25 @@ export default function CampaignDetailPage() {
     error: ec,
     refetch: refetchCampaign,
   } = useComviaQuery(Boolean(workspaceId && campaignId), campaignFetcher);
+
+  const templatesFetcher = useCallback(
+    (token: string) => comviaFetch<TemplateOption[]>(`/workspaces/${workspaceId}/templates`, { token }),
+    [workspaceId],
+  );
+  const { data: templates } = useComviaQuery(Boolean(workspaceId), templatesFetcher);
+
+  const oaFetcher = useCallback(
+    async (token: string): Promise<OaPreviewAsset | null> => {
+      try {
+        return await comviaFetch<OaPreviewAsset>(`/workspaces/${workspaceId}/oa`, { token });
+      } catch (fetchError) {
+        if (fetchError instanceof ComviaApiError && fetchError.statusCode === 404) return null;
+        throw fetchError;
+      }
+    },
+    [workspaceId],
+  );
+  const { data: oa } = useComviaQuery(Boolean(workspaceId), oaFetcher);
 
   const rowsQuery = rowFilter ? `?status=${encodeURIComponent(rowFilter)}&limit=500` : "?limit=500";
   const rowsFetcher = useCallback(
@@ -166,27 +223,16 @@ export default function CampaignDetailPage() {
   const statusUpper = (campaign?.status ?? "").toUpperCase();
   const isLocked = ["RUNNING", "CANCELLED"].includes(statusUpper);
   const pendingCount = pendingRows?.length ?? 0;
-  const canImportCsv = !hasExecuted;
   const canReconcileCsv = hasExecuted && !isLocked;
   const canExecute = pendingCount > 0 && !isLocked;
 
-  const failedSelectable = useMemo(
-    () => rowList.filter((r) => (r.status ?? "").toUpperCase() === "FAILED"),
-    [rowList],
+  const approvedTemplates = useMemo(
+    () => (templates ?? []).filter((t) => (t.status ?? "").toUpperCase() === "APPROVED"),
+    [templates],
   );
-
-  function toggleSelect(id: string) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
-  function selectAllFailed() {
-    setSelectedIds(new Set(failedSelectable.map((r) => r.id)));
-  }
+  const templateById = useMemo(() => new Map((templates ?? []).map((t) => [t.id, t])), [templates]);
+  const selectedTemplateId = templateOverrideId ?? campaign?.templateId ?? campaign?.template?.id ?? "";
+  const selectedTemplate = templateById.get(selectedTemplateId);
 
   async function downloadCsvTemplate() {
     const token = getAccessToken();
@@ -204,6 +250,18 @@ export default function CampaignDetailPage() {
     } finally {
       setBusy(false);
     }
+  }
+
+  function downloadFailedRowsCsv() {
+    const slug = toAsciiFileSlug(campaign?.name ?? "") || "campaign";
+    const csv = buildFailedRowsCsv(rowList, placeholderKeys);
+    const blob = new Blob([`﻿${csv}`], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${slug}-loi.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   async function uploadCsv(file: File) {
@@ -230,7 +288,6 @@ export default function CampaignDetailPage() {
         });
         setMsg("Đã import CSV — danh sách đã được thay thế.");
       }
-      setSelectedIds(new Set());
       void refetchCampaign();
       void refetchRows();
       void refetchPending();
@@ -256,7 +313,7 @@ export default function CampaignDetailPage() {
           ? comviaFetch<MessagePricingConfig>("/admin/config/message-pricing", { token }).catch(() => null)
           : Promise.resolve(null),
       ]);
-      const oa = oaRes ?? {};
+      const oaStatusRes = oaRes ?? {};
       const wallet = walletRes ?? {};
 
       const fromCampaign = Number(campaign.rowCount ?? campaign.totalData ?? 0);
@@ -269,8 +326,8 @@ export default function CampaignDetailPage() {
       setPreflightData({
         templateName: campaign.template?.name ?? campaign.template?.code,
         templateStatus: campaign.template?.status,
-        oaStatus: oa.status,
-        oaName: oa.oaName,
+        oaStatus: oaStatusRes.status,
+        oaName: oaStatusRes.oaName,
         rowCount: count,
         campaignUnitPrice: campaign.unitPriceAtCreate,
         templateUnitPrice: campaign.template?.unitPricePerMessage,
@@ -298,40 +355,11 @@ export default function CampaignDetailPage() {
       });
       setMsg("Đã bắt đầu gửi chiến dịch.");
       setPreflightOpen(false);
-      setSelectedIds(new Set());
       void refetchCampaign();
       void refetchRows();
       void refetchPending();
     } catch (e) {
       setMsg(formatComviaError(e, "Không thực hiện được gửi chiến dịch."));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function retrySelected() {
-    const token = getAccessToken();
-    if (!token) return;
-    const rowIds = [...selectedIds];
-    if (rowIds.length === 0) {
-      setMsg("Chọn ít nhất một dòng thất bại để gửi lại.");
-      return;
-    }
-    setBusy(true);
-    setMsg(null);
-    try {
-      await comviaFetch(`/workspaces/${workspaceId}/campaigns/${campaignId}/retry`, {
-        method: "POST",
-        token,
-        body: JSON.stringify({ rowIds }),
-      });
-      setMsg(`Đã gửi lại ${rowIds.length} dòng.`);
-      setSelectedIds(new Set());
-      void refetchCampaign();
-      void refetchRows();
-      void refetchPending();
-    } catch (e) {
-      setMsg(formatComviaError(e, "Gửi lại thất bại."));
     } finally {
       setBusy(false);
     }
@@ -347,11 +375,6 @@ export default function CampaignDetailPage() {
       await comviaFetch(`/workspaces/${workspaceId}/campaigns/${campaignId}/rows/${rowId}`, {
         method: "DELETE",
         token,
-      });
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(rowId);
-        return next;
       });
       void refetchCampaign();
       void refetchRows();
@@ -385,11 +408,12 @@ export default function CampaignDetailPage() {
     }
   }
 
-  async function patchCampaignName() {
+  async function commitNameEdit() {
+    setEditingName(false);
+    const next = nameDraft.trim();
+    if (!next || next === campaign?.name) return;
     const token = getAccessToken();
-    if (!token || !campaign) return;
-    const next = renameValue.trim();
-    if (!next) return;
+    if (!token) return;
     setBusy(true);
     setMsg(null);
     try {
@@ -398,10 +422,35 @@ export default function CampaignDetailPage() {
         token,
         body: JSON.stringify({ name: next }),
       });
-      setRenameOpen(false);
       void refetchCampaign();
     } catch (e) {
       setMsg(e instanceof ComviaApiError ? e.message : "Không đổi tên được.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  /**
+   * Đổi mẫu tin khi campaign chưa gửi lần nào. API hiện tại (`PATCH /campaigns/:id`) theo tài liệu
+   * chỉ hỗ trợ đổi `name`, chưa hỗ trợ `templateId` — BE cần bổ sung trước khi field này hoạt động
+   * thật (xem docs/issues). FE vẫn gửi `templateId` để sẵn sàng khi BE hỗ trợ.
+   */
+  async function changeTemplate(newTemplateId: string) {
+    setTemplateOverrideId(newTemplateId);
+    const token = getAccessToken();
+    if (!token) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      await comviaFetch(`/workspaces/${workspaceId}/campaigns/${campaignId}`, {
+        method: "PATCH",
+        token,
+        body: JSON.stringify({ templateId: newTemplateId }),
+      });
+      setMsg("Đã đổi mẫu tin.");
+      void refetchCampaign();
+    } catch (e) {
+      setMsg(formatComviaError(e, "Không đổi được mẫu tin."));
     } finally {
       setBusy(false);
     }
@@ -430,167 +479,266 @@ export default function CampaignDetailPage() {
 
   return (
     <div>
-      <PageHeader
-        title={campaign.name ?? campaign.id}
-        description={
-          campaign.template?.name
-            ? `Mẫu: ${campaign.template.name}${campaign.template.code ? ` (${campaign.template.code})` : ""}`
-            : undefined
-        }
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            {campaign.status ? <EntityStatusBadge value={campaign.status} /> : null}
-            <Button icon={<HiArrowLeft className="size-4" />} variant="outline" asChild size="sm">
-              <Link href={workspacePath(workspaceId, "campaigns")}>Danh sách</Link>
-            </Button>
-          </div>
-        }
-      />
-
-      <div className="mb-6 grid gap-4 md:grid-cols-3">
-        <Card className="space-y-1 text-sm">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Gửi gần nhất</p>
-          <p className="font-medium">
-            {campaign.lastRunAt ? new Date(campaign.lastRunAt).toLocaleString() : "Chưa gửi"}
-          </p>
-        </Card>
-        <Card className="space-y-1 text-sm">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Số dòng dữ liệu</p>
-          <p className="font-medium tabular-nums">
-            {campaign.rowCount ?? campaign.totalData ?? rowList.length}
-          </p>
-        </Card>
-        <Card className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            icon={<HiOutlinePencilSquare className="size-4" />}
-            disabled={busy}
-            onClick={() => {
-              setRenameValue(campaign.name ?? "");
-              setRenameOpen(true);
-            }}
-          >
-            Đổi tên
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            icon={<HiOutlineTrash className="size-4" />}
-            disabled={busy}
-            onClick={() => void deleteCampaign()}
-          >
-            Xóa / Hủy
-          </Button>
-        </Card>
-      </div>
-
-      <Card className="mb-6 space-y-4">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">CSV & gửi tin</p>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            icon={<HiOutlineArrowDownTray className="size-4" />}
-            disabled={busy}
-            onClick={() => void downloadCsvTemplate()}
-          >
-            {hasExecuted ? "Tải CSV hiện tại" : "Tải CSV mẫu"}
-          </Button>
-          {canImportCsv || canReconcileCsv ? (
-            <>
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".csv,text/csv"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) void uploadCsv(f);
-                }}
-              />
-              <Button
-                type="button"
-                variant="outline"
-                icon={<HiOutlineArrowUpTray className="size-4" />}
-                disabled={busy}
-                onClick={() => fileRef.current?.click()}
-              >
-                {hasExecuted ? "Upload CSV sửa lỗi" : "Upload CSV"}
-              </Button>
-            </>
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          {editingName ? (
+            <Input
+              autoFocus
+              value={nameDraft}
+              onChange={(e) => setNameDraft(e.target.value)}
+              onBlur={() => void commitNameEdit()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                if (e.key === "Escape") setEditingName(false);
+              }}
+              className="h-auto max-w-sm py-1 text-2xl font-semibold"
+            />
           ) : (
-            <p className="text-xs text-muted-foreground self-center">
-              {statusUpper === "RUNNING"
-                ? "Chiến dịch đang gửi — chờ hoàn tất rồi mới upload lại CSV."
-                : "Chiến dịch đã hủy — không thể upload CSV."}
-            </p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+                {campaign.name ?? campaign.id}
+              </h1>
+              <button
+                type="button"
+                className="text-muted-foreground transition hover:text-foreground"
+                aria-label="Sửa tên chiến dịch"
+                onClick={() => {
+                  setNameDraft(campaign.name ?? "");
+                  setEditingName(true);
+                }}
+              >
+                <HiOutlinePencilSquare className="size-5" />
+              </button>
+            </div>
           )}
-          <Button
-            type="button"
-            icon={<HiOutlinePlay className="size-4" />}
-            disabled={busy || !canExecute}
-            onClick={() => void openPreflight()}
-          >
-            Thực hiện gửi (Execute)
-          </Button>
-          {failedSelectable.length > 0 ? (
-            <Button
-              type="button"
-              variant="accent"
-              icon={<HiArrowPath className="size-4" />}
-              disabled={busy || selectedIds.size === 0}
-              onClick={() => void retrySelected()}
-            >
-              Gửi lại đã chọn ({selectedIds.size})
-            </Button>
+          {campaign.template?.name ? (
+            <p className="mt-2 text-muted-foreground">
+              Mẫu: {campaign.template.name}
+              {campaign.template.code ? ` (${campaign.template.code})` : ""}
+            </p>
           ) : null}
         </div>
-        {canReconcileCsv ? (
-          <p className="text-xs text-muted-foreground">
-            Để gửi lại các dòng thất bại: tải CSV hiện tại, sửa số điện thoại hoặc dữ liệu của dòng thất bại (giữ
-            nguyên cột <code>row_id</code>), upload CSV sửa lỗi rồi bấm Thực hiện gửi. Dòng đã gửi thành công không
-            bị gửi lại.
-          </p>
-        ) : null}
-        {msg ? <p className="text-sm text-muted-foreground">{msg}</p> : null}
-        {csvErrors.length > 0 ? (
-          <ul className="list-disc space-y-0.5 pl-5 text-sm text-danger">
-            {csvErrors.slice(0, MAX_CSV_ERRORS_SHOWN).map((line, index) => (
-              <li key={`${index}-${line}`}>{line}</li>
-            ))}
-            {csvErrors.length > MAX_CSV_ERRORS_SHOWN ? (
-              <li>…và {csvErrors.length - MAX_CSV_ERRORS_SHOWN} lỗi khác.</li>
-            ) : null}
-          </ul>
-        ) : null}
-      </Card>
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {campaign.status ? <EntityStatusBadge value={campaign.status} /> : null}
+          <Button icon={<HiArrowLeft className="size-4" />} variant="outline" asChild size="sm">
+            <Link href={workspacePath(workspaceId, "campaigns")}>Danh sách</Link>
+          </Button>
+        </div>
+      </div>
 
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2">
-          {ROW_FILTERS.map((f) => (
+      <div className="mb-6 grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <Card className="space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Thông tin chiến dịch
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <p className="text-xs text-muted-foreground">Gửi gần nhất</p>
+              <p className="font-medium">
+                {campaign.lastRunAt ? new Date(campaign.lastRunAt).toLocaleString() : "Chưa gửi"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground">Số dòng dữ liệu</p>
+              <p className="font-medium tabular-nums">
+                {campaign.rowCount ?? campaign.totalData ?? rowList.length}
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs text-muted-foreground">Chọn mẫu</label>
+            {hasExecuted ? (
+              <p className="text-sm text-foreground">
+                {campaign.template?.name ?? campaign.template?.code ?? "—"}{" "}
+                <span className="text-xs text-muted-foreground">(đã gửi — không đổi được mẫu)</span>
+              </p>
+            ) : approvedTemplates.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Chưa có mẫu APPROVED.</p>
+            ) : (
+              <Select value={selectedTemplateId} disabled={busy} onChange={(e) => void changeTemplate(e.target.value)}>
+                {approvedTemplates.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name ?? t.code ?? t.id}
+                    {t.code ? ` (${t.code})` : ""}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {!hasExecuted ? (
+              <Button
+                type="button"
+                icon={<HiOutlinePlay className="size-4" />}
+                disabled={busy || !canExecute}
+                onClick={() => void openPreflight()}
+              >
+                Thực hiện gửi (Execute)
+              </Button>
+            ) : null}
             <Button
-              key={f.value || "all"}
+              type="button"
+              variant="outline"
+              icon={<HiOutlineTrash className="size-4" />}
+              disabled={busy}
+              onClick={() => void deleteCampaign()}
+            >
+              Xóa / Hủy
+            </Button>
+          </div>
+        </Card>
+
+        <Card className="flex min-w-0 flex-col gap-3">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Xem trước</p>
+          {selectedTemplate ? (
+            <TemplatePreview
+              type={toPreviewType(selectedTemplate.type)}
+              title={selectedTemplate.title ?? ""}
+              content={selectedTemplate.content ?? ""}
+              placeholders={selectedTemplate.placeholdersJson ?? {}}
+              placeholderLabels={selectedTemplate.placeholder_labels ?? undefined}
+              secondaryContent={selectedTemplate.secondaryContent ?? ""}
+              minutes={String(selectedTemplate.otpExpiryMinutes ?? 5)}
+              logoUrl={resolvePublicAssetUrl(oa?.logoLightUrl)}
+              ctaButtons={(selectedTemplate.ctaButtons ?? []).map((b) => ({
+                ...b,
+                label: b.label ?? "",
+                target: b.target ?? "",
+              }))}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground">Chưa có mẫu tin để xem trước.</p>
+          )}
+        </Card>
+      </div>
+
+      {!hasExecuted ? (
+        <Card className="mb-6 space-y-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">CSV & gửi tin</p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              icon={<HiOutlineArrowDownTray className="size-4" />}
+              disabled={busy}
+              onClick={() => void downloadCsvTemplate()}
+            >
+              Tải CSV mẫu
+            </Button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void uploadCsv(f);
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              icon={<HiOutlineArrowUpTray className="size-4" />}
+              disabled={busy}
+              onClick={() => fileRef.current?.click()}
+            >
+              Upload CSV
+            </Button>
+          </div>
+          {msg ? <p className="text-sm text-muted-foreground">{msg}</p> : null}
+          {csvErrors.length > 0 ? (
+            <ul className="list-disc space-y-0.5 pl-5 text-sm text-danger">
+              {csvErrors.slice(0, MAX_CSV_ERRORS_SHOWN).map((line, index) => (
+                <li key={`${index}-${line}`}>{line}</li>
+              ))}
+              {csvErrors.length > MAX_CSV_ERRORS_SHOWN ? (
+                <li>…và {csvErrors.length - MAX_CSV_ERRORS_SHOWN} lỗi khác.</li>
+              ) : null}
+            </ul>
+          ) : null}
+        </Card>
+      ) : msg || csvErrors.length > 0 ? (
+        <Card className="mb-6 space-y-2">
+          {msg ? <p className="text-sm text-muted-foreground">{msg}</p> : null}
+          {csvErrors.length > 0 ? (
+            <ul className="list-disc space-y-0.5 pl-5 text-sm text-danger">
+              {csvErrors.slice(0, MAX_CSV_ERRORS_SHOWN).map((line, index) => (
+                <li key={`${index}-${line}`}>{line}</li>
+              ))}
+              {csvErrors.length > MAX_CSV_ERRORS_SHOWN ? (
+                <li>…và {csvErrors.length - MAX_CSV_ERRORS_SHOWN} lỗi khác.</li>
+              ) : null}
+            </ul>
+          ) : null}
+        </Card>
+      ) : null}
+
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {ROW_FILTERS.map((f) => (
+          <Button
+            key={f.value || "all"}
+            type="button"
+            size="sm"
+            variant={rowFilter === f.value ? "primary" : "outline"}
+            onClick={() => setRowFilter(f.value)}
+          >
+            {f.label}
+          </Button>
+        ))}
+      </div>
+
+      {hasExecuted && rowFilter === "FAILED" ? (
+        <Card className="mb-4 space-y-2">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              icon={<HiOutlineArrowDownTray className="size-4" />}
+              disabled={busy || rowList.length === 0}
+              onClick={downloadFailedRowsCsv}
+            >
+              Tải CSV dữ liệu gửi lỗi
+            </Button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void uploadCsv(f);
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              icon={<HiOutlineArrowUpTray className="size-4" />}
+              disabled={busy || !canReconcileCsv}
+              onClick={() => fileRef.current?.click()}
+            >
+              Upload CSV dữ liệu đã sửa lỗi
+            </Button>
+            <Button
               type="button"
               size="sm"
-              variant={rowFilter === f.value ? "primary" : "outline"}
-              onClick={() => {
-                setRowFilter(f.value);
-                setSelectedIds(new Set());
-              }}
+              icon={<HiArrowPath className="size-4" />}
+              disabled={busy || !canExecute}
+              onClick={() => void openPreflight()}
             >
-              {f.label}
+              Gửi lại tin bị lỗi
             </Button>
-          ))}
-        </div>
-        {failedSelectable.length > 0 ? (
-          <Button type="button" size="sm" variant="ghost" onClick={selectAllFailed}>
-            Chọn tất cả thất bại
-          </Button>
-        ) : null}
-      </div>
+          </div>
+          {!canExecute ? (
+            <p className="text-xs text-muted-foreground">
+              Upload CSV dữ liệu đã sửa lỗi (giữ nguyên cột <code>row_id</code>) để bật nút gửi lại.
+            </p>
+          ) : null}
+        </Card>
+      ) : null}
 
       {lr ? <PageLoading /> : null}
       {er && !rows ? <PageError message={er} onRetry={() => void refetchRows()} /> : null}
@@ -607,22 +755,6 @@ export default function CampaignDetailPage() {
           rows={rowList}
           getRowKey={(r) => r.id}
           columns={[
-            {
-              key: "sel",
-              header: "",
-              cell: (r) => {
-                const failed = (r.status ?? "").toUpperCase() === "FAILED";
-                if (!failed) return null;
-                return (
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.has(r.id)}
-                    onChange={() => toggleSelect(r.id)}
-                    aria-label="Chọn gửi lại"
-                  />
-                );
-              },
-            },
             { key: "phone", header: "Phone", cell: (r) => r.phoneNumber ?? "—" },
             ...placeholderKeys.map((key) => ({
               key: `ph-${key}`,
@@ -675,24 +807,6 @@ export default function CampaignDetailPage() {
           ]}
         />
       ) : null}
-
-      <Modal
-        open={renameOpen}
-        title="Đổi tên chiến dịch"
-        onClose={() => setRenameOpen(false)}
-        footer={
-          <>
-            <Button variant="ghost" onClick={() => setRenameOpen(false)}>
-              Hủy
-            </Button>
-            <Button disabled={busy} onClick={() => void patchCampaignName()}>
-              Lưu
-            </Button>
-          </>
-        }
-      >
-        <Input value={renameValue} onChange={(e) => setRenameValue(e.target.value)} />
-      </Modal>
 
       <CampaignPreflightModal
         open={preflightOpen}

@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
-import { HiMiniPlus, HiOutlineDocumentText } from "react-icons/hi2";
+import { HiMiniPlus, HiOutlineDocumentText, HiOutlineEye } from "react-icons/hi2";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
@@ -13,6 +14,7 @@ import { TemplateForm } from "@/components/template/template-form";
 import { TemplateEditForm } from "@/components/template/template-edit-form";
 import { useToast } from "@/components/ui/toast";
 import { comviaFetch } from "@/lib/comviaFetch";
+import { workspacePath } from "@/lib/paths";
 import { TEMPLATE_STATUS_LABELS } from "@/lib/status-labels";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { formatDate } from "@/lib/utils";
@@ -127,43 +129,40 @@ export function DashboardTemplateList({ className }: { className?: string }) {
                 cell: (r) => <span className="tabular-nums">{rows.indexOf(r) + 1}</span>,
               },
               {
-                key: "name",
-                header: "Tên mẫu tin",
+                key: "template",
+                header: "Mẫu tin",
                 cell: (r) => (
-                  <button
-                    type="button"
-                    className="font-medium text-primary hover:underline"
-                    onClick={() => setEditingTemplateId(r.id)}
-                  >
-                    {r.name ?? r.id}
-                  </button>
+                  <div className="space-y-1">
+                    <button
+                      type="button"
+                      className="font-medium text-primary hover:underline"
+                      onClick={() => setEditingTemplateId(r.id)}
+                    >
+                      {r.name ?? r.id}
+                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-xs text-muted-foreground">{r.code ?? "—"}</span>
+                      {r.status ? (
+                        <EntityStatusBadge value={r.status} label={TEMPLATE_STATUS_LABELS[r.status.toUpperCase()]} />
+                      ) : null}
+                    </div>
+                  </div>
                 ),
-              },
-              {
-                key: "code",
-                header: "Mã mẫu tin",
-                cell: (r) => <span className="font-mono text-xs">{r.code ?? "—"}</span>,
-              },
-              {
-                key: "category",
-                header: "Danh mục",
-                // §7.2 không có field "Danh mục" (category) → render phòng thủ "—" (ghi lại cho TL/BE).
-                cell: () => "—",
-              },
-              {
-                key: "status",
-                header: "Trạng thái",
-                cell: (r) =>
-                  r.status ? (
-                    <EntityStatusBadge value={r.status} label={TEMPLATE_STATUS_LABELS[r.status.toUpperCase()]} />
-                  ) : (
-                    "—"
-                  ),
               },
               {
                 key: "updated",
                 header: "Cập nhật",
                 cell: (r) => (r.updatedAt ? formatDate(r.updatedAt) : "—"),
+              },
+              {
+                key: "view",
+                header: "",
+                className: "w-16 text-right",
+                cell: (r) => (
+                  <Button variant="ghost" size="sm" icon={<HiOutlineEye className="size-4" />} asChild>
+                    <Link href={workspacePath(workspaceId, "templates", r.id)}>Xem</Link>
+                  </Button>
+                ),
               },
             ]}
           />
