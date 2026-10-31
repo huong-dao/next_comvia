@@ -11,10 +11,10 @@ import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { useAlertModal } from "@/components/ui/alert-modal";
 import { cn } from "@/lib/cn";
-import { getAccessToken, getStoredUser, saveAuthSession } from "@/lib/auth";
+import { endCurrentSession, getAccessToken, getStoredUser, saveAuthSession } from "@/lib/auth";
 import { createDefaultOtpExpiredAt, createOtpRequestId, savePendingOtpContext } from "@/lib/otp-context";
 import { resolvePostLoginPath } from "@/lib/post-login-redirect";
-import { getComviaApiBaseUrl } from "@/lib/comviaFetch";
+import { ComviaApiError, comviaFetch, getComviaApiBaseUrl } from "@/lib/comviaFetch";
 import { getInvitationReturnPath } from "@/lib/post-auth-return";
 
 type LoginErrors = {
@@ -58,15 +58,23 @@ export default function LoginPage() {
 
   useEffect(() => {
     const token = getAccessToken();
-    if (token) {
-      let cancelled = false;
-      void resolvePostLoginPath(getStoredUser()?.role, token).then((path) => {
-        if (!cancelled) router.replace(returnTo ?? path);
-      });
-      return () => {
-        cancelled = true;
-      };
-    }
+    if (!token) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        // Token còn trong storage chưa chắc còn hiệu lực: chỉ tự chuyển hướng khi BE xác nhận, tránh vòng lặp login ↔ dashboard.
+        await comviaFetch("/auth/me", { token });
+      } catch (e) {
+        if (e instanceof ComviaApiError && e.statusCode === 401) endCurrentSession();
+        return;
+      }
+      const path = await resolvePostLoginPath(getStoredUser()?.role, token);
+      if (!cancelled) router.replace(returnTo ?? path);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [returnTo, router]);
 
   function validate(nextEmail: string, nextPassword: string) {

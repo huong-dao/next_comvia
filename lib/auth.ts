@@ -121,7 +121,12 @@ export function getAccessToken() {
   if (typeof window === "undefined") return null;
 
   const impersonationToken = window.sessionStorage.getItem(COMVIA_IMPERSONATION_TOKEN_KEY);
-  if (impersonationToken) return impersonationToken;
+  if (impersonationToken) {
+    // Token đăng nhập hộ hết hạn (20 phút, không refresh): bỏ đi để không bị đẩy qua lại giữa login và dashboard.
+    const meta = getImpersonationMeta();
+    if (meta && meta.expiresAt > Date.now()) return impersonationToken;
+    clearImpersonationSession();
+  }
 
   return (
     window.localStorage.getItem(COMVIA_ACCESS_TOKEN_KEY) ??
@@ -139,6 +144,15 @@ export function clearAuthSession() {
   window.sessionStorage.removeItem(COMVIA_ACCESS_TOKEN_KEY);
   window.sessionStorage.removeItem(COMVIA_REFRESH_TOKEN_KEY);
   window.sessionStorage.removeItem(COMVIA_USER_KEY);
+}
+
+/** Xóa đúng phiên đang dùng: đăng nhập hộ thì chỉ xóa phiên hộ, giữ nguyên phiên admin thật ở tab gốc. */
+export function endCurrentSession() {
+  if (isImpersonating()) {
+    clearImpersonationSession();
+    return;
+  }
+  clearAuthSession();
 }
 
 export function getStoredUser(): StoredUser | null {

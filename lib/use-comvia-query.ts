@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ComviaApiError } from "@/lib/comviaFetch";
-import { getAccessToken } from "@/lib/auth";
+import { endCurrentSession, getAccessToken } from "@/lib/auth";
 
 export type ComviaQueryState<T> = {
   data: T | null;
@@ -66,6 +66,8 @@ export function useComviaQuery<T>(enabled: boolean, fetcher: (token: string) => 
             forbidden: false,
             unauthorized: true,
           });
+          // Đã thử refresh mà vẫn 401: xóa phiên trước khi về login, nếu không login sẽ thấy token cũ và đẩy ngược lại.
+          endCurrentSession();
           router.replace("/auth/login");
           return;
         }
@@ -130,6 +132,7 @@ export function useComviaMutation<TResult>() {
       } catch (e) {
         if (e instanceof ComviaApiError) {
           if (e.statusCode === 401) {
+            endCurrentSession();
             router.replace("/auth/login");
           }
           setError(e.message);

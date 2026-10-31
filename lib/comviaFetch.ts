@@ -1,4 +1,4 @@
-import { clearAuthSession, getRefreshToken, isImpersonating, updateTokenPair } from "@/lib/auth";
+import { clearAuthSession, getAccessToken, getRefreshToken, isImpersonating, updateTokenPair } from "@/lib/auth";
 
 export type ComviaApiErrorBody = {
   statusCode?: number;
@@ -66,53 +66,102 @@ export function resolvePublicAssetUrl(url?: string | null): string | null {
 
 type RefreshResponse = { accessToken: string; refreshToken: string };
 
+/** Làm mới access token trước khi hết hạn khoảng này, để user không gặp 401 → refresh → retry. */
+const REFRESH_AHEAD_MS = 5 * 60_000;
+const REFRESH_LOCK_NAME = "comvia-auth-refresh";
+
+/** Đọc `exp` (epoch ms) từ JWT; trả null nếu không đọc được (token không phải JWT). */
+function getTokenExpiresAt(token: string): number | null {
+  try {
+    const part = token.split(".")[1];
+    if (!part) return null;
+    const base64 = part.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+    const payload = JSON.parse(atob(padded)) as { exp?: unknown };
+    return typeof payload.exp === "number" ? payload.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
+function isExpiringSoon(token: string) {
+  const expiresAt = getTokenExpiresAt(token);
+  return expiresAt !== null && expiresAt - Date.now() <= REFRESH_AHEAD_MS;
+}
+
 /**
- * ISSUE-003 — warmup phiên 30 ngày. `refreshPromise` dùng làm mutex: nếu nhiều
- * request cùng gặp 401 song song, chỉ 1 lần gọi `/auth/refresh` thật sự chạy,
- * các request còn lại dùng chung kết quả (theo đúng khuyến nghị chống race
- * condition ở `docs/FRONTEND_API_GUIDE_NEXTJS.mdc` mục 3.3b).
+ * ISSUE-003 — warmup phiên 30 ngày. `refreshPromise` gộp các request cùng lúc trong một tab
+ * thành một lần gọi `/auth/refresh`. Web Locks gộp thêm giữa các tab cùng origin: refresh token
+ * bị rotate mỗi lần dùng, nên tab thứ hai dùng token cũ sẽ bị BE coi là bị lộ và thu hồi cả chuỗi.
  */
 let refreshPromise: Promise<string | null> | null = null;
 
-async function refreshAccessToken(): Promise<string | null> {
+async function runExclusiveRefresh<T>(task: () => Promise<T>): Promise<T> {
+  if (typeof navigator === "undefined" || !navigator.locks) return task();
+
+  let result!: T;
+  await navigator.locks.request(REFRESH_LOCK_NAME, async () => {
+    result = await task();
+  });
+  return result;
+}
+
+/**
+ * Lấy access token mới thay cho `failedToken` (vừa bị 401 hoặc sắp hết hạn).
+ * Trả null khi không còn phiên dùng được — lúc đó phiên đã bị xóa.
+ */
+function refreshAccessToken(failedToken: string): Promise<string | null> {
   if (refreshPromise) return refreshPromise;
 
-  refreshPromise = (async () => {
-    const refreshToken = getRefreshToken();
-    if (!refreshToken) return null;
+  refreshPromise = runExclusiveRefresh(() => refreshWithStoredToken(failedToken)).finally(() => {
+    refreshPromise = null;
+  });
+  return refreshPromise;
+}
 
-    try {
-      const baseUrl = getComviaApiBaseUrl();
-      const res = await fetch(`${baseUrl.replace(/\/$/, "")}/auth/refresh`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken }),
-      });
+async function refreshWithStoredToken(failedToken: string): Promise<string | null> {
+  // Tab khác có thể vừa refresh xong trong lúc chờ khóa: dùng luôn token mới, không gọi refresh lần nữa.
+  const current = getAccessToken();
+  if (current && current !== failedToken && !isExpiringSoon(current)) return current;
 
-      if (!res.ok) {
-        // Refresh token hết hạn/bị rotate/tài khoản khóa/đổi mật khẩu — không retry, buộc đăng nhập lại.
-        clearAuthSession();
-        return null;
-      }
-
-      const data = (await res.json()) as RefreshResponse;
-      updateTokenPair({ accessToken: data.accessToken, refreshToken: data.refreshToken });
-      return data.accessToken;
-    } catch {
-      return null;
-    }
-  })();
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    // Phiên đăng nhập từ trước khi có warmup không có refresh token: không gia hạn được, buộc đăng nhập lại.
+    clearAuthSession();
+    return null;
+  }
 
   try {
-    return await refreshPromise;
-  } finally {
-    refreshPromise = null;
+    const baseUrl = getComviaApiBaseUrl();
+    const res = await fetch(`${baseUrl.replace(/\/$/, "")}/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!res.ok) {
+      // Refresh token hết hạn/bị rotate/tài khoản khóa/đổi mật khẩu — không retry, buộc đăng nhập lại.
+      clearAuthSession();
+      return null;
+    }
+
+    const data = (await res.json()) as RefreshResponse;
+    updateTokenPair({ accessToken: data.accessToken, refreshToken: data.refreshToken });
+    return data.accessToken;
+  } catch {
+    return null;
   }
 }
 
 /** Token "đăng nhập hộ" (ISSUE-002) không có refreshToken — hết hạn là phải đăng nhập lại, không được lẫn sang refresh token của phiên admin thật đang nằm chung storage. */
 function canAttemptRefresh(path: string, hadToken: boolean) {
   return hadToken && path !== "/auth/refresh" && !isImpersonating();
+}
+
+/** Token dùng cho request: nếu sắp hết hạn thì làm mới trước (warmup chủ động). */
+async function resolveRequestToken(path: string, token: string | undefined): Promise<string | undefined> {
+  if (!token || !canAttemptRefresh(path, true) || !isExpiringSoon(token)) return token;
+  return (await refreshAccessToken(token)) ?? token;
 }
 
 export async function comviaFetch<T>(
@@ -132,10 +181,11 @@ export async function comviaFetch<T>(
     return headers;
   }
 
-  let res = await fetch(url, { ...init, headers: buildHeaders(init?.token) });
+  const requestToken = await resolveRequestToken(path, init?.token);
+  let res = await fetch(url, { ...init, headers: buildHeaders(requestToken) });
 
-  if (res.status === 401 && canAttemptRefresh(path, Boolean(init?.token))) {
-    const newToken = await refreshAccessToken();
+  if (res.status === 401 && requestToken && canAttemptRefresh(path, true)) {
+    const newToken = await refreshAccessToken(requestToken);
     if (newToken) {
       res = await fetch(url, { ...init, headers: buildHeaders(newToken) });
     }
@@ -175,10 +225,11 @@ export async function comviaMultipartFetch<T>(
     return fetch(url, { ...rest, method: init.method ?? "POST", body: formData, headers });
   }
 
-  let res = await send(token);
+  const requestToken = (await resolveRequestToken(path, token)) ?? token;
+  let res = await send(requestToken);
 
   if (res.status === 401 && canAttemptRefresh(path, true)) {
-    const newToken = await refreshAccessToken();
+    const newToken = await refreshAccessToken(requestToken);
     if (newToken) {
       res = await send(newToken);
     }
