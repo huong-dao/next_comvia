@@ -456,19 +456,33 @@ export default function CampaignDetailPage() {
     }
   }
 
+  /**
+   * `DELETE /campaigns/:id`: DRAFT (chưa gửi lần nào) bị xóa hẳn, không hoàn tác được;
+   * campaign đã chạy chỉ chuyển trạng thái `CANCELLED` (ngưng kích hoạt, không mất dữ liệu).
+   */
+  const isDraftCampaign = statusUpper === "DRAFT";
+
   async function deleteCampaign() {
     const token = getAccessToken();
     if (!token) return;
-    if (!window.confirm("Xóa hoặc hủy chiến dịch này?")) return;
+    const confirmMessage = isDraftCampaign
+      ? "Xóa chiến dịch này? Không thể hoàn tác."
+      : "Ngừng kích hoạt chiến dịch này?";
+    if (!window.confirm(confirmMessage)) return;
     setBusy(true);
     try {
       await comviaFetch(`/workspaces/${workspaceId}/campaigns/${campaignId}`, {
         method: "DELETE",
         token,
       });
-      window.location.href = workspacePath(workspaceId, "campaigns");
+      if (isDraftCampaign) {
+        window.location.href = workspacePath(workspaceId, "campaigns");
+      } else {
+        void refetchCampaign();
+        setBusy(false);
+      }
     } catch (e) {
-      setMsg(formatComviaError(e, "Không xóa được chiến dịch."));
+      setMsg(formatComviaError(e, isDraftCampaign ? "Không xóa được chiến dịch." : "Không ngưng kích hoạt được chiến dịch."));
       setBusy(false);
     }
   }
@@ -556,14 +570,16 @@ export default function CampaignDetailPage() {
             ) : approvedTemplates.length === 0 ? (
               <p className="text-sm text-muted-foreground">Chưa có mẫu APPROVED.</p>
             ) : (
-              <Select value={selectedTemplateId} disabled={busy} onChange={(e) => void changeTemplate(e.target.value)}>
-                {approvedTemplates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name ?? t.code ?? t.id}
-                    {t.code ? ` (${t.code})` : ""}
-                  </option>
-                ))}
-              </Select>
+              <div className="max-w-xs">
+                <Select value={selectedTemplateId} disabled={busy} onChange={(e) => void changeTemplate(e.target.value)}>
+                  {approvedTemplates.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name ?? t.code ?? t.id}
+                      {t.code ? ` (${t.code})` : ""}
+                    </option>
+                  ))}
+                </Select>
+              </div>
             )}
           </div>
 
@@ -585,7 +601,7 @@ export default function CampaignDetailPage() {
               disabled={busy}
               onClick={() => void deleteCampaign()}
             >
-              Xóa / Hủy
+              {isDraftCampaign ? "Xóa" : "Ngừng kích hoạt"}
             </Button>
           </div>
         </Card>
