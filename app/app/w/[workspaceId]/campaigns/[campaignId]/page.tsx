@@ -555,7 +555,7 @@ export default function CampaignDetailPage() {
             <div>
               <p className="text-xs text-muted-foreground">Số dòng dữ liệu</p>
               <p className="font-medium tabular-nums">
-                {campaign.rowCount ?? campaign.totalData ?? rowList.length}
+                {hasExecuted ? (campaign.rowCount ?? campaign.totalData ?? rowList.length) : pendingCount}
               </p>
             </div>
           </div>
@@ -583,17 +583,35 @@ export default function CampaignDetailPage() {
             )}
           </div>
 
+          {!hasExecuted ? (
+            <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
+              <p className="mb-2 font-medium text-foreground">Hướng dẫn gửi tin</p>
+              <ol className="list-decimal space-y-1 pl-5 text-muted-foreground">
+                <li>Chọn mẫu tin ở trên.</li>
+                <li>
+                  Bấm <strong className="text-foreground">Tải CSV mẫu</strong> để lấy file có sẵn cột{" "}
+                  <code>phone</code>
+                  {placeholderKeys.length > 0 ? (
+                    <>
+                      {" "}
+                      và các biến: <code>{placeholderKeys.join(", ")}</code>
+                    </>
+                  ) : null}
+                  .
+                </li>
+                <li>Điền danh sách người nhận vào file CSV đã tải.</li>
+                <li>
+                  Bấm <strong className="text-foreground">Upload CSV</strong> và chọn file đã điền. Số dòng đã upload sẽ
+                  hiển thị bên dưới.
+                </li>
+                <li>
+                  Bấm <strong className="text-foreground">Thực hiện gửi (Execute)</strong> để bắt đầu gửi.
+                </li>
+              </ol>
+            </div>
+          ) : null}
+
           <div className="flex flex-wrap gap-2">
-            {!hasExecuted ? (
-              <Button
-                type="button"
-                icon={<HiOutlinePlay className="size-4" />}
-                disabled={busy || !canExecute}
-                onClick={() => void openPreflight()}
-              >
-                Thực hiện gửi (Execute)
-              </Button>
-            ) : null}
             <Button
               type="button"
               variant="outline"
@@ -662,7 +680,19 @@ export default function CampaignDetailPage() {
             >
               Upload CSV
             </Button>
+            <Button
+              type="button"
+              icon={<HiOutlinePlay className="size-4" />}
+              disabled={busy || !canExecute}
+              onClick={() => void openPreflight()}
+            >
+              Thực hiện gửi (Execute)
+            </Button>
           </div>
+          <p className="text-sm text-muted-foreground">
+            Số dòng đã upload:{" "}
+            <span className="font-medium tabular-nums text-foreground">{pendingCount}</span>
+          </p>
           {msg ? <p className="text-sm text-muted-foreground">{msg}</p> : null}
           {csvErrors.length > 0 ? (
             <ul className="list-disc space-y-0.5 pl-5 text-sm text-danger">
