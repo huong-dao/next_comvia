@@ -552,12 +552,6 @@ export default function CampaignDetailPage() {
                 {campaign.lastRunAt ? new Date(campaign.lastRunAt).toLocaleString() : "Chưa gửi"}
               </p>
             </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Số dòng dữ liệu</p>
-              <p className="font-medium tabular-nums">
-                {hasExecuted ? (campaign.rowCount ?? campaign.totalData ?? rowList.length) : pendingCount}
-              </p>
-            </div>
           </div>
 
           <div>
@@ -612,6 +606,17 @@ export default function CampaignDetailPage() {
           ) : null}
 
           <div className="flex flex-wrap gap-2">
+            {!hasExecuted ? (
+              <Button
+                type="button"
+                variant="outline"
+                icon={<HiOutlineArrowDownTray className="size-4" />}
+                disabled={busy}
+                onClick={() => void downloadCsvTemplate()}
+              >
+                Tải CSV mẫu
+              </Button>
+            ) : null}
             <Button
               type="button"
               variant="outline"
@@ -652,15 +657,6 @@ export default function CampaignDetailPage() {
         <Card className="mb-6 space-y-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">CSV & gửi tin</p>
           <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              icon={<HiOutlineArrowDownTray className="size-4" />}
-              disabled={busy}
-              onClick={() => void downloadCsvTemplate()}
-            >
-              Tải CSV mẫu
-            </Button>
             <input
               ref={fileRef}
               type="file"
