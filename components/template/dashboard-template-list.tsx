@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { HiMiniPlus, HiOutlineDocumentText, HiOutlineEye } from "react-icons/hi2";
 import { Button } from "@/components/ui/button";
@@ -14,7 +13,6 @@ import { TemplateForm } from "@/components/template/template-form";
 import { TemplateEditForm } from "@/components/template/template-edit-form";
 import { useToast } from "@/components/ui/toast";
 import { comviaFetch } from "@/lib/comviaFetch";
-import { workspacePath } from "@/lib/paths";
 import { TEMPLATE_STATUS_LABELS } from "@/lib/status-labels";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { formatDate } from "@/lib/utils";
@@ -159,8 +157,13 @@ export function DashboardTemplateList({ className }: { className?: string }) {
                 header: "",
                 className: "w-16 text-right",
                 cell: (r) => (
-                  <Button variant="ghost" size="sm" icon={<HiOutlineEye className="size-4" />} asChild>
-                    <Link href={workspacePath(workspaceId, "templates", r.id)}>Xem</Link>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={<HiOutlineEye className="size-4" />}
+                    onClick={() => setEditingTemplateId(r.id)}
+                  >
+                    Xem
                   </Button>
                 ),
               },
