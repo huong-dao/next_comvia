@@ -57,7 +57,8 @@ function ctaUrlParams(target: string) {
 }
 
 function isValidVietnamPhone(value: string) {
-  return /^(?:0\d{9}|84\d{9}|\+84\d{9})$/.test(value.replace(/[.\s-]/g, ""));
+  // Số di động: 0 + 9 số. Số bàn: 0 + mã vùng (2-3 số) + số thuê bao, tổng 10-11 số.
+  return /^(?:0\d{9,10}|84\d{9,10}|\+84\d{9,10})$/.test(value.replace(/[.\s-]/g, ""));
 }
 
 function isValidHttpUrl(value: string) {
