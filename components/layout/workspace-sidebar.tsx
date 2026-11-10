@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ComponentType } from "react";
+import type { ComponentType } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -144,7 +144,6 @@ export function WorkspaceSidebar({
   const currentWorkspaceId = workspaceFromUrl || activeWorkspaceId;
   const isCompact = collapsed;
   const isAdmin = String(getStoredUser()?.role ?? "").toUpperCase() === "ADMIN";
-  const [adminOpen, setAdminOpen] = useState(pathname.startsWith("/admin"));
 
   return (
     <aside
@@ -237,29 +236,21 @@ export function WorkspaceSidebar({
         {isAdmin ? (
           <div className="mt-auto pt-6">
             <div className="border-t border-border/70 pt-3">
-              <button
-                type="button"
-                onClick={() => setAdminOpen((open) => !open)}
+              <div
                 className={cn(
-                  "flex w-full items-center rounded-lg py-2 text-sm font-semibold text-muted-foreground transition hover:bg-surface-muted/70 hover:text-foreground",
+                  "flex w-full items-center rounded-lg py-2 text-sm font-semibold text-muted-foreground",
                   isCompact ? "justify-center px-2" : "gap-3 px-4",
                   pathname.startsWith("/admin") &&
                     "bg-surface-muted text-secondary shadow-[inset_3px_0_0_0_var(--color-primary)]",
                 )}
                 title={isCompact ? "Qu\u1ea3n tr\u1ecb" : undefined}
-                aria-expanded={adminOpen}
               >
                 <HiOutlineCog6Tooth className="size-5 shrink-0" />
-                {!isCompact ? (
-                  <>
-                    <span className="flex-1 text-left">{"Qu\u1ea3n tr\u1ecb"}</span>
-                    <span className="text-xs">{adminOpen ? "\u2212" : "+"}</span>
-                  </>
-                ) : null}
-              </button>
+                {!isCompact ? <span className="flex-1 text-left">{"Qu\u1ea3n tr\u1ecb"}</span> : null}
+              </div>
 
-              {adminOpen && !isCompact ? (
-                <div className="mt-1 space-y-1 border-l border-border/70 pl-3">
+              {!isCompact ? (
+                <div className="mt-1 space-y-1 pl-3">
                   {adminItems.map((item) => {
                     const Icon = item.icon;
                     const active = pathname === item.href || pathname.startsWith(item.href + "/");
