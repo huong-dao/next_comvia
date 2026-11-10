@@ -1,12 +1,17 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { HiOutlineArrowTopRightOnSquare, HiOutlineNoSymbol } from "react-icons/hi2";
+import { HiOutlineArrowTopRightOnSquare, HiOutlineNoSymbol, HiOutlineWallet } from "react-icons/hi2";
 import { FilterCard, FilterField } from "@/components/app/filter-card";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { AdminRoleGate } from "@/components/admin/role-gate";
+import {
+  WalletAdjustmentModal,
+  type WalletAdjustmentResult,
+} from "@/components/admin/wallet-adjustment-modal";
 import { Button } from "@/components/ui/button";
+import { useAlertModal } from "@/components/ui/alert-modal";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input, Select } from "@/components/ui/input";
 import { PaginationBar } from "@/components/ui/pagination-bar";
@@ -14,6 +19,7 @@ import { SimpleTable } from "@/components/ui/simple-table";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken, getStoredUser, type ImpersonationMeta, type StoredUser } from "@/lib/auth";
 import { useComviaQuery } from "@/lib/use-comvia-query";
+import { formatVND } from "@/lib/utils";
 
 const PAGE_SIZE = 30;
 const STATUS_OPTIONS = [
@@ -51,11 +57,13 @@ type AppliedFilters = { keyword: string; status: string; ownerUserId: string };
 const initialFilters = (): AppliedFilters => ({ keyword: "", status: "", ownerUserId: "" });
 
 export default function AdminWorkspacesPage() {
+  const { showAlert } = useAlertModal();
   const [page, setPage] = useState(1);
   const [applied, setApplied] = useState<AppliedFilters>(initialFilters);
   const [draft, setDraft] = useState<AppliedFilters>(initialFilters);
   const [busy, setBusy] = useState<string | null>(null);
   const [impersonating, setImpersonating] = useState<string | null>(null);
+  const [adjustTarget, setAdjustTarget] = useState<WsRow | null>(null);
 
   const qs = useMemo(() => {
     const p = new URLSearchParams();
@@ -93,6 +101,23 @@ export default function AdminWorkspacesPage() {
     } finally {
       setBusy(null);
     }
+  }
+
+  /**
+   * ISSUE-006: điều chỉnh ví xong — báo số dư mới để admin đối chiếu ngay (bút toán đã ghi,
+   * không có bước hoàn tác). Refetch danh sách để trạng thái workspace luôn khớp backend.
+   */
+  function handleAdjusted(result: WalletAdjustmentResult) {
+    setAdjustTarget(null);
+    const sign = result.direction === "CREDIT" ? "+" : "−";
+    showAlert({
+      type: "success",
+      title: "Đã điều chỉnh số dư ví",
+      message: `${sign}${formatVND(Number(result.amount))} · Số dư ví của owner: ${formatVND(
+        Number(result.balanceBefore),
+      )} → ${formatVND(Number(result.balanceAfter))}`,
+    });
+    void refetch();
   }
 
   /**
@@ -235,6 +260,21 @@ export default function AdminWorkspacesPage() {
                         type="button"
                         size="sm"
                         variant="outline"
+                        disabled={inactive}
+                        title={
+                          inactive
+                            ? "Chỉ điều chỉnh được ví của workspace đang ACTIVE."
+                            : "Cộng/trừ số dư ví của owner workspace này."
+                        }
+                        onClick={() => setAdjustTarget(r)}
+                        icon={<HiOutlineWallet className="size-4" />}
+                      >
+                        Điều chỉnh số dư ví
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
                         disabled={impersonating === r.id || inactive}
                         title={inactive ? "Chỉ đăng nhập hộ được workspace đang ACTIVE." : undefined}
                         onClick={() => void impersonateOwner(r)}
@@ -275,6 +315,17 @@ export default function AdminWorkspacesPage() {
               ariaLabel="Phân trang danh sách workspace"
             />
           </div>
+
+          {/* `key` theo workspace: mỗi lần mở là một instance mới nên số tiền/lý do của
+              lần trước không bao giờ dính sang workspace khác. */}
+          {adjustTarget ? (
+            <WalletAdjustmentModal
+              key={adjustTarget.id}
+              workspace={adjustTarget}
+              onClose={() => setAdjustTarget(null)}
+              onAdjusted={handleAdjusted}
+            />
+          ) : null}
         </div>
       ) : null}
     </AdminRoleGate>

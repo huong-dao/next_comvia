@@ -13,6 +13,13 @@ import { SimpleTable } from "@/components/ui/simple-table";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { formatVND } from "@/lib/utils";
+import {
+  WALLET_TX_TYPE_LABELS,
+  WALLET_TX_TYPE_OPTIONS,
+  walletTxDirection,
+  walletTxTypeLabel,
+} from "@/lib/wallet-transaction";
+import { cn } from "@/lib/cn";
 
 type WalletBalance = {
   balance?: string;
@@ -21,12 +28,17 @@ type WalletBalance = {
   totalRefund?: string;
 };
 
+/**
+ * §9.2 — `amount` LUÔN dương với mọi loại giao dịch, nên chiều tiền suy từ `balanceBefore`
+ * so với `balanceAfter`. `note` nullable; với `MANUAL_ADJUSTMENT` là lý do admin điều chỉnh.
+ */
 type TxRow = {
   transactionCode?: string;
   type?: string;
   amount?: string;
   balanceBefore?: string;
   balanceAfter?: string;
+  note?: string | null;
   createdAt?: string;
 };
 
@@ -90,14 +102,15 @@ export default function WalletPage() {
       </div>
 
       <div className="mb-4 flex justify-between items-center gap-3">
-        {/* <Select value={type} onChange={(e) => setType(e.target.value)} className="max-w-sm">
+        {/* Lọc theo `type` (§9.2) — gửi nguyên giá trị enum, chỉ map nhãn khi hiển thị. */}
+        <Select value={type} onChange={(e) => setType(e.target.value)} className="max-w-sm">
           <option value="">Mọi loại giao dịch</option>
-          <option value="TOPUP_CREDIT">TOPUP_CREDIT</option>
-          <option value="MESSAGE_DEBIT">MESSAGE_DEBIT</option>
-          <option value="CAMPAIGN_HOLD">CAMPAIGN_HOLD</option>
-          <option value="CAMPAIGN_REFUND">CAMPAIGN_REFUND</option>
-          <option value="MANUAL_ADJUSTMENT">MANUAL_ADJUSTMENT</option>
-        </Select> */}
+          {WALLET_TX_TYPE_OPTIONS.map((t) => (
+            <option key={t} value={t}>
+              {WALLET_TX_TYPE_LABELS[t]}
+            </option>
+          ))}
+        </Select>
         <Button className="w-40" type="button" variant="outline" size="sm" onClick={() => void rt()}>
           Làm mới lịch sử
         </Button>
@@ -111,10 +124,39 @@ export default function WalletPage() {
         getRowKey={(r, i) => r.transactionCode ?? String(i)}
         columns={[
           { key: "code", header: "Mã", cell: (r) => r.transactionCode ?? "—" },
-          { key: "type", header: "Loại", cell: (r) => r.type ?? "—" },
-          { key: "amt", header: "Số tiền", cell: (r) => r.amount != null ? formatVND(Number(r.amount)) : "—" },
+          { key: "type", header: "Loại", cell: (r) => walletTxTypeLabel(r.type) ?? "—" },
+          {
+            key: "amt",
+            header: "Số tiền",
+            cell: (r) => {
+              if (r.amount == null) return "—";
+              const direction = walletTxDirection(r);
+              return (
+                <span
+                  className={cn(
+                    "font-semibold tabular-nums",
+                    direction === "CREDIT" && "text-success",
+                    direction === "DEBIT" && "text-danger",
+                  )}
+                >
+                  {direction === "CREDIT" ? "+" : direction === "DEBIT" ? "−" : ""}
+                  {formatVND(Math.abs(Number(r.amount)))}
+                </span>
+              );
+            },
+          },
           { key: "before", header: "Trước", cell: (r) => r.balanceBefore != null ? formatVND(Number(r.balanceBefore)) : "—" },
           { key: "after", header: "Sau", cell: (r) => r.balanceAfter != null ? formatVND(Number(r.balanceAfter)) : "—" },
+          {
+            key: "note",
+            header: "Lý do",
+            cell: (r) =>
+              r.note ? (
+                <span className="block max-w-[260px] whitespace-pre-wrap break-words text-sm">{r.note}</span>
+              ) : (
+                "—"
+              ),
+          },
           {
             key: "at",
             header: "Thời gian",

@@ -24,6 +24,12 @@ import { TopupModal } from "@/components/wallet/topup-modal";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { formatDate, formatVND } from "@/lib/utils";
+import {
+  WALLET_TX_TYPE_LABELS,
+  WALLET_TX_TYPE_OPTIONS,
+  walletTxDirection,
+  walletTxTypeLabel,
+} from "@/lib/wallet-transaction";
 import { cn } from "@/lib/cn";
 
 /** Chỉ số tháng — `monthly.toppedUp`/`monthly.used` (BR-06). `value` number; `changePercent` nullable. */
@@ -45,26 +51,6 @@ type WalletBalance = {
     used: WalletMonthlyMetric;
   } | null;
 };
-
-/** Enum loại giao dịch — Phụ lục A `WalletTransactionType`. Hiển thị map nhãn, KHÔNG đổi giá trị enum. */
-type WalletTransactionType =
-  | "TOPUP_CREDIT"
-  | "MESSAGE_DEBIT"
-  | "CAMPAIGN_HOLD"
-  | "CAMPAIGN_REFUND"
-  | "MANUAL_ADJUSTMENT"
-  | "REVERSAL";
-
-const TX_TYPE_LABELS: Record<WalletTransactionType, string> = {
-  TOPUP_CREDIT: "Nạp tiền",
-  MESSAGE_DEBIT: "Trừ phí gửi tin",
-  CAMPAIGN_HOLD: "Tạm giữ chiến dịch",
-  CAMPAIGN_REFUND: "Hoàn tiền chiến dịch",
-  MANUAL_ADJUSTMENT: "Điều chỉnh thủ công",
-  REVERSAL: "Đảo giao dịch",
-};
-
-const TX_TYPE_OPTIONS = Object.keys(TX_TYPE_LABELS) as WalletTransactionType[];
 
 /**
  * Enum trạng thái giao dịch — `status` (BR-11, §9.2 bản backend). Hiển thị map nhãn, KHÔNG đổi giá trị enum.
@@ -89,15 +75,19 @@ const TX_STATUS_TONE: Record<WalletTransactionStatus, "active" | "pending" | "er
 
 /**
  * Một dòng giao dịch — `GET /workspaces/:id/wallet/transactions` (§9.2 bản backend, BR-11).
- * `amount` là Decimal → chuỗi số, có thể âm (parse number khi hiển thị).
+ * `amount` là Decimal → chuỗi số, **luôn dương với mọi loại** → chiều tiền phải suy từ
+ * `balanceBefore`/`balanceAfter` (xem `walletTxDirection`).
  * `status` (BR-11 đảo ngược): giao dịch ví CÓ trạng thái → render cột "Trạng thái".
+ * `note` nullable; với `MANUAL_ADJUSTMENT` (ISSUE-006) luôn có giá trị — là lý do admin điều chỉnh.
  */
 type TxRow = {
   transactionCode?: string;
   type?: string;
   status?: string;
   amount?: string;
+  balanceBefore?: string;
   balanceAfter?: string;
+  note?: string | null;
   createdAt?: string;
 };
 
@@ -275,9 +265,9 @@ export function WalletSection() {
                 }}
               >
                 <option value="">Tất cả giao dịch</option>
-                {TX_TYPE_OPTIONS.map((t) => (
+                {WALLET_TX_TYPE_OPTIONS.map((t) => (
                   <option key={t} value={t}>
-                    {TX_TYPE_LABELS[t]}
+                    {WALLET_TX_TYPE_LABELS[t]}
                   </option>
                 ))}
               </Select>
@@ -332,8 +322,7 @@ export function WalletSection() {
                   {
                     key: "type",
                     header: "Loại giao dịch",
-                    cell: (r) =>
-                      r.type ? TX_TYPE_LABELS[r.type as WalletTransactionType] ?? r.type : "—",
+                    cell: (r) => walletTxTypeLabel(r.type) ?? "—",
                   },
                   {
                     key: "status",
@@ -352,16 +341,36 @@ export function WalletSection() {
                     header: "Số tiền",
                     cell: (r) => {
                       if (r.amount == null) return "—";
-                      // Chỉ "Nạp tiền" (TOPUP_CREDIT) hiện số dương/xanh; mọi loại khác (trừ phí, tạm giữ...) hiện âm/đỏ.
-                      const isCredit = r.type === "TOPUP_CREDIT";
+                      // `amount` luôn dương với MỌI loại giao dịch (§9.2) → chiều tiền suy từ
+                      // số dư trước/sau, không dựa vào dấu của `amount` hay vào `type`
+                      // (MANUAL_ADJUSTMENT có thể là cộng hoặc trừ).
+                      const direction = walletTxDirection(r);
                       const amount = Math.abs(Number(r.amount));
                       return (
-                        <span className={cn("font-semibold tabular-nums", isCredit ? "text-success" : "text-danger")}>
-                          {isCredit ? "" : "-"}
+                        <span
+                          className={cn(
+                            "font-semibold tabular-nums",
+                            direction === "CREDIT" && "text-success",
+                            direction === "DEBIT" && "text-danger",
+                          )}
+                        >
+                          {direction === "CREDIT" ? "+" : direction === "DEBIT" ? "−" : ""}
                           {formatVND(amount)}
                         </span>
                       );
                     },
+                  },
+                  {
+                    key: "note",
+                    header: "Lý do",
+                    cell: (r) =>
+                      r.note ? (
+                        <span className="block max-w-[260px] whitespace-pre-wrap break-words text-sm">
+                          {r.note}
+                        </span>
+                      ) : (
+                        "—"
+                      ),
                   },
                   {
                     key: "bal",
