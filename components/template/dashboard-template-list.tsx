@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Modal } from "@/components/ui/modal";
 import { PageError, PageLoading } from "@/components/app/page-state";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SimpleTable } from "@/components/ui/simple-table";
 import { TemplateForm } from "@/components/template/template-form";
 import { TemplateEditForm } from "@/components/template/template-edit-form";
@@ -30,8 +31,8 @@ type TemplateRow = {
   updatedAt?: string;
 };
 
-/** Số dòng hiển thị rút gọn trên dashboard. */
-const PREVIEW_LIMIT = 5;
+/** Số dòng mỗi trang trên dashboard. */
+const PAGE_SIZE = 5;
 
 const STATUS_FILTERS = [
   { value: "ALL", label: "Tất cả" },
@@ -56,6 +57,7 @@ export function DashboardTemplateList({ className }: { className?: string }) {
   const [createOpen, setCreateOpen] = useState(false);
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
   const [filter, setFilter] = useState<(typeof STATUS_FILTERS)[number]["value"]>("ALL");
+  const [page, setPage] = useState(1);
 
   const fetcher = useCallback(
     (token: string) => comviaFetch<TemplateRow[]>(`/workspaces/${workspaceId}/templates`, { token }),
@@ -63,12 +65,24 @@ export function DashboardTemplateList({ className }: { className?: string }) {
   );
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId), fetcher);
 
-  const rows = useMemo(() => {
-    const matching = filter === "ALL"
+  const matching = useMemo(() => {
+    return filter === "ALL"
       ? data ?? []
       : (data ?? []).filter((template) => (template.status ?? "").toUpperCase() === filter);
-    return matching.slice(0, PREVIEW_LIMIT);
   }, [data, filter]);
+
+  const totalPages = Math.max(1, Math.ceil(matching.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+
+  const rows = useMemo(
+    () => matching.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [matching, currentPage],
+  );
+
+  function handleFilterChange(value: (typeof STATUS_FILTERS)[number]["value"]) {
+    setFilter(value);
+    setPage(1);
+  }
 
   function handleCreated(_: TemplateRow, { submitted }: { submitted: boolean }) {
     if (submitted) setCreateOpen(false);
@@ -104,7 +118,7 @@ export function DashboardTemplateList({ className }: { className?: string }) {
               type="button"
               size="sm"
               variant={filter === item.value ? "primary" : "outline"}
-              onClick={() => setFilter(item.value)}
+              onClick={() => handleFilterChange(item.value)}
             >
               {item.label}
             </Button>
@@ -124,7 +138,7 @@ export function DashboardTemplateList({ className }: { className?: string }) {
                 key: "index",
                 header: "#",
                 className: "w-10 text-muted-foreground",
-                cell: (r) => <span className="tabular-nums">{rows.indexOf(r) + 1}</span>,
+                cell: (r) => <span className="tabular-nums">{(currentPage - 1) * PAGE_SIZE + rows.indexOf(r) + 1}</span>,
               },
               {
                 key: "template",
@@ -170,6 +184,15 @@ export function DashboardTemplateList({ className }: { className?: string }) {
             ]}
           />
         )}
+        {!loading || data ? (
+          <PaginationBar
+            className="mt-4"
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            ariaLabel="Phân trang danh sách mẫu tin"
+          />
+        ) : null}
       </div>
 
       <Modal size="full" open={createOpen} title="Tạo mẫu tin" onClose={() => setCreateOpen(false)}>
