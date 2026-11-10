@@ -14,6 +14,7 @@ import { comviaFetch } from "@/lib/comviaFetch";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
 type WsRow = { id: string; name?: string };
+type WsListResponse = { data: WsRow[]; meta?: unknown };
 
 const DEFAULT_LIMIT = 50;
 
@@ -24,12 +25,12 @@ function clampLimit(raw: string) {
 }
 
 export default function AdminAuditLogsPage() {
-  const wsFetcher = useCallback((token: string) => comviaFetch<WsRow[]>("/admin/workspaces", { token }), []);
+  const wsFetcher = useCallback((token: string) => comviaFetch<WsListResponse>("/admin/workspaces", { token }), []);
   const { data: wsData, loading: wsLoading } = useComviaQuery(true, wsFetcher);
 
   const workspaceOptions = useMemo(
     () =>
-      (wsData ?? []).map((w) => ({
+      (wsData?.data ?? []).map((w) => ({
         value: w.id,
         label: w.name || w.id,
       })),
