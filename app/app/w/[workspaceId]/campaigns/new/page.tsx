@@ -8,7 +8,8 @@ import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input, Select } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
+import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
 import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
 import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
 import { formatComviaError } from "@/lib/api-message";
@@ -76,6 +77,15 @@ export default function CampaignNewPage() {
     [data],
   );
 
+  const templateOptions = useMemo<SearchableSelectOption[]>(
+    () =>
+      approvedTemplates.map((t) => ({
+        value: t.id,
+        label: t.name ? (t.code ? `${t.name} (${t.code})` : t.name) : (t.code ?? t.id),
+      })),
+    [approvedTemplates],
+  );
+
   const selectedTemplate = approvedTemplates.find((t) => t.id === templateId);
   const previewPlaceholders = useMemo(
     () => selectedTemplate?.placeholdersJson ?? {},
@@ -131,7 +141,9 @@ export default function CampaignNewPage() {
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="VD: Marketing mùa thu" />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Mẫu tin (đã duyệt)</label>
+            <label className="mb-1 block text-xs text-muted-foreground" htmlFor="campaign-template">
+              Mẫu tin (đã duyệt)
+            </label>
             {approvedTemplates.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 Chưa có mẫu APPROVED.{" "}
@@ -140,15 +152,15 @@ export default function CampaignNewPage() {
                 </Link>
               </p>
             ) : (
-              <Select value={templateId} onChange={(e) => setTemplateId(e.target.value)}>
-                <option value="">— Chọn mẫu —</option>
-                {approvedTemplates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name ?? t.code ?? t.id}
-                    {t.code ? ` (${t.code})` : ""}
-                  </option>
-                ))}
-              </Select>
+              <SearchableSelect
+                id="campaign-template"
+                aria-label="Mẫu tin (đã duyệt)"
+                options={templateOptions}
+                value={templateId}
+                onValueChange={setTemplateId}
+                placeholder="— Chọn mẫu —"
+                emptyText="Không tìm thấy mẫu tin phù hợp."
+              />
             )}
           </div>
           <Button type="button" disabled={busy || approvedTemplates.length === 0} onClick={() => void createCampaign()}>
