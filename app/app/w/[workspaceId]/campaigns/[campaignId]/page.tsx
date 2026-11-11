@@ -592,7 +592,9 @@ export default function CampaignDetailPage() {
                   options={templateOptions}
                   value={selectedTemplateId}
                   onValueChange={(v) => {
-                    if (v) void changeTemplate(v);
+                    // Doi mau tin se xoa toan bo dong da import, nen chi PATCH
+                    // khi thuc su chon sang mau khac.
+                    if (v && v !== selectedTemplateId) void changeTemplate(v);
                   }}
                   disabled={busy}
                   emptyText="Không tìm thấy mẫu tin phù hợp."

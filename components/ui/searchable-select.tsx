@@ -67,10 +67,17 @@ export function SearchableSelect({
     });
   }, [options, query, matchValue]);
 
+  // Mo danh sach ma chua go gi: bat sang dung muc dang chon, de Enter ngay
+  // sau khi focus khong vo tinh chon mat muc dau tien.
   React.useEffect(() => {
     if (!open) return;
-    setHighlight(0);
-  }, [open, query, filtered.length]);
+    if (query) {
+      setHighlight(0);
+      return;
+    }
+    const i = filtered.findIndex((o) => o.value === value);
+    setHighlight(i >= 0 ? i : 0);
+  }, [open, query, filtered, value]);
 
   React.useEffect(() => {
     function onDocPointerDown(e: MouseEvent) {
