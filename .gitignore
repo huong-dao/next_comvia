@@ -43,3 +43,6 @@ next-env.d.ts
 # Claude Code agent workspace (local only, not part of the app)
 /.claude/
 /.codex/
+
+# API contract docs do BE dong bo sang (local only, khong commit)
+/docs/*.mdc
