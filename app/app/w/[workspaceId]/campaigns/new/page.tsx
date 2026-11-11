@@ -160,6 +160,7 @@ export default function CampaignNewPage() {
                 onValueChange={setTemplateId}
                 placeholder="— Chọn mẫu —"
                 emptyText="Không tìm thấy mẫu tin phù hợp."
+                matchValue={false}
               />
             )}
           </div>

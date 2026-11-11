@@ -20,7 +20,8 @@ import { isWorkspaceOwner, useWorkspaceContext } from "@/components/workspace/wo
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
-import { Input, Select } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
+import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
 import { SimpleTable } from "@/components/ui/simple-table";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { formatComviaError } from "@/lib/api-message";
@@ -239,6 +240,14 @@ export default function CampaignDetailPage() {
   const approvedTemplates = useMemo(
     () => (templates ?? []).filter((t) => (t.status ?? "").toUpperCase() === "APPROVED"),
     [templates],
+  );
+  const templateOptions = useMemo<SearchableSelectOption[]>(
+    () =>
+      approvedTemplates.map((t) => ({
+        value: t.id,
+        label: t.name ? (t.code ? `${t.name} (${t.code})` : t.name) : (t.code ?? t.id),
+      })),
+    [approvedTemplates],
   );
   const templateById = useMemo(() => new Map((templates ?? []).map((t) => [t.id, t])), [templates]);
   const selectedTemplateId = templateOverrideId ?? campaign?.templateId ?? campaign?.template?.id ?? "";
@@ -565,7 +574,9 @@ export default function CampaignDetailPage() {
           </div>
 
           <div>
-            <label className="mb-1 block text-xs text-muted-foreground">Chọn mẫu</label>
+            <label className="mb-1 block text-xs text-muted-foreground" htmlFor="campaign-template">
+              Chọn mẫu
+            </label>
             {hasExecuted ? (
               <p className="text-sm text-foreground">
                 {campaign.template?.name ?? campaign.template?.code ?? "—"}{" "}
@@ -575,14 +586,19 @@ export default function CampaignDetailPage() {
               <p className="text-sm text-muted-foreground">Chưa có mẫu APPROVED.</p>
             ) : (
               <div className="max-w-xs">
-                <Select value={selectedTemplateId} disabled={busy} onChange={(e) => void changeTemplate(e.target.value)}>
-                  {approvedTemplates.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name ?? t.code ?? t.id}
-                      {t.code ? ` (${t.code})` : ""}
-                    </option>
-                  ))}
-                </Select>
+                <SearchableSelect
+                  id="campaign-template"
+                  aria-label="Chọn mẫu tin"
+                  options={templateOptions}
+                  value={selectedTemplateId}
+                  onValueChange={(v) => {
+                    if (v) void changeTemplate(v);
+                  }}
+                  disabled={busy}
+                  emptyText="Không tìm thấy mẫu tin phù hợp."
+                  clearable={false}
+                  matchValue={false}
+                />
               </div>
             )}
           </div>

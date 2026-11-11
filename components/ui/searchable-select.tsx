@@ -19,12 +19,22 @@ export type SearchableSelectProps = {
   placeholder?: string;
   emptyText?: string;
   disabled?: boolean;
+  /** Cho phep bam X de bo chon. Tat o nhung o bat buoc luon co gia tri. */
+  clearable?: boolean;
+  /** Tim theo ca `value` (thuong la id). Tat khi id la cuid, vi go "cm" se khop het. */
+  matchValue?: boolean;
   className?: string;
   "aria-label"?: string;
 };
 
+/** Bo dau tieng Viet de go khong dau van tim duoc ("khuyen" -> "Khuyen mai"). */
 function normalize(s: string) {
-  return s.trim().toLowerCase();
+  return s
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/đ/g, "d");
 }
 
 export function SearchableSelect({
@@ -35,6 +45,8 @@ export function SearchableSelect({
   placeholder = "Chọn…",
   emptyText = "Không có mục phù hợp.",
   disabled = false,
+  clearable = true,
+  matchValue = true,
   className,
   "aria-label": ariaLabel,
 }: SearchableSelectProps) {
@@ -50,10 +62,10 @@ export function SearchableSelect({
     const q = normalize(query);
     if (!q) return options;
     return options.filter((o) => {
-      const hay = `${o.label} ${o.description ?? ""} ${o.value}`.toLowerCase();
+      const hay = normalize(`${o.label} ${o.description ?? ""}${matchValue ? ` ${o.value}` : ""}`);
       return hay.includes(q);
     });
-  }, [options, query]);
+  }, [options, query, matchValue]);
 
   React.useEffect(() => {
     if (!open) return;
@@ -143,7 +155,7 @@ export function SearchableSelect({
           onKeyDown={onKeyDown}
           className="min-w-0 flex-1 border-0 bg-transparent py-2 pl-2 text-sm text-foreground outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
         />
-        {value && !disabled ? (
+        {value && clearable && !disabled ? (
           <Button
             type="button"
             variant="ghost"
