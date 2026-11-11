@@ -16,7 +16,9 @@ import { Button } from "@/components/ui/button";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input, Select } from "@/components/ui/input";
 import { SimpleTable } from "@/components/ui/simple-table";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { comviaFetch } from "@/lib/comviaFetch";
+import { useClientPagination } from "@/lib/use-client-pagination";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
 type InternalTemplateItem = {
@@ -99,7 +101,7 @@ export function TemplatesReviewPanel({
   );
   const { data, loading, error, refetch } = useComviaQuery(true, fetcher);
 
-  const rows = useMemo(
+  const sorted = useMemo(
     () =>
       [...(data ?? [])].sort((a, b) => {
         const at = new Date(a.updatedAt ?? a.createdAt ?? 0).getTime();
@@ -108,6 +110,8 @@ export function TemplatesReviewPanel({
       }),
     [data],
   );
+
+  const { rows, page, totalPages, total, pageSize, setPage } = useClientPagination(sorted);
 
   return (
     <div>
@@ -132,7 +136,10 @@ export function TemplatesReviewPanel({
       </div>
 
       <FilterCard
-        onApply={() => setApplied({ ...draft })}
+        onApply={() => {
+          setApplied({ ...draft });
+          setPage(1);
+        }}
         onRefresh={() => void refetch()}
         note="Staff dùng queue toàn cục nội bộ, không gắn membership workspace. Filter `workspace` và `oa` hiện áp dụng ở FE trên dữ liệu trả về từ API."
       >
@@ -190,7 +197,7 @@ export function TemplatesReviewPanel({
             header: "Trạng thái",
             cell: (r) => (
               <div className="flex flex-wrap items-center gap-1.5">
-                {r.status ? <EntityStatusBadge value={r.status} /> : "—"}
+                {r.status ? <EntityStatusBadge value={r.status} kind="template" /> : "—"}
                 {r.requiresOwnerRevision ? <span className="rounded-full bg-surface-muted px-2 py-0.5 text-xs text-muted-foreground">Chờ Owner sửa</span> : null}
               </div>
             ),
@@ -238,6 +245,15 @@ export function TemplatesReviewPanel({
             ),
           },
         ]}
+      />
+      <TablePagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        unitLabel="mẫu tin"
+        ariaLabel="Phân trang danh sách duyệt mẫu tin"
       />
     </div>
   );

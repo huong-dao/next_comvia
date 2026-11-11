@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useMemo, useState, useEffect } from "react";
 import { HiLockClosed, HiLockOpen, HiOutlineUsers } from "react-icons/hi2";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
@@ -9,8 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { SimpleTable } from "@/components/ui/simple-table";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
+import { useClientPagination } from "@/lib/use-client-pagination";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
 type UserRow = {
@@ -27,8 +29,9 @@ export default function AdminUsersPage() {
   const fetcher = useCallback((token: string) => comviaFetch<UserRow[]>("/admin/users", { token }), []);
   const { data, loading, error, refetch } = useComviaQuery(true, fetcher);
   const [busy, setBusy] = useState<string | null>(null);
-  const rows = data ?? [];
-  const lockedCount = rows.filter((item) => item.locked).length;
+  const allRows = useMemo(() => data ?? [], [data]);
+  const lockedCount = allRows.filter((item) => item.locked).length;
+  const { rows, page, totalPages, total, pageSize, setPage } = useClientPagination(allRows);
 
   async function toggleLock(userId: string, locked: boolean) {
     const token = getAccessToken();
@@ -66,7 +69,7 @@ export default function AdminUsersPage() {
           <div className="mb-6 grid gap-4 md:grid-cols-3">
             <Card className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Tổng người dùng</p>
-              <p className="text-3xl font-semibold text-foreground">{rows.length}</p>
+              <p className="text-3xl font-semibold text-foreground">{total}</p>
             </Card>
             <Card className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Đang bị khóa</p>
@@ -74,7 +77,7 @@ export default function AdminUsersPage() {
             </Card>
             <Card className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Đang hoạt động</p>
-              <p className="text-3xl font-semibold text-foreground">{rows.length - lockedCount}</p>
+              <p className="text-3xl font-semibold text-foreground">{total - lockedCount}</p>
             </Card>
           </div>
           <SimpleTable
@@ -121,6 +124,15 @@ export default function AdminUsersPage() {
                 ),
               },
             ]}
+          />
+          <TablePagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            unitLabel="người dùng"
+            ariaLabel="Phân trang danh sách người dùng"
           />
         </div>
       ) : null}

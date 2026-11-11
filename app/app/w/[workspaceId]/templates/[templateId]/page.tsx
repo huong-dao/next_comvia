@@ -292,7 +292,7 @@ export default function TemplateDetailPage() {
         description={data.code ? `Mã: ${data.code}` : undefined}
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            {data.status ? <EntityStatusBadge value={data.status} /> : null}
+            {data.status ? <EntityStatusBadge value={data.status} kind="template" /> : null}
             <Button icon={<HiArrowLeft className="size-4" />} variant="outline" asChild size="sm">
               <Link href={workspacePath(workspaceId, "templates")}>Danh sách Template</Link>
             </Button>

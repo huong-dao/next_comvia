@@ -11,8 +11,10 @@ import { PageError, PageForbidden, PageLoading } from "@/components/app/page-sta
 import { isWorkspaceOwner, useWorkspaceContext } from "@/components/workspace/workspace-gate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { workspacePath } from "@/lib/paths";
+import { useClientPagination } from "@/lib/use-client-pagination";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
 const DEFAULT_LIMIT = 50;
@@ -51,12 +53,14 @@ export default function WorkspaceActivityHistoryPage() {
   );
 
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId && owner), fetcher);
-  const rows = data ?? [];
+  const allRows = useMemo(() => data ?? [], [data]);
+  const { rows, page, totalPages, total, pageSize, setPage } = useClientPagination(allRows);
 
   function applyFilters() {
     const lim = clampLimit(limitDraft);
     setApplied({ action: action.trim(), limit: lim });
     setLimitDraft(String(lim));
+    setPage(1);
   }
 
   if (!owner) {
@@ -109,6 +113,15 @@ export default function WorkspaceActivityHistoryPage() {
           </FilterCard>
 
           <AuditLogsTable rows={rows} showWorkspaceColumn={false} />
+          <TablePagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            unitLabel="bản ghi"
+            ariaLabel="Phân trang lịch sử hoạt động"
+          />
         </div>
       ) : null}
     </div>

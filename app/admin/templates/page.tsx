@@ -11,8 +11,10 @@ import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input, Select } from "@/components/ui/input";
 import { SimpleTable } from "@/components/ui/simple-table";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { TEMPLATE_STATUS_LABELS } from "@/lib/status-labels";
+import { useClientPagination } from "@/lib/use-client-pagination";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
 type TemplateRow = {
@@ -45,7 +47,8 @@ export default function AdminTemplatesPage() {
     [queryString],
   );
   const { data, loading, error, refetch } = useComviaQuery(true, fetcher);
-  const rows = Array.isArray(data) ? data : data?.items ?? data?.data ?? [];
+  const allRows = useMemo(() => (Array.isArray(data) ? data : data?.items ?? data?.data ?? []), [data]);
+  const { rows, page, totalPages, total, pageSize, setPage } = useClientPagination(allRows);
 
   return (
     <AdminRoleGate>
@@ -82,7 +85,7 @@ export default function AdminTemplatesPage() {
                 <label className="mb-1 block text-xs text-muted-foreground">Số dòng</label>
                 <Select value={draft.limit} onChange={(event) => setDraft((value) => ({ ...value, limit: event.target.value }))}><option value="20">20</option><option value="50">50</option><option value="100">100</option></Select>
               </div>
-              <div className="flex items-end gap-2"><Button type="button" variant="outline" onClick={() => setApplied({ ...draft })}>Áp dụng</Button><Button type="button" variant="ghost" onClick={() => void refetch()}>Làm mới</Button></div>
+              <div className="flex items-end gap-2"><Button type="button" variant="outline" onClick={() => { setApplied({ ...draft }); setPage(1); }}>Áp dụng</Button><Button type="button" variant="ghost" onClick={() => void refetch()}>Làm mới</Button></div>
             </div>
           </Card>
           <SimpleTable
@@ -96,6 +99,15 @@ export default function AdminTemplatesPage() {
               { key: "status", header: "Trạng thái", cell: (row) => row.status ? <EntityStatusBadge value={row.status} label={TEMPLATE_STATUS_LABELS[row.status.toUpperCase()]} /> : "—" },
               { key: "updated", header: "Cập nhật", cell: (row) => row.updatedAt ? new Date(row.updatedAt).toLocaleString("vi-VN") : "—" },
             ]}
+          />
+          <TablePagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            pageSize={pageSize}
+            onPageChange={setPage}
+            unitLabel="mẫu tin"
+            ariaLabel="Phân trang danh sách mẫu tin"
           />
         </div>
       ) : null}

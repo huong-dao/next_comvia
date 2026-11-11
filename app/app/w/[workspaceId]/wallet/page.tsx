@@ -1,7 +1,8 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { HiOutlineChevronLeft, HiOutlineChevronRight } from "react-icons/hi2";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { isWorkspaceOwner, useWorkspaceContext } from "@/components/workspace/workspace-gate";
@@ -32,6 +33,9 @@ type WalletBalance = {
  * §9.2 — `amount` LUÔN dương với mọi loại giao dịch, nên chiều tiền suy từ `balanceBefore`
  * so với `balanceAfter`. `note` nullable; với `MANUAL_ADJUSTMENT` là lý do admin điều chỉnh.
  */
+/** Số giao dịch mỗi trang — khớp mặc định `limit` của backend (§9.2). */
+const PAGE_SIZE = 20;
+
 type TxRow = {
   transactionCode?: string;
   type?: string;
@@ -48,6 +52,8 @@ export default function WalletPage() {
   const { role } = useWorkspaceContext();
   const owner = isWorkspaceOwner(role);
   const [type, setType] = useState("");
+  /** §9.2: endpoint nhận `offset`/`limit` thật, nên phân trang ở server. */
+  const [offset, setOffset] = useState(0);
 
   const balanceFetcher = useCallback(
     (token: string) => comviaFetch<WalletBalance>(`/workspaces/${workspaceId}/wallet/balance`, { token }),
@@ -56,10 +62,17 @@ export default function WalletPage() {
 
   const { data: bal, loading: lb, error: eb, refetch: rb } = useComviaQuery(Boolean(workspaceId), balanceFetcher);
 
-  const txQuery = type ? `?type=${encodeURIComponent(type)}` : "";
+  const txQuery = useMemo(() => {
+    const qs = new URLSearchParams();
+    qs.set("offset", String(offset));
+    qs.set("limit", String(PAGE_SIZE));
+    if (type) qs.set("type", type);
+    return qs.toString();
+  }, [offset, type]);
+
   const txFetcher = useCallback(
     (token: string) =>
-      comviaFetch<TxRow[]>(`/workspaces/${workspaceId}/wallet/transactions${txQuery}`, { token }),
+      comviaFetch<TxRow[]>(`/workspaces/${workspaceId}/wallet/transactions?${txQuery}`, { token }),
     [workspaceId, txQuery],
   );
 
@@ -69,6 +82,13 @@ export default function WalletPage() {
     error: et,
     refetch: rt,
   } = useComviaQuery(Boolean(workspaceId), txFetcher);
+
+  const txRows = txs ?? [];
+  const rangeStart = txRows.length === 0 ? 0 : offset + 1;
+  const rangeEnd = offset + txRows.length;
+  const hasPrev = offset > 0;
+  // Endpoint trả mảng phẳng (không kèm tổng số) → còn trang sau khi trang hiện tại đầy `PAGE_SIZE`.
+  const hasNext = txRows.length === PAGE_SIZE;
 
   if (lb) return <PageLoading />;
   if (eb && !bal) return <PageError message={eb} onRetry={() => void rb()} />;
@@ -103,7 +123,14 @@ export default function WalletPage() {
 
       <div className="mb-4 flex justify-between items-center gap-3">
         {/* Lọc theo `type` (§9.2) — gửi nguyên giá trị enum, chỉ map nhãn khi hiển thị. */}
-        <Select value={type} onChange={(e) => setType(e.target.value)} className="max-w-sm">
+        <Select
+          value={type}
+          onChange={(e) => {
+            setType(e.target.value);
+            setOffset(0);
+          }}
+          className="max-w-sm"
+        >
           <option value="">Mọi loại giao dịch</option>
           {WALLET_TX_TYPE_OPTIONS.map((t) => (
             <option key={t} value={t}>
@@ -120,7 +147,7 @@ export default function WalletPage() {
       {et && !txs ? <PageError message={et} onRetry={() => void rt()} /> : null}
 
       <SimpleTable
-        rows={txs ?? []}
+        rows={txRows}
         getRowKey={(r, i) => r.transactionCode ?? String(i)}
         columns={[
           { key: "code", header: "Mã", cell: (r) => r.transactionCode ?? "—" },
@@ -164,6 +191,33 @@ export default function WalletPage() {
           },
         ]}
       />
+
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-3 border-t border-border/60 pt-4">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="px-2"
+          icon={<HiOutlineChevronLeft className="size-4" />}
+          disabled={!hasPrev}
+          aria-label="Trang trước"
+          onClick={() => setOffset((o) => Math.max(0, o - PAGE_SIZE))}
+        />
+        <p className="text-sm text-muted-foreground">
+          {rangeStart === 0 ? "Chưa có giao dịch" : `Giao dịch ${rangeStart}–${rangeEnd}`}
+        </p>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="px-2"
+          icon={<HiOutlineChevronRight className="size-4" />}
+          iconPosition="right"
+          disabled={!hasNext}
+          aria-label="Trang sau"
+          onClick={() => setOffset((o) => o + PAGE_SIZE)}
+        />
+      </div>
     </div>
   );
 }

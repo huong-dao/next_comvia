@@ -153,7 +153,7 @@ export function StaffTemplateReviewDetail({
       <Card className="mb-6 space-y-4 p-4">
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-lg font-semibold text-foreground">{template.name ?? template.code ?? template.id}</p>
-          {template.status ? <EntityStatusBadge value={template.status} /> : null}
+          {template.status ? <EntityStatusBadge value={template.status} kind="template" /> : null}
         </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {/* <div>
@@ -238,7 +238,7 @@ export function StaffTemplateReviewDetail({
                   {template.submissions.map((submission, index) => (
                     <div key={submission.id ?? `${index}`} className="rounded-xl border border-border/70 bg-surface-muted/50 p-3">
                       <div className="flex flex-wrap items-center gap-2">
-                        {submission.status ? <EntityStatusBadge value={submission.status} /> : null}
+                        {submission.status ? <EntityStatusBadge value={submission.status} kind="template" /> : null}
                         <span className="text-xs text-muted-foreground">
                           {submission.createdAt ? new Date(submission.createdAt).toLocaleString() : "—"}
                         </span>

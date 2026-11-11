@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { SimpleTable } from "@/components/ui/simple-table";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { workspacePath } from "@/lib/paths";
+import { useClientPagination } from "@/lib/use-client-pagination";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
 type OrderRow = {
@@ -30,7 +32,8 @@ export default function OrdersListPage() {
   );
 
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId), fetcher);
-  const rows = data ?? [];
+  const allRows = useMemo(() => data ?? [], [data]);
+  const { rows, page, totalPages, total, pageSize, setPage } = useClientPagination(allRows);
 
   if (loading) return <PageLoading />;
   if (error && !data) return <PageError message={error} onRetry={() => void refetch()} />;
@@ -68,6 +71,15 @@ export default function OrdersListPage() {
             cell: (r) => (r.paidAt ? new Date(r.paidAt).toLocaleString() : "—"),
           },
         ]}
+      />
+      <TablePagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        unitLabel="đơn"
+        ariaLabel="Phân trang danh sách đơn hàng"
       />
     </div>
   );

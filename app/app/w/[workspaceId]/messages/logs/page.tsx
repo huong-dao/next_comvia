@@ -8,7 +8,9 @@ import { FilterCard, FilterField } from "@/components/app/filter-card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Select } from "@/components/ui/input";
 import { SimpleTable } from "@/components/ui/simple-table";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { comviaFetch } from "@/lib/comviaFetch";
+import { useClientPagination } from "@/lib/use-client-pagination";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
 type LogRow = {
@@ -24,12 +26,6 @@ type LogRow = {
 
 /** BE giới hạn limit là số nguyên trong khoảng 1–100. */
 const LIMIT_OPTIONS = ["20", "50", "100"];
-
-const STATUS_LABELS: Record<string, string> = {
-  SUCCESS: "THÀNH CÔNG",
-  FAILED: "THẤT BẠI",
-  PENDING: "ĐANG XỬ LÝ",
-};
 
 const SEND_TYPE_LABELS: Record<string, string> = {
   SINGLE: "ĐƠN LẺ",
@@ -61,7 +57,8 @@ export default function MessageLogsPage() {
   );
 
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId), fetcher);
-  const rows = data ?? [];
+  const allRows = useMemo(() => data ?? [], [data]);
+  const { rows, page, totalPages, total, pageSize, setPage } = useClientPagination(allRows);
 
   const templatesFetcher = useCallback(
     (token: string) => comviaFetch<TemplateOption[]>(`/workspaces/${workspaceId}/templates`, { token }),
@@ -81,7 +78,13 @@ export default function MessageLogsPage() {
         description="Lọc theo trạng thái và loại gửi (query API)."
       />
 
-      <FilterCard onApply={() => setApplied({ ...draft })} onRefresh={() => void refetch()}>
+      <FilterCard
+        onApply={() => {
+          setApplied({ ...draft });
+          setPage(1);
+        }}
+        onRefresh={() => void refetch()}
+      >
         <FilterField label="Trạng thái" htmlFor="logs-status" className="sm:w-48">
           <Select
             id="logs-status"
@@ -152,10 +155,22 @@ export default function MessageLogsPage() {
               key: "st",
               header: "Trạng thái",
               cell: (r) =>
-                r.status ? <EntityStatusBadge value={r.status} label={STATUS_LABELS[r.status]} /> : "—",
+                r.status ? <EntityStatusBadge value={r.status} kind="message" /> : "—",
             },
             { key: "cost", header: "Chi phí", cell: (r) => r.costAtTime ?? "—" },
           ]}
+        />
+      ) : null}
+
+      {!loading && !(error && !data) ? (
+        <TablePagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          unitLabel="bản ghi"
+          ariaLabel="Phân trang nhật ký gửi tin"
         />
       ) : null}
     </div>

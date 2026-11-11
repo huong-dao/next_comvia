@@ -6,7 +6,8 @@ import { PageError, PageLoading } from "@/components/app/page-state";
 import { Card } from "@/components/ui/card";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { useComviaQuery } from "@/lib/use-comvia-query";
-import { StatusBadge } from "@/components/ui/status-badge";
+import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
+import { resolveStatusLabel } from "@/lib/status-labels";
 
 type MeResponse = {
   id: string;
@@ -46,11 +47,11 @@ export default function ProfilePage() {
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Vai trò hệ thống</p>
-            <p className="mt-1 text-sm text-foreground">{user?.role ?? "—"}</p>
+            <p className="mt-1 text-sm text-foreground">{user?.role ? resolveStatusLabel(user.role) : "—"}</p>
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Trạng thái</p>
-            <StatusBadge tone={user?.status === "ACTIVE" ? "active" : "error"}>{user?.status ?? "—"}</StatusBadge>
+            {user?.status ? <EntityStatusBadge value={user.status} /> : <span className="text-sm text-muted-foreground">—</span>}
           </div>
           {user?.createdAt ? (
             <div className="sm:col-span-2">

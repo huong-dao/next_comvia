@@ -9,8 +9,10 @@ import { PageError, PageLoading } from "@/components/app/page-state";
 import { Button } from "@/components/ui/button";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { SimpleTable } from "@/components/ui/simple-table";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { workspacePath } from "@/lib/paths";
+import { useClientPagination } from "@/lib/use-client-pagination";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
 type TemplateRow = {
@@ -42,11 +44,13 @@ export default function TemplatesListPage() {
 
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId), fetcher);
 
-  const rows = useMemo(() => {
+  const matching = useMemo(() => {
     const list = data ?? [];
     if (filter === "ALL") return list;
     return list.filter((t) => (t.status ?? "").toUpperCase() === filter);
   }, [data, filter]);
+
+  const { rows, page, totalPages, total, pageSize, setPage } = useClientPagination(matching);
 
   if (loading) return <PageLoading />;
   if (error && !data) return <PageError message={error} onRetry={() => void refetch()} />;
@@ -71,7 +75,10 @@ export default function TemplatesListPage() {
             type="button"
             size="sm"
             variant={filter === f.value ? "primary" : "outline"}
-            onClick={() => setFilter(f.value)}
+            onClick={() => {
+              setFilter(f.value);
+              setPage(1);
+            }}
           >
             {f.label}
           </Button>
@@ -95,7 +102,7 @@ export default function TemplatesListPage() {
           {
             key: "status",
             header: "Trạng thái",
-            cell: (r) => (r.status ? <EntityStatusBadge value={r.status} /> : "—"),
+            cell: (r) => (r.status ? <EntityStatusBadge value={r.status} kind="template" /> : "—"),
           },
           {
             key: "updated",
@@ -103,6 +110,15 @@ export default function TemplatesListPage() {
             cell: (r) => (r.updatedAt ? new Date(r.updatedAt).toLocaleString() : "—"),
           },
         ]}
+      />
+      <TablePagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        unitLabel="mẫu tin"
+        ariaLabel="Phân trang danh sách mẫu tin"
       />
     </div>
   );

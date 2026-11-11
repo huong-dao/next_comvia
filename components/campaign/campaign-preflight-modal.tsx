@@ -83,7 +83,7 @@ export function CampaignPreflightModal({
         <div className="flex justify-between gap-4">
           <dt className="text-muted-foreground">Trạng thái mẫu</dt>
           <dd>
-            {data.templateStatus ? <EntityStatusBadge value={data.templateStatus} /> : "—"}
+            {data.templateStatus ? <EntityStatusBadge value={data.templateStatus} kind="template" /> : "—"}
           </dd>
         </div>
         <div className="flex justify-between gap-4">

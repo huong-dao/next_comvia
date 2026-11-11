@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ApiUsageGuide } from "@/components/api-key/api-usage-guide";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageForbidden, PageLoading } from "@/components/app/page-state";
@@ -12,10 +12,12 @@ import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { SimpleTable } from "@/components/ui/simple-table";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { useToast } from "@/components/ui/toast";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
 import { API_KEY_STATUS_LABELS } from "@/lib/status-labels";
+import { useClientPagination } from "@/lib/use-client-pagination";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { HiArrowPath, HiLockClosed, HiMiniPlus, HiOutlineClipboardDocument, HiOutlineXMark, HiCheck } from "react-icons/hi2";
 
@@ -40,6 +42,9 @@ export default function ApiKeysPage() {
   );
 
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId), fetcher);
+
+  const allRows = useMemo(() => data ?? [], [data]);
+  const { rows, page, totalPages, total, pageSize, setPage } = useClientPagination(allRows);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [name, setName] = useState("");
@@ -128,8 +133,6 @@ export default function ApiKeysPage() {
   if (loading) return <PageLoading />;
   if (error && !data) return <PageError message={error} onRetry={() => void refetch()} />;
 
-  const rows = data ?? [];
-
   return (
     <div>
       <PageHeader
@@ -189,6 +192,15 @@ export default function ApiKeysPage() {
             ),
           },
         ]}
+      />
+      <TablePagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        unitLabel="API key"
+        ariaLabel="Phân trang danh sách API key"
       />
 
       <ApiUsageGuide workspaceId={workspaceId} className="mt-6" />

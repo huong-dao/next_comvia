@@ -22,6 +22,7 @@ import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input, Select } from "@/components/ui/input";
 import { SimpleTable } from "@/components/ui/simple-table";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { formatComviaError } from "@/lib/api-message";
 import {
   campaignRowFailureText,
@@ -33,6 +34,7 @@ import { ComviaApiError, comviaFetch, comviaMultipartFetch, resolvePublicAssetUr
 import { getAccessToken, getStoredUser } from "@/lib/auth";
 import { workspacePath } from "@/lib/paths";
 import { type TemplateCtaButton } from "@/lib/template-cta";
+import { useClientPagination } from "@/lib/use-client-pagination";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
 type CampaignDetail = {
@@ -214,6 +216,14 @@ export default function CampaignDetailPage() {
   );
 
   const rowList = useMemo(() => rows ?? [], [rows]);
+  const {
+    rows: pagedRows,
+    page: rowsPage,
+    totalPages: rowsTotalPages,
+    total: rowsTotal,
+    pageSize: rowsPageSize,
+    setPage: setRowsPage,
+  } = useClientPagination(rowList);
   const placeholderKeys = useMemo(
     () => Object.keys(campaign?.template?.placeholdersJson ?? {}),
     [campaign?.template?.placeholdersJson],
@@ -794,7 +804,7 @@ export default function CampaignDetailPage() {
 
       {rowList.length > 0 ? (
         <SimpleTable
-          rows={rowList}
+          rows={pagedRows}
           getRowKey={(r) => r.id}
           columns={[
             { key: "phone", header: "Phone", cell: (r) => r.phoneNumber ?? "—" },
@@ -809,7 +819,7 @@ export default function CampaignDetailPage() {
             {
               key: "status",
               header: "Trạng thái",
-              cell: (r) => (r.status ? <EntityStatusBadge value={r.status} /> : "—"),
+              cell: (r) => (r.status ? <EntityStatusBadge value={r.status} kind="campaignRow" /> : "—"),
             },
             {
               key: "fail",
@@ -847,6 +857,18 @@ export default function CampaignDetailPage() {
               ),
             },
           ]}
+        />
+      ) : null}
+
+      {rowList.length > 0 ? (
+        <TablePagination
+          page={rowsPage}
+          totalPages={rowsTotalPages}
+          total={rowsTotal}
+          pageSize={rowsPageSize}
+          onPageChange={setRowsPage}
+          unitLabel="dòng"
+          ariaLabel="Phân trang dòng dữ liệu chiến dịch"
         />
       ) : null}
 

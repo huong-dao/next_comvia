@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { isWorkspaceOwner, useWorkspaceContext } from "@/components/workspace/workspace-gate";
@@ -10,9 +10,11 @@ import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import { SimpleTable } from "@/components/ui/simple-table";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
 import { MEMBER_STATUS_LABELS } from "@/lib/status-labels";
+import { useClientPagination } from "@/lib/use-client-pagination";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { HiOutlineXMark, HiOutlinePaperAirplane } from "react-icons/hi2";
 
@@ -37,6 +39,9 @@ export default function MembersPage() {
   );
 
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId), fetcher);
+
+  const allRows = useMemo(() => data ?? [], [data]);
+  const { rows, page, totalPages, total, pageSize, setPage } = useClientPagination(allRows);
 
   const [inviteOpen, setInviteOpen] = useState(false);
   const [inviteValue, setInviteValue] = useState("");
@@ -85,8 +90,6 @@ export default function MembersPage() {
 
   if (loading) return <PageLoading />;
   if (error && !data) return <PageError message={error} onRetry={() => void refetch()} />;
-
-  const rows = data ?? [];
 
   return (
     <div>
@@ -143,6 +146,15 @@ export default function MembersPage() {
               ),
           },
         ]}
+      />
+      <TablePagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        unitLabel="thành viên"
+        ariaLabel="Phân trang danh sách thành viên"
       />
 
       <Modal

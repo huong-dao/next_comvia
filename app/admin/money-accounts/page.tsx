@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { HiOutlineXMark, HiOutlinePlus, HiOutlineCheckCircle, HiOutlinePencil, HiOutlineEye, HiOutlineEyeSlash } from "react-icons/hi2";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
@@ -8,9 +8,11 @@ import { AdminRoleGate } from "@/components/admin/role-gate";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { SimpleTable } from "@/components/ui/simple-table";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
+import { useClientPagination } from "@/lib/use-client-pagination";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/controls";
@@ -29,9 +31,14 @@ type MoneyAccountRow = {
 export default function AdminMoneyAccountPage() {
     const fetcher = useCallback((token: string) => comviaFetch<MoneyAccountRow[]>("/money-accounts/all", { token }), []);
     const { data, loading, error, refetch } = useComviaQuery(true, fetcher);
-    const rows: MoneyAccountRow[] = Array.isArray(data)
-      ? data
-      : (data as unknown as { data?: MoneyAccountRow[] } | undefined)?.data ?? [];
+    const allRows: MoneyAccountRow[] = useMemo(
+      () =>
+        Array.isArray(data)
+          ? data
+          : (data as unknown as { data?: MoneyAccountRow[] } | undefined)?.data ?? [],
+      [data],
+    );
+    const { rows, page, totalPages, total, pageSize, setPage } = useClientPagination(allRows);
 
     const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -248,9 +255,18 @@ export default function AdminMoneyAccountPage() {
                 },
               ]}
             />
+            <TablePagination
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              pageSize={pageSize}
+              onPageChange={setPage}
+              unitLabel="tài khoản"
+              ariaLabel="Phân trang tài khoản ngân hàng"
+            />
 
-            <Modal 
-                open={isOpen} 
+            <Modal
+                open={isOpen}
                 onClose={handleCloseModal} 
                 title={modalTitle}
                 footer={

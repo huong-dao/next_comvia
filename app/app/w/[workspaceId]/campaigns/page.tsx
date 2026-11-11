@@ -9,9 +9,11 @@ import { PageEmpty, PageError, PageLoading } from "@/components/app/page-state";
 import { Button } from "@/components/ui/button";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { SimpleTable } from "@/components/ui/simple-table";
+import { TablePagination } from "@/components/ui/table-pagination";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { workspacePath } from "@/lib/paths";
 import { CAMPAIGN_STATUS_LABELS } from "@/lib/status-labels";
+import { useClientPagination } from "@/lib/use-client-pagination";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
 type CampaignRow = {
@@ -35,7 +37,8 @@ export default function CampaignsListPage() {
   );
 
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId), fetcher);
-  const rows = useMemo(() => data ?? [], [data]);
+  const allRows = useMemo(() => data ?? [], [data]);
+  const { rows, page, totalPages, total, pageSize, setPage } = useClientPagination(allRows);
 
   if (loading) return <PageLoading />;
   if (error && !data) return <PageError message={error} onRetry={() => void refetch()} />;
@@ -52,7 +55,7 @@ export default function CampaignsListPage() {
         }
       />
 
-      {rows.length === 0 ? (
+      {total === 0 ? (
         <PageEmpty title="Chưa có chiến dịch" description="Tạo chiến dịch mới để gửi tin ZNS hàng loạt." />
       ) : (
         <SimpleTable
@@ -104,6 +107,17 @@ export default function CampaignsListPage() {
           ]}
         />
       )}
+      {total > 0 ? (
+        <TablePagination
+          page={page}
+          totalPages={totalPages}
+          total={total}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          unitLabel="chiến dịch"
+          ariaLabel="Phân trang danh sách chiến dịch"
+        />
+      ) : null}
     </div>
   );
 }
