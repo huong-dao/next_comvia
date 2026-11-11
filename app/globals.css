@@ -73,3 +73,36 @@ input::placeholder,
 textarea::placeholder {
   color: color-mix(in oklab, var(--muted-foreground) 82%, transparent);
 }
+
+/*
+ * Tailwind v4 preflight đặt `cursor: default` cho button, nên mọi thành phần bấm được
+ * phải tự khai báo lại. Gom về một chỗ để không phải nhớ thêm `cursor-pointer` ở từng nơi.
+ */
+button,
+summary,
+label[for],
+select,
+a[href],
+[role="button"],
+[role="tab"],
+[role="option"],
+[role="menuitem"],
+[role="switch"],
+[role="checkbox"],
+[role="radio"],
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+input[type="checkbox"],
+input[type="radio"],
+input[type="file"]::file-selector-button {
+  cursor: pointer;
+}
+
+button:disabled,
+select:disabled,
+input:disabled,
+[aria-disabled="true"],
+[data-disabled] {
+  cursor: not-allowed;
+}

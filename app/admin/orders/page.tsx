@@ -56,6 +56,9 @@ type WsRow = {
   slug?: string;
 };
 
+/** `GET /admin/workspaces` trả `{ data, meta }` (xem fix cùng loại ở trang audit-logs). */
+type WsListResponse = { data: WsRow[]; meta?: unknown };
+
 type UserRow = {
   id: string;
   email?: string;
@@ -92,7 +95,7 @@ export default function AdminOrdersPage() {
   const [applied, setApplied] = useState<AppliedFilters>(initialFilters);
   const [draft, setDraft] = useState<AppliedFilters>(initialFilters);
 
-  const wsFetcher = useCallback((token: string) => comviaFetch<WsRow[]>("/admin/workspaces", { token }), []);
+  const wsFetcher = useCallback((token: string) => comviaFetch<WsListResponse>("/admin/workspaces", { token }), []);
   const usersFetcher = useCallback((token: string) => comviaFetch<UserRow[]>("/admin/users", { token }), []);
 
   const { data: wsData, loading: wsLoading } = useComviaQuery(true, wsFetcher);
@@ -100,7 +103,7 @@ export default function AdminOrdersPage() {
 
   const workspaceOptions = useMemo(
     () =>
-      (wsData ?? []).map((w) => ({
+      (wsData?.data ?? []).map((w) => ({
         value: w.id,
         label: w.name || w.id,
         // description: w.id,
@@ -109,7 +112,7 @@ export default function AdminOrdersPage() {
   );
 
   const endUserOptions = useMemo(() => {
-    return (usersData ?? [])
+    return (Array.isArray(usersData) ? usersData : [])
       .filter((u) => isEndUserRole(u.role))
       .map((u) => ({
         value: u.id,

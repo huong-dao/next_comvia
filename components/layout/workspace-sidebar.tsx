@@ -157,16 +157,16 @@ export function WorkspaceSidebar({
           <div className="flex items-center justify-between gap-2">
             <div>
               <Image
-                src="/images/comvia_light_logo.png"
+                src="/images/comvia-logo-zalo-4x-light.png"
                 alt="COMVIA"
-                width={176}
+                width={199}
                 height={46}
                 className="cv-light-logo h-[46px] block dark:hidden"
               />
               <Image
-                src="/images/comvia_dark_logo.png"
+                src="/images/comvia-logo-zalo-4x-dark.png"
                 alt="COMVIA"
-                width={176}
+                width={199}
                 height={46}
                 className="cv-dark-logo h-[46px] hidden dark:block"
               />
@@ -234,7 +234,7 @@ export function WorkspaceSidebar({
         </nav>
 
         {isAdmin ? (
-          <div className="mt-auto pt-6">
+          <div className="pt-4">
             <div className="border-t border-border/70 pt-3">
               <div
                 className={cn(

@@ -9,6 +9,7 @@ import { AdminRoleGate } from "@/components/admin/role-gate";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { useComviaQuery } from "@/lib/use-comvia-query";
@@ -17,6 +18,12 @@ type WsRow = { id: string; name?: string };
 type WsListResponse = { data: WsRow[]; meta?: unknown };
 
 const DEFAULT_LIMIT = 50;
+
+/**
+ * `GET /admin/audit-logs` chỉ nhận `limit` (tối đa 200) và trả mảng thuần — không có
+ * `page`/`meta` (§11.2). Nên phân trang ở client trên đúng tập vừa tải về.
+ */
+const PAGE_SIZE = 20;
 
 function clampLimit(raw: string) {
   const n = Number.parseInt(raw.trim(), 10);
@@ -61,7 +68,15 @@ export default function AdminAuditLogsPage() {
   );
 
   const { data, loading, error, refetch } = useComviaQuery(true, fetcher);
-  const rows = data ?? [];
+  const allRows = useMemo(() => data ?? [], [data]);
+
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(allRows.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const rows = useMemo(
+    () => allRows.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [allRows, currentPage],
+  );
 
   function applyFilters() {
     const lim = clampLimit(limitDraft);
@@ -71,6 +86,7 @@ export default function AdminAuditLogsPage() {
       limit: lim,
     });
     setLimitDraft(String(lim));
+    setPage(1);
   }
 
   return (
@@ -148,6 +164,22 @@ export default function AdminAuditLogsPage() {
           </Card>
 
           <AuditLogsTable rows={rows} showWorkspaceColumn />
+
+          <div className="mt-4 space-y-4 border-t border-border/60 pt-4">
+            <p className="text-center text-sm text-muted-foreground">
+              Hiển thị{" "}
+              {allRows.length > 0
+                ? `${(currentPage - 1) * PAGE_SIZE + 1}–${Math.min(currentPage * PAGE_SIZE, allRows.length)}`
+                : "0"}{" "}
+              trong {allRows.length} bản ghi
+            </p>
+            <PaginationBar
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              ariaLabel="Phân trang lịch sử hoạt động"
+            />
+          </div>
         </div>
       ) : null}
     </AdminRoleGate>

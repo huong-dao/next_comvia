@@ -1,6 +1,6 @@
 # ISSUE-005: Cho phép đổi mẫu tin (templateId) của campaign khi chưa gửi lần nào
 
-**Trạng thái:** Mới
+**Trạng thái:** Đã xử lý (BE)
 **Phân loại:** Change Request
 **Màn hình/route liên quan:** `app/app/w/[workspaceId]/campaigns/[campaignId]` — trang chi tiết campaign (field "Chọn mẫu")
 
@@ -30,11 +30,13 @@ Khi được hỏi cách xử lý vì API hiện không hỗ trợ, PO xác nh�
 - Không ảnh hưởng trang tạo campaign (`campaigns/new`) — trang đó vẫn tạo mới với `templateId` cố định từ đầu, không đổi.
 - Ảnh hưởng tới cột `placeholderKeys` hiển thị ở bảng dữ liệu campaign (lấy từ `campaign.template.placeholdersJson`) và file CSV mẫu/hiện tại tải về — các cột này sẽ đổi theo mẫu mới ngay khi BE cập nhật `templateId`, FE không cần sửa thêm.
 
-## Giả định / Câu hỏi mở
-CÂU HỎI MỞ: Nếu campaign đã có `CampaignRow` (đã import CSV) nhưng chưa execute, đổi `templateId` có được phép không? Nếu cho phép, các `CampaignRow.payloadData` hiện có (theo placeholder của mẫu cũ) sẽ được xử lý thế nào — giữ nguyên (có thể dư/thiếu cột), xóa hết, hay báo lỗi yêu cầu xóa rows trước khi đổi mẫu?
+## Giả định / Câu hỏi mở (đã chốt)
+CÂU HỎI MỞ: Nếu campaign đã có `CampaignRow` (đã import CSV) nhưng chưa execute, đổi `templateId` có được phép không?
 
-## Hướng xử lý đề xuất
-Backend bổ sung `templateId` vào whitelist field của `PATCH /workspaces/:workspaceId/campaigns/:campaignId`, validate template `APPROVED` và campaign chưa từng execute, trả `400` kèm message rõ ràng khi vi phạm để FE hiển thị qua `formatComviaError`.
+**Quyết định:** Cho phép đổi tự do trong mọi trường hợp campaign chưa execute (`lastRunAt == null`, không `RUNNING`), bất kể đã có `CampaignRow` hay chưa — nhất quán với hành vi `import-csv` vốn đã thay toàn bộ rows mỗi lần import trước khi execute (`campaigns.service.ts` `importCsv()` luôn `deleteMany` rồi tạo lại). Khi đổi `templateId`, BE xóa luôn toàn bộ `CampaignRow` hiện có (nếu có) thay vì giữ lại dữ liệu lệch cột hoặc bắt FE tự xóa trước — tránh thêm round-trip và nhất quán với `import-csv`.
 
-## Xử lý
-Chờ backend/SA xác nhận hướng xử lý câu hỏi mở, sau đó tạo TICKET nếu cần sửa thêm ở FE (hiện FE đã gửi sẵn `templateId`, không cần sửa gì thêm một khi BE hỗ trợ).
+## Hướng xử lý (đã triển khai)
+- `UpdateCampaignDto`: `name` và `templateId` đều optional (trước đây `name` bắt buộc, khiến PATCH chỉ gửi `templateId` của FE bị 400 vì validation).
+- `CampaignsService.update()`: khi `templateId` đổi khác giá trị hiện tại — chặn nếu `status === 'RUNNING'` hoặc `lastRunAt != null` (400); validate template mới `APPROVED` + OA `CONNECTED` qua `getApprovedTemplateOrThrow` (rule giống `create()`); trong transaction: xóa hết `CampaignRow`, cập nhật `templateId`, `oaConnectionId`, `unitPriceAtCreate` theo template mới, reset `status` về `DRAFT` và các counter (`totalData`, `totalValid`, `totalInvalid`, `totalPending`, `totalSuccess`, `totalFailed`, `estimatedTotalAmount`) về 0.
+- Cập nhật `docs/FRONTEND_API_GUIDE_NEXTJS.mdc` mục 7.7 phản ánh hành vi mới.
+- FE không cần sửa gì thêm — `changeTemplate()` đã gửi đúng `PATCH { templateId }`; `GET .../csv-template` và block "Xem trước" tự phản ánh theo `campaign.templateId` mới. Lưu ý FE: sau khi đổi mẫu, `CampaignRow` bị xóa hết nên cần nhắc user import lại CSV.
