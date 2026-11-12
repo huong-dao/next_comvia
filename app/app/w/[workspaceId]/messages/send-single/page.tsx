@@ -124,8 +124,15 @@ export default function SendSinglePage() {
 
   const selected = approved.find((t) => t.id === templateId);
   const fieldKeys = fieldKeysOf(selected);
+  // Form luôn cần một nhãn để hiển thị nên lấy tạm slug khi mẫu tin chưa đặt nhãn.
   const labelOf = (key: string) => selected?.placeholder_labels?.[key]?.trim() || key;
-  const placeholderLabels = Object.fromEntries(fieldKeys.map((key) => [key, labelOf(key)]));
+  // Preview thì KHÔNG được fallback về slug: biến không có nhãn chỉ dùng trong nội dung,
+  // không phải một dòng của bảng (giống trang chi tiết mẫu tin bên admin).
+  const previewLabels = Object.fromEntries(
+    Object.entries(selected?.placeholder_labels ?? {})
+      .filter(([, label]) => label?.trim())
+      .map(([slug, label]) => [slug, label.trim()]),
+  );
 
   if (loading) return <PageLoading />;
   if (error && !data) return <PageError message={error} onRetry={() => void refetch()} />;
@@ -303,7 +310,7 @@ export default function SendSinglePage() {
                 title={selected.title ?? ""}
                 content={selected.content ?? ""}
                 placeholders={values}
-                placeholderLabels={placeholderLabels}
+                placeholderLabels={previewLabels}
                 secondaryContent={selected.secondaryContent ?? ""}
                 minutes={String(selected.otpExpiryMinutes ?? 5)}
                 logoUrl={resolvePublicAssetUrl(oa?.logoLightUrl)}
