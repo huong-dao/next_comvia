@@ -203,7 +203,7 @@ export default function AdminWorkspacesPage() {
                 id="ws-filter-keyword"
                 value={draft.keyword}
                 onChange={(e) => setDraft((d) => ({ ...d, keyword: e.target.value }))}
-                placeholder="Tìm theo tên hoặc slug"
+                placeholder="Tên workspace"
                 className="max-w-md"
               />
             </FilterField>
@@ -228,7 +228,6 @@ export default function AdminWorkspacesPage() {
             getRowKey={(r) => r.id}
             columns={[
               { key: "n", header: "Tên", cell: (r) => r.name ?? "—" },
-              { key: "s", header: "Slug", cell: (r) => r.slug ?? "—" },
               {
                 key: "st",
                 header: "Trạng thái",
