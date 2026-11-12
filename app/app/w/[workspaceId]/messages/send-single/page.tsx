@@ -7,7 +7,8 @@ import { PageError, PageLoading } from "@/components/app/page-state";
 import { useAlertModal } from "@/components/ui/alert-modal";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input, Select, Textarea } from "@/components/ui/input";
+import { Input, Textarea } from "@/components/ui/input";
+import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
 import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
 import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
 import { getAccessToken } from "@/lib/auth";
@@ -102,6 +103,16 @@ export default function SendSinglePage() {
   const approved = useMemo(
     () => (data?.templates ?? []).filter((t) => (t.status ?? "").toUpperCase() === "APPROVED"),
     [data?.templates],
+  );
+
+  /** Tìm được theo tên lẫn mã mẫu tin, gõ không dấu vẫn khớp (xem SearchableSelect). */
+  const templateOptions = useMemo<SearchableSelectOption[]>(
+    () =>
+      approved.map((t) => ({
+        value: t.id,
+        label: t.name ? (t.code ? `${t.name} (${t.code})` : t.name) : (t.code ?? t.id),
+      })),
+    [approved],
   );
 
   const [templateId, setTemplateId] = useState("");
@@ -212,17 +223,22 @@ export default function SendSinglePage() {
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         <Card className="space-y-4">
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <label
+              className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground"
+              htmlFor="send-single-template"
+            >
               Mẫu tin nhắn
             </label>
-            <Select value={templateId} onChange={(e) => chooseTemplate(e.target.value)}>
-              <option value="">— Chọn —</option>
-              {approved.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name ?? t.code ?? t.id}
-                </option>
-              ))}
-            </Select>
+            <SearchableSelect
+              id="send-single-template"
+              aria-label="Mẫu tin nhắn (đã duyệt)"
+              options={templateOptions}
+              value={templateId}
+              onValueChange={chooseTemplate}
+              placeholder="— Chọn —"
+              emptyText={approved.length === 0 ? "Chưa có mẫu tin nào được duyệt." : "Không tìm thấy mẫu tin phù hợp."}
+              matchValue={false}
+            />
           </div>
           <div>
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
