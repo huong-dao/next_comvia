@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input, Select } from "@/components/ui/input";
 import { PaginationBar } from "@/components/ui/pagination-bar";
+import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
 import { SimpleTable } from "@/components/ui/simple-table";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { useComviaQuery } from "@/lib/use-comvia-query";
@@ -32,6 +33,10 @@ type OaRow = {
 };
 
 type OaListResponse = { items: OaRow[]; page: number; limit: number; total: number };
+
+type WsRow = { id: string; name?: string; slug?: string };
+/** `GET /admin/workspaces` trả `{ data, meta }` — giống trang Đơn hàng / Lịch sử hoạt động. */
+type WsListResponse = { data?: WsRow[]; meta?: unknown };
 
 type Filters = { workspaceId: string; status: string; keyword: string; limit: string };
 const initialFilters = (): Filters => ({ workspaceId: "", status: "", keyword: "", limit: "50" });
@@ -56,6 +61,13 @@ export default function AdminOaConnectionsPage() {
   const { data, loading, error, refetch } = useComviaQuery(true, fetcher);
   const totalPages = data ? Math.max(1, Math.ceil(data.total / data.limit)) : 0;
 
+  const wsFetcher = useCallback((token: string) => comviaFetch<WsListResponse>("/admin/workspaces", { token }), []);
+  const { data: wsData, loading: wsLoading } = useComviaQuery(true, wsFetcher);
+  const workspaceOptions = useMemo<SearchableSelectOption[]>(
+    () => (wsData?.data ?? []).map((w) => ({ value: w.id, label: w.name || w.slug || w.id })),
+    [wsData],
+  );
+
   function applyFilters() {
     setApplied({ ...draft });
     setPage(1);
@@ -79,8 +91,18 @@ export default function AdminOaConnectionsPage() {
                 <Input value={draft.keyword} onChange={(event) => setDraft((value) => ({ ...value, keyword: event.target.value }))} placeholder="Tên OA hoặc mã OA" />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-muted-foreground">Workspace ID</label>
-                <Input value={draft.workspaceId} onChange={(event) => setDraft((value) => ({ ...value, workspaceId: event.target.value }))} placeholder="Tất cả workspace" />
+                <label className="mb-1 block text-xs text-muted-foreground" htmlFor="oa-filter-ws">Workspace</label>
+                <SearchableSelect
+                  id="oa-filter-ws"
+                  aria-label="Lọc theo workspace"
+                  options={workspaceOptions}
+                  value={draft.workspaceId}
+                  onValueChange={(value) => setDraft((current) => ({ ...current, workspaceId: value }))}
+                  placeholder="Tất cả workspace"
+                  emptyText="Không có workspace."
+                  matchValue={false}
+                  disabled={wsLoading}
+                />
               </div>
               <div>
                 <label className="mb-1 block text-xs text-muted-foreground">Trạng thái</label>
@@ -96,8 +118,8 @@ export default function AdminOaConnectionsPage() {
                 </Select>
               </div>
               <div className="flex items-end gap-2">
-                <Button type="button" variant="outline" onClick={applyFilters}>Áp dụng</Button>
-                <Button type="button" variant="ghost" onClick={() => void refetch()}>Làm mới</Button>
+                <Button size="lg" type="button" variant="outline" onClick={applyFilters}>Áp dụng</Button>
+                <Button size="lg" type="button" variant="ghost" onClick={() => void refetch()}>Làm mới</Button>
               </div>
             </div>
           </Card>

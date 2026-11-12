@@ -15,6 +15,7 @@ import { PageError, PageLoading } from "@/components/app/page-state";
 import { Button } from "@/components/ui/button";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input, Select } from "@/components/ui/input";
+import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
 import { SimpleTable } from "@/components/ui/simple-table";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { comviaFetch } from "@/lib/comviaFetch";
@@ -84,12 +85,12 @@ export function TemplatesReviewPanel({
   const [draft, setDraft] = useState<Filters>(INITIAL_FILTERS);
   const [applied, setApplied] = useState<Filters>(INITIAL_FILTERS);
 
+  // Queue nội bộ chỉ nhận `status`/`keyword`/`limit`; workspace và OA lọc ở FE
+  // trên dữ liệu trả về (xem ghi chú dưới bộ lọc).
   const queryString = useMemo(() => {
     const qs = new URLSearchParams();
     if (status) qs.set("status", status);
     if (applied.keyword.trim()) qs.set("keyword", applied.keyword.trim());
-    if (applied.workspaceId.trim()) qs.set("workspaceId", applied.workspaceId.trim());
-    if (applied.oaId.trim()) qs.set("oaId", applied.oaId.trim());
     if (applied.limit.trim()) qs.set("limit", applied.limit.trim());
     return qs.toString();
   }, [status, applied]);
@@ -111,7 +112,48 @@ export function TemplatesReviewPanel({
     [data],
   );
 
-  const { rows, page, totalPages, total, pageSize, setPage } = useClientPagination(sorted);
+  /** Ô chọn lấy chính workspace/OA có trong queue hiện tại, hiển thị theo tên. */
+  const workspaceOptions = useMemo<SearchableSelectOption[]>(() => {
+    const byId = new Map<string, SearchableSelectOption>();
+    for (const item of data ?? []) {
+      const ws = item.workspace;
+      if (!ws?.id || byId.has(ws.id)) continue;
+      byId.set(ws.id, { value: ws.id, label: ws.name || ws.slug || ws.id, description: ws.slug });
+    }
+    return [...byId.values()].sort((a, b) => a.label.localeCompare(b.label, "vi"));
+  }, [data]);
+
+  const oaOptions = useMemo<SearchableSelectOption[]>(() => {
+    const byId = new Map<string, SearchableSelectOption>();
+    for (const item of data ?? []) {
+      const oa = item.oaConnection;
+      if (!oa?.id || byId.has(oa.id)) continue;
+      if (draft.workspaceId && item.workspace?.id !== draft.workspaceId) continue;
+      byId.set(oa.id, { value: oa.id, label: oa.oaName || oa.oaId || oa.id, description: item.workspace?.name });
+    }
+    return [...byId.values()].sort((a, b) => a.label.localeCompare(b.label, "vi"));
+  }, [data, draft.workspaceId]);
+
+  const filtered = useMemo(
+    () =>
+      sorted.filter((item) => {
+        if (applied.workspaceId && item.workspace?.id !== applied.workspaceId) return false;
+        if (applied.oaId && item.oaConnection?.id !== applied.oaId) return false;
+        return true;
+      }),
+    [sorted, applied.workspaceId, applied.oaId],
+  );
+
+  const { rows, page, totalPages, total, pageSize, setPage } = useClientPagination(filtered);
+
+  /** Đổi workspace thì bỏ OA đang chọn, vì OA đó có thể không thuộc workspace mới. */
+  function patchDraft(patch: Partial<Filters>) {
+    setDraft((value) => {
+      const next = { ...value, ...patch };
+      if (patch.workspaceId !== undefined && patch.workspaceId !== value.workspaceId) next.oaId = "";
+      return next;
+    });
+  }
 
   return (
     <div>
@@ -141,37 +183,45 @@ export function TemplatesReviewPanel({
           setPage(1);
         }}
         onRefresh={() => void refetch()}
-        note="Staff dùng queue toàn cục nội bộ, không gắn membership workspace. Filter `workspace` và `oa` hiện áp dụng ở FE trên dữ liệu trả về từ API."
+        note="Staff dùng queue toàn cục nội bộ, không gắn membership workspace. Lọc workspace và OA áp dụng ở FE trên dữ liệu trả về từ API (giới hạn theo ô Limit)."
       >
-        <FilterField label="Keyword" htmlFor="review-keyword" className="grow">
+        <FilterField label="Từ khóa" htmlFor="review-keyword" className="grow">
           <Input
             id="review-keyword"
             value={draft.keyword}
-            onChange={(e) => setDraft((value) => ({ ...value, keyword: e.target.value }))}
+            onChange={(e) => patchDraft({ keyword: e.target.value })}
             placeholder="Tên template hoặc code"
           />
         </FilterField>
-        <FilterField label="Workspace filter" htmlFor="review-workspace" className="grow">
-          <Input
+        <FilterField label="Workspace" htmlFor="review-workspace" className="grow">
+          <SearchableSelect
             id="review-workspace"
+            aria-label="Lọc theo workspace"
+            options={workspaceOptions}
             value={draft.workspaceId}
-            onChange={(e) => setDraft((value) => ({ ...value, workspaceId: e.target.value }))}
-            placeholder="workspaceId"
+            onValueChange={(value) => patchDraft({ workspaceId: value })}
+            placeholder="Tất cả workspace"
+            emptyText="Không có workspace trong queue."
+            matchValue={false}
           />
         </FilterField>
-        <FilterField label="OA filter" htmlFor="review-oa" className="grow">
-          <Input
+        <FilterField label="Zalo OA" htmlFor="review-oa" className="grow">
+          <SearchableSelect
             id="review-oa"
+            aria-label="Lọc theo Zalo OA"
+            options={oaOptions}
             value={draft.oaId}
-            onChange={(e) => setDraft((value) => ({ ...value, oaId: e.target.value }))}
-            placeholder="oaId"
+            onValueChange={(value) => patchDraft({ oaId: value })}
+            placeholder="Tất cả OA"
+            emptyText="Không có OA phù hợp."
+            matchValue={false}
           />
         </FilterField>
-        <FilterField label="Limit" htmlFor="review-limit" className="sm:w-28">
+        <FilterField label="Số dòng" htmlFor="review-limit" className="sm:w-28">
           <Select
             id="review-limit"
             value={draft.limit}
-            onChange={(e) => setDraft((value) => ({ ...value, limit: e.target.value }))}
+            onChange={(e) => patchDraft({ limit: e.target.value })}
           >
             <option value="20">20</option>
             <option value="50">50</option>
