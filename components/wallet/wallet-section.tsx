@@ -185,7 +185,7 @@ export function WalletSection() {
     <section className="mb-6">
       <div className="grid gap-4 lg:grid-cols-5">
         {/* Box trái: số dư + hành động + tổng quan tháng */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-1">
           <h2 className="flex items-center gap-2 text-lg font-semibold">
             <HiOutlineWallet className="size-5 text-primary" aria-hidden />
             Ví Credit
@@ -239,7 +239,7 @@ export function WalletSection() {
         </Card>
 
         {/* Box phải: danh sách giao dịch + filter + phân trang */}
-        <Card className="lg:col-span-3">
+        <Card className="lg:col-span-4">
           <h2 className="flex items-center gap-2 text-lg font-semibold">
             <HiOutlineDocumentText className="size-5 text-primary" aria-hidden />
             Danh sách giao dịch
