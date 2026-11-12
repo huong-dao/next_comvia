@@ -26,13 +26,13 @@ export function FilterCard({
         <Button
           type="button"
           variant="outline"
-          size="sm"
+          size="lg"
           onClick={onApply}
           icon={<HiOutlineClipboardDocumentList className="size-4" />}
         >
           Áp dụng
         </Button>
-        <Button type="button" variant="ghost" size="sm" onClick={onRefresh}>
+        <Button type="button" variant="ghost" size="lg" onClick={onRefresh}>
           Làm mới
         </Button>
       </div>

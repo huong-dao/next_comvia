@@ -24,10 +24,10 @@ import { formatVND } from "@/lib/utils";
 const PAGE_SIZE = 30;
 const STATUS_OPTIONS = [
   { value: "", label: "Tất cả" },
-  { value: "ACTIVE", label: "ACTIVE" },
-  { value: "DISABLED", label: "DISABLED" },
-  { value: "SUSPENDED", label: "SUSPENDED" },
-  { value: "DELETED", label: "DELETED" },
+  { value: "ACTIVE", label: "KÍCH HOẠT" },
+  { value: "DISABLED", label: "NGỪNG KÍCH HOẠT" },
+  { value: "SUSPENDED", label: "TẠM NGỪNG" },
+  { value: "DELETED", label: "ĐÃ XÓA" },
 ];
 
 type WsRow = {
@@ -207,15 +207,6 @@ export default function AdminWorkspacesPage() {
                 className="max-w-md"
               />
             </FilterField>
-            <FilterField label="ID chủ workspace" htmlFor="ws-filter-owner">
-              <Input
-                id="ws-filter-owner"
-                value={draft.ownerUserId}
-                onChange={(e) => setDraft((d) => ({ ...d, ownerUserId: e.target.value }))}
-                placeholder="Khớp chính xác"
-                className="max-w-[220px]"
-              />
-            </FilterField>
             <FilterField label="Trạng thái" htmlFor="ws-filter-status">
               <Select
                 id="ws-filter-status"
@@ -238,7 +229,6 @@ export default function AdminWorkspacesPage() {
             columns={[
               { key: "n", header: "Tên", cell: (r) => r.name ?? "—" },
               { key: "s", header: "Slug", cell: (r) => r.slug ?? "—" },
-              { key: "o", header: "Chủ Workspace", cell: (r) => r.ownerUserId ?? "—" },
               {
                 key: "st",
                 header: "Trạng thái",
@@ -269,7 +259,7 @@ export default function AdminWorkspacesPage() {
                         onClick={() => setAdjustTarget(r)}
                         icon={<HiOutlineWallet className="size-4" />}
                       >
-                        Điều chỉnh số dư ví
+                        Số dư
                       </Button>
                       <Button
                         type="button"
@@ -280,7 +270,7 @@ export default function AdminWorkspacesPage() {
                         onClick={() => void impersonateOwner(r)}
                         icon={<HiOutlineArrowTopRightOnSquare className="size-4" />}
                       >
-                        {impersonating === r.id ? "Đang mở..." : "Đăng nhập Owner"}
+                        {impersonating === r.id ? "Đang mở..." : "Đăng nhập"}
                       </Button>
                       <Button
                         className="bg-red-600 text-white"
