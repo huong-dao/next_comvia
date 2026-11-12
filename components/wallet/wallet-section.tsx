@@ -312,7 +312,23 @@ export function WalletSection() {
                   {
                     key: "code",
                     header: "Mã GD",
-                    cell: (r) => <span className="font-mono text-xs">{r.transactionCode ?? "—"}</span>,
+                    cell: (r) => {
+                      const s = r.status as WalletTransactionStatus | undefined;
+                      const label = s ? TX_STATUS_LABELS[s] : undefined;
+                      return (
+                        <div className="flex flex-col items-start gap-1 text-xs">
+                          <span className="font-mono">{r.transactionCode ?? "—"}</span>
+                          {/* Enum ngoài 3 giá trị hợp đồng (không bịa): badge neutral + text gốc. */}
+                          {s ? (
+                            label ? (
+                              <StatusBadge tone={TX_STATUS_TONE[s]}>{label}</StatusBadge>
+                            ) : (
+                              <StatusBadge tone="neutral">{r.status}</StatusBadge>
+                            )
+                          ) : null}
+                        </div>
+                      );
+                    },
                   },
                   {
                     key: "at",
@@ -323,18 +339,6 @@ export function WalletSection() {
                     key: "type",
                     header: "Loại giao dịch",
                     cell: (r) => walletTxTypeLabel(r.type) ?? "—",
-                  },
-                  {
-                    key: "status",
-                    header: "Trạng thái",
-                    cell: (r) => {
-                      if (!r.status) return "—";
-                      const s = r.status as WalletTransactionStatus;
-                      const label = TX_STATUS_LABELS[s];
-                      // Enum ngoài 3 giá trị hợp đồng (không bịa): badge neutral + text gốc.
-                      if (!label) return <StatusBadge tone="neutral">{r.status}</StatusBadge>;
-                      return <StatusBadge tone={TX_STATUS_TONE[s]}>{label}</StatusBadge>;
-                    },
                   },
                   {
                     key: "amt",
