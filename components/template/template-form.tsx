@@ -202,7 +202,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
       return { ok: true, body };
     }
 
-    const ctaError = validateCtaButtons(ctaButtons, filledSlugs);
+    const ctaError = validateCtaButtons(ctaButtons);
     if (ctaError) return { ok: false, message: ctaError };
     if (ctaButtons.length > 0) body.ctaButtons = normalizeCtaButtons(ctaButtons);
 

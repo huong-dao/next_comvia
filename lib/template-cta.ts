@@ -80,7 +80,7 @@ export function normalizeCtaButtons(buttons: TemplateCtaDraft[]) {
   }));
 }
 
-export function validateCtaButtons(buttons: TemplateCtaDraft[], contentParams: string[] = []): string | null {
+export function validateCtaButtons(buttons: TemplateCtaDraft[]): string | null {
   if (buttons.length > 2) return "Mẫu tin chỉ có tối đa 2 nút CTA.";
 
   for (const button of buttons) {
@@ -105,9 +105,6 @@ export function validateCtaButtons(buttons: TemplateCtaDraft[], contentParams: s
         const pathname = decodeURIComponent(new URL(target).pathname);
         if (params.some((param) => !pathname.includes(`<${param}>`))) {
           return "Param CTA phải nằm trong phần đường dẫn của URL, không đặt ở query string.";
-        }
-        if (params.some((param) => contentParams.includes(param))) {
-          return "Param CTA không được trùng với biến đã dùng trong nội dung mẫu tin.";
         }
       }
     }

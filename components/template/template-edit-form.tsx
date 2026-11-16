@@ -74,10 +74,6 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
   }, [data]);
 
   const placeholdersParsed = useMemo(() => rowsToPlaceholders(placeholderRows), [placeholderRows]);
-  const filledSlugs = useMemo(
-    () => placeholderRows.map((row) => row.slug.trim()).filter((slug) => slug.length > 0 && slugLooksValid(slug)),
-    [placeholderRows],
-  );
   // Không fallback label về slug — biến không nhập Nhãn thì bị loại khỏi bảng ở TablePreview.
   const previewLabels = useMemo(
     () => Object.fromEntries(placeholderRows.filter((row) => row.slug.trim() && slugLooksValid(row.slug.trim()) && row.label.trim()).map((row) => [row.slug.trim(), row.label.trim()])),
@@ -103,7 +99,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
     if (!data || !editable) return;
     const placeholders = rowsToPlaceholders(placeholderRows);
     if (!placeholders.ok) return setMessage(placeholders.message);
-    const ctaError = validateCtaButtons(ctaButtons, filledSlugs);
+    const ctaError = validateCtaButtons(ctaButtons);
     if (ctaError) return setMessage(ctaError);
     const token = getAccessToken();
     if (!token) return;

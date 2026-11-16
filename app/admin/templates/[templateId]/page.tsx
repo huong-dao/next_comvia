@@ -192,7 +192,7 @@ export default function AdminTemplateDetailPage() {
       placeholdersJson = parsed.data;
     }
 
-    const ctaError = validateCtaButtons(ctaButtons as TemplateCtaDraft[], filledSlugs);
+    const ctaError = validateCtaButtons(ctaButtons as TemplateCtaDraft[]);
     if (ctaError) {
       setMessage(ctaError);
       return;
