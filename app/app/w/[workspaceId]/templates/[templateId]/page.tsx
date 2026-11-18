@@ -21,6 +21,8 @@ import {
   newPlaceholderRow,
   recordToPlaceholderRows,
   rowsToPlaceholderLabels,
+  rowsToPlaceholderOrder,
+  orderedSlugs,
   rowsToPlaceholders,
   slugLooksValid,
   type PlaceholderRow,
@@ -45,6 +47,7 @@ type TemplateDetail = {
   returnedForRevisionAt?: string | null;
   placeholdersJson?: Record<string, string>;
   placeholder_labels?: Record<string, string> | null;
+  placeholderOrder?: string[] | null;
   unitPricePerMessage?: number | string | null;
   ctaButtons?: TemplateCtaButton[];
   updatedAt?: string;
@@ -112,7 +115,7 @@ export default function TemplateDetailPage() {
     setTitle(data.title ?? "");
     setSecondaryContent(data.secondaryContent ?? "");
     setContent(data.content ?? "");
-    setPlaceholderRows(recordToPlaceholderRows(data.placeholdersJson, data.placeholder_labels));
+    setPlaceholderRows(recordToPlaceholderRows(data.placeholdersJson, data.placeholder_labels, data.placeholderOrder));
     setUnitPrice(
       data.unitPricePerMessage != null && data.unitPricePerMessage !== ""
         ? String(data.unitPricePerMessage)
@@ -188,6 +191,7 @@ export default function TemplateDetailPage() {
           ...(isTable ? { secondaryContent: secondaryContent.trim() || null } : {}),
           content: content || data.content,
           placeholdersJson: ph.data,
+          placeholderOrder: rowsToPlaceholderOrder(placeholderRows),
           placeholder_labels: rowsToPlaceholderLabels(placeholderRows),
           ctaButtons: normalizeCtaButtons(ctaButtons),
         }),
@@ -312,7 +316,7 @@ export default function TemplateDetailPage() {
   if (error && !data) return <PageError message={error} onRetry={() => void refetch()} />;
   if (!data) return null;
 
-  const readOnlyPlaceholders = Object.entries(data.placeholdersJson ?? {});
+  const readOnlyPlaceholders = orderedSlugs(Object.keys(data.placeholdersJson ?? {}), data.placeholderOrder).map((slug) => [slug, (data.placeholdersJson ?? {})[slug]] as const);
 
   return (
     <div>
@@ -598,6 +602,7 @@ export default function TemplateDetailPage() {
               minutes={String(data.otpExpiryMinutes ?? 5)}
               logoUrl={resolvePublicAssetUrl(oa?.logoLightUrl)}
               ctaButtons={ctaButtons}
+              placeholderOrder={editable ? undefined : data.placeholderOrder}
             />
           </div>
         </Card>

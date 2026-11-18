@@ -28,6 +28,7 @@ type TemplateRow = {
   otpExpiryMinutes?: number | null;
   placeholdersJson?: Record<string, string>;
   placeholder_labels?: Record<string, string> | null;
+  placeholderOrder?: string[] | null;
   ctaButtons?: TemplateCtaButton[];
 };
 type OaStatus = { status?: string };
@@ -314,6 +315,7 @@ export default function SendSinglePage() {
                 secondaryContent={selected.secondaryContent ?? ""}
                 minutes={String(selected.otpExpiryMinutes ?? 5)}
                 logoUrl={resolvePublicAssetUrl(oa?.logoLightUrl)}
+                placeholderOrder={selected.placeholderOrder}
                 ctaButtons={(selected.ctaButtons ?? []).map((b) => ({ ...b, label: b.label ?? "", target: b.target ?? "" }))}
               />
           </Card>

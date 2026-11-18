@@ -32,6 +32,7 @@ type TemplateDetail = {
   otpExpiryMinutes?: number;
   placeholdersJson?: Record<string, unknown>;
   placeholder_labels?: Record<string, string> | null;
+  placeholderOrder?: string[] | null;
   ctaButtons?: TemplateCtaButton[];
   providerTemplateId?: string | null;
   status?: string;
@@ -241,6 +242,7 @@ export function StaffTemplateReviewDetail({
                   secondaryContent={template.secondaryContent ?? ""}
                   minutes={String(template.otpExpiryMinutes ?? 5)}
                   logoUrl={resolvePublicAssetUrl(oa?.logoLightUrl)}
+                  placeholderOrder={template.placeholderOrder}
                   ctaButtons={(template.ctaButtons ?? []).map((b) => ({ ...b, label: b.label ?? "", target: b.target ?? "" }))}
                 />
               </div>

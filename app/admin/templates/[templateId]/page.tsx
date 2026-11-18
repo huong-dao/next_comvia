@@ -20,6 +20,7 @@ import {
   applyContentInput,
   recordToPlaceholderRows,
   rowsToPlaceholderLabels,
+  rowsToPlaceholderOrder,
   rowsToPlaceholders,
   slugLooksValid,
   type PlaceholderRow,
@@ -44,6 +45,7 @@ type TemplateDetail = {
   revisionReason?: string | null;
   placeholdersJson?: Record<string, string>;
   placeholder_labels?: Record<string, string> | null;
+  placeholderOrder?: string[] | null;
   placeholderLabels?: Record<string, string> | null;
   unitPricePerMessage?: number | string | null;
   providerTemplateId?: string | null;
@@ -125,7 +127,7 @@ export default function AdminTemplateDetailPage() {
     setContent(data.content ?? "");
     setSecondaryContent(data.secondaryContent ?? "");
     setOtpMinutes(data.otpExpiryMinutes != null ? String(data.otpExpiryMinutes) : "5");
-    setPlaceholderRows(recordToPlaceholderRows(data.placeholdersJson, data.placeholder_labels ?? data.placeholderLabels));
+    setPlaceholderRows(recordToPlaceholderRows(data.placeholdersJson, data.placeholder_labels ?? data.placeholderLabels, data.placeholderOrder));
     setUnitPrice(data.unitPricePerMessage != null ? String(data.unitPricePerMessage) : "");
     setProviderTemplateId(data.providerTemplateId ?? "");
     setStatus((data.status ?? "DRAFT").toUpperCase());
@@ -253,6 +255,7 @@ export default function AdminTemplateDetailPage() {
         }
         body.content = content;
         body.placeholdersJson = placeholdersJson;
+        body.placeholderOrder = rowsToPlaceholderOrder(placeholderRows);
         body.placeholder_labels = rowsToPlaceholderLabels(placeholderRows);
         if (type === "TABLE") body.secondaryContent = secondaryContent.trim() || null;
       }

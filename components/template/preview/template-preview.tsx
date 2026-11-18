@@ -18,6 +18,8 @@ type TemplatePreviewProps = {
   minutes: string;
   logoUrl?: string | null;
   ctaButtons?: TemplateCtaDraft[];
+  /** Thứ tự biến đã lưu ở DB (placeholderOrder); null/thiếu → thứ tự khóa của placeholders. */
+  placeholderOrder?: string[] | null;
 };
 
 /** Chọn preview trực quan theo loại tin. Chỉ render phía client, không gửi gì thêm lên API. */
@@ -31,6 +33,7 @@ export function TemplatePreview({
   minutes,
   logoUrl,
   ctaButtons = [],
+  placeholderOrder,
 }: TemplatePreviewProps) {
   // Chuẩn hóa nhãn chung cho mọi nơi xem trước: bỏ nhãn rỗng, KHÔNG fallback về slug.
   const labels = Object.fromEntries(
@@ -49,6 +52,7 @@ export function TemplatePreview({
           secondaryContent={secondaryContent}
           logoUrl={logoUrl}
           ctaButtons={ctaButtons}
+          placeholderOrder={placeholderOrder}
         />
       );
     case "van_ban":

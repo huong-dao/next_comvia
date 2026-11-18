@@ -1,6 +1,6 @@
 "use client";
 
-import { previewTemplateContent } from "@/lib/template-placeholders";
+import { orderedSlugs, previewTemplateContent } from "@/lib/template-placeholders";
 import { PreviewCtas, PreviewFrame, PreviewTitle } from "./preview-frame";
 import type { TemplateCtaDraft } from "@/lib/template-cta";
 
@@ -12,13 +12,16 @@ type TablePreviewProps = {
   secondaryContent: string;
   logoUrl?: string | null;
   ctaButtons: TemplateCtaDraft[];
+  placeholderOrder?: string[] | null;
 };
 
 /** Preview mẫu tin "Dạng bảng" (hình 4): tiêu đề + đoạn mở + bảng key-value + nội dung phụ + CTA. */
-export function TablePreview({ title, content, placeholders, placeholderLabels, secondaryContent, logoUrl, ctaButtons }: TablePreviewProps) {
+export function TablePreview({ title, content, placeholders, placeholderLabels, secondaryContent, logoUrl, ctaButtons, placeholderOrder }: TablePreviewProps) {
   const rendered = previewTemplateContent(content, placeholders);
   // Chỉ hiện trong bảng những biến có nhập Nhãn — biến chỉ dùng trong content (không có nhãn) thì ẩn khỏi bảng.
-  const rows = Object.entries(placeholders).filter(([slug]) => Boolean(placeholderLabels?.[slug]));
+  const rows = orderedSlugs(Object.keys(placeholders), placeholderOrder)
+    .filter((slug) => Boolean(placeholderLabels?.[slug]))
+    .map((slug) => [slug, placeholders[slug]] as const);
 
   return (
     <PreviewFrame logoUrl={logoUrl}>

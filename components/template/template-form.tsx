@@ -12,6 +12,7 @@ import {
   newPlaceholderRow,
   applyContentInput,
   rowsToPlaceholderLabels,
+  rowsToPlaceholderOrder,
   rowsToPlaceholders,
   slugLooksValid,
   type PlaceholderRow,
@@ -68,6 +69,7 @@ type CreateTemplateBody = {
   otpExpiryMinutes?: number;
   placeholdersJson?: Record<string, string>;
   placeholder_labels?: Record<string, string>;
+  placeholderOrder?: string[];
   ctaButtons?: ReturnType<typeof normalizeCtaButtons>;
 };
 
@@ -216,6 +218,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
     body.content = content;
     body.placeholdersJson = ph.data;
     body.placeholder_labels = rowsToPlaceholderLabels(placeholderRows);
+    body.placeholderOrder = rowsToPlaceholderOrder(placeholderRows);
     if (type === "bang" && secondaryContent.trim()) {
       body.secondaryContent = secondaryContent.trim();
     }

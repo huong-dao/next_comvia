@@ -55,11 +55,24 @@ export function rowsToPlaceholderLabels(rows: PlaceholderRow[]): Record<string, 
 }
 
 /** Load API object vào danh sách dòng chỉnh sửa. */
-export function recordToPlaceholderRows(record: unknown, labels?: Record<string, string> | null): PlaceholderRow[] {
+/** Slug theo thứ tự đã lưu (placeholderOrder); slug không có trong order xếp sau theo thứ tự khóa. order null → thứ tự khóa. */
+export function orderedSlugs(slugs: string[], order?: string[] | null): string[] {
+  if (!order?.length) return slugs;
+  const rank = new Map(order.map((slug, index) => [slug, index]));
+  return [...slugs].sort((a, b) => (rank.get(a) ?? Infinity) - (rank.get(b) ?? Infinity));
+}
+
+/** Thứ tự slug hợp lệ hiện tại của danh sách dòng — gửi lên API dưới tên placeholderOrder. */
+export function rowsToPlaceholderOrder(rows: PlaceholderRow[]): string[] {
+  return rows.map((row) => row.slug.trim()).filter((slug) => slug && slugLooksValid(slug));
+}
+
+export function recordToPlaceholderRows(record: unknown, labels?: Record<string, string> | null, order?: string[] | null): PlaceholderRow[] {
   if (record === null || typeof record !== "object" || Array.isArray(record)) {
     return [newPlaceholderRow()];
   }
-  const entries = Object.entries(record as Record<string, unknown>);
+  const source = record as Record<string, unknown>;
+  const entries = orderedSlugs(Object.keys(source), order).map((slug) => [slug, source[slug]] as const);
   if (entries.length === 0) return [newPlaceholderRow()];
   return entries.map(([slug, raw]) => ({
     id: crypto.randomUUID(),
