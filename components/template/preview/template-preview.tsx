@@ -32,6 +32,12 @@ export function TemplatePreview({
   logoUrl,
   ctaButtons = [],
 }: TemplatePreviewProps) {
+  // Chuẩn hóa nhãn chung cho mọi nơi xem trước: bỏ nhãn rỗng, KHÔNG fallback về slug.
+  const labels = Object.fromEntries(
+    Object.entries(placeholderLabels ?? {})
+      .map(([slug, label]) => [slug, (label ?? "").trim()] as const)
+      .filter(([, label]) => label),
+  );
   switch (type) {
     case "bang":
       return (
@@ -39,7 +45,7 @@ export function TemplatePreview({
           title={title}
           content={content}
           placeholders={placeholders}
-          placeholderLabels={placeholderLabels}
+          placeholderLabels={labels}
           secondaryContent={secondaryContent}
           logoUrl={logoUrl}
           ctaButtons={ctaButtons}

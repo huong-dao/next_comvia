@@ -1,7 +1,7 @@
 "use client";
 
 import { previewTemplateContent } from "@/lib/template-placeholders";
-import { PreviewCtas, PreviewFrame } from "./preview-frame";
+import { PreviewCtas, PreviewFrame, PreviewTitle } from "./preview-frame";
 import type { TemplateCtaDraft } from "@/lib/template-cta";
 
 type TablePreviewProps = {
@@ -15,13 +15,14 @@ type TablePreviewProps = {
 };
 
 /** Preview mẫu tin "Dạng bảng" (hình 4): tiêu đề + đoạn mở + bảng key-value + nội dung phụ + CTA. */
-export function TablePreview({ content, placeholders, placeholderLabels, secondaryContent, logoUrl, ctaButtons }: TablePreviewProps) {
+export function TablePreview({ title, content, placeholders, placeholderLabels, secondaryContent, logoUrl, ctaButtons }: TablePreviewProps) {
   const rendered = previewTemplateContent(content, placeholders);
   // Chỉ hiện trong bảng những biến có nhập Nhãn — biến chỉ dùng trong content (không có nhãn) thì ẩn khỏi bảng.
   const rows = Object.entries(placeholders).filter(([slug]) => Boolean(placeholderLabels?.[slug]));
 
   return (
     <PreviewFrame logoUrl={logoUrl}>
+      <PreviewTitle title={title} />
       {rendered ? (
         <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-600">{rendered}</p>
       ) : null}

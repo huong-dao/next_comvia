@@ -261,7 +261,7 @@ export function ApiUsageGuide({ workspaceId, className }: { workspaceId: string;
           content={selected.content ?? ""}
           placeholders={Object.fromEntries(variables.map(([k, v]) => [k, String(v)]))}
           placeholderLabels={Object.fromEntries(
-            variables.map(([k]) => [k, selected?.placeholder_labels?.[k]?.trim() || k]),
+            variables.map(([k]) => [k, selected?.placeholder_labels?.[k] ?? ""]),
           )}
           secondaryContent={selected.secondaryContent ?? ""}
           minutes={String(selected.otpExpiryMinutes ?? 5)}

@@ -28,6 +28,12 @@ export function PreviewFrame({ children, logoUrl }: { children: ReactNode; logoU
   );
 }
 
+/** Tiêu đề tin (in đậm, đầu nội dung). Rỗng thì không hiện. */
+export function PreviewTitle({ title }: { title?: string | null }) {
+  const text = title?.trim();
+  return text ? <p className="mb-2 whitespace-pre-wrap text-sm font-bold text-zinc-900">{text}</p> : null;
+}
+
 /** Nút CTA xanh dưới đáy tin (mô phỏng, không tương tác). */
 export function PreviewCta({ label }: { label: string }) {
   return (

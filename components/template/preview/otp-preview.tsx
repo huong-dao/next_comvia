@@ -1,7 +1,7 @@
 "use client";
 
 import { HiOutlineSquare2Stack } from "react-icons/hi2";
-import { PreviewCtas, PreviewFrame } from "./preview-frame";
+import { PreviewCtas, PreviewFrame, PreviewTitle } from "./preview-frame";
 import type { TemplateCtaDraft } from "@/lib/template-cta";
 
 type OtpPreviewProps = {
@@ -12,11 +12,12 @@ type OtpPreviewProps = {
 };
 
 /** Preview mẫu tin "Dạng OTP" (hình 6): tiêu đề + mã lớn + icon copy + cảnh báo bảo mật + thời hạn. */
-export function OtpPreview({ minutes, logoUrl, ctaButtons }: OtpPreviewProps) {
+export function OtpPreview({ title, minutes, logoUrl, ctaButtons }: OtpPreviewProps) {
   const displayMinutes = minutes.trim() || "5";
 
   return (
     <PreviewFrame logoUrl={logoUrl}>
+      <PreviewTitle title={title} />
       <p className="mb-3 text-sm font-bold text-zinc-900">Nội dung này sẽ do Zalo quyết định.</p>
       <div className="mb-3 flex items-center gap-2">
         <span className="text-3xl font-bold tracking-wider text-zinc-900">123456</span>
