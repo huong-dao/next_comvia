@@ -27,7 +27,7 @@ export function TablePreview({ title, content, placeholders, placeholderLabels, 
     <PreviewFrame logoUrl={logoUrl}>
       <PreviewTitle title={title} />
       {rendered ? (
-        <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-600">{rendered}</p>
+        <p className="mb-2 whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-600">{rendered}</p>
       ) : null}
       {rows.length > 0 ? (
         <dl className="my-3 space-y-1.5">
@@ -40,7 +40,7 @@ export function TablePreview({ title, content, placeholders, placeholderLabels, 
         </dl>
       ) : null}
       {secondaryContent ? (
-        <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-600">{secondaryContent}</p>
+        <p className="mb-2 whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-600">{secondaryContent}</p>
       ) : null}
       <PreviewCtas buttons={ctaButtons} />
     </PreviewFrame>

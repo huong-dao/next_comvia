@@ -19,7 +19,7 @@ export function TextPreview({ title, content, placeholders, logoUrl, ctaButtons 
   return (
     <PreviewFrame logoUrl={logoUrl}>
       <PreviewTitle title={title} />
-      <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-600">{rendered || "—"}</p>
+      <p className="mb-2 whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-600">{rendered || "—"}</p>
       <PreviewCtas buttons={ctaButtons} />
     </PreviewFrame>
   );
