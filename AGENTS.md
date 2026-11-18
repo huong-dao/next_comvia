@@ -8,3 +8,4 @@ Keep work local, evidence-led, and small in context.
 - Start with `rg` and read only the files, symbols, and documentation sections relevant to the request. Do not load `.claude/memory*.md` or full specification archives unless the request directly depends on them.
 - Preserve existing work outside the requested scope. Do not change synced `.mdc` contracts unless explicitly asked.
 - After a code change is complete and its relevant verification passes, commit the task-scoped files and push the commit to branch `dev`. Do not include unrelated working-tree changes; report if `dev` cannot be safely used.
+- Changes under `docs/` always come from BE (synced over), so always commit them together with the task, even when they are not part of the requested scope. Never edit `docs/` by hand; only commit what BE delivered.
