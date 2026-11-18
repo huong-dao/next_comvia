@@ -10,13 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input, Textarea } from "@/components/ui/input";
-import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
+import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
+import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
 import { getAccessToken, getStoredUser } from "@/lib/auth";
 import { formatVND } from "@/lib/utils";
 import { workspacePath } from "@/lib/paths";
 import {
   newPlaceholderRow,
-  previewTemplateContent,
   recordToPlaceholderRows,
   rowsToPlaceholderLabels,
   rowsToPlaceholders,
@@ -32,7 +32,11 @@ type TemplateDetail = {
   id: string;
   name?: string;
   code?: string;
+  type?: string;
+  title?: string;
   content?: string;
+  secondaryContent?: string;
+  otpExpiryMinutes?: number;
   status?: string;
   requiresOwnerRevision?: boolean;
   revisionReason?: string | null;
@@ -43,6 +47,14 @@ type TemplateDetail = {
   ctaButtons?: TemplateCtaButton[];
   updatedAt?: string;
 };
+
+type OaPreviewAsset = { logoLightUrl?: string | null };
+
+function toPreviewType(type?: string): TemplateMessageType {
+  if (type?.toUpperCase() === "TEXT") return "van_ban";
+  if (type?.toUpperCase() === "OTP") return "otp";
+  return "bang";
+}
 
 export default function TemplateDetailPage() {
   const params = useParams();
@@ -59,6 +71,19 @@ export default function TemplateDetailPage() {
   );
 
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId && templateId), fetcher);
+
+  const oaFetcher = useCallback(
+    async (token: string): Promise<OaPreviewAsset | null> => {
+      try {
+        return await comviaFetch<OaPreviewAsset>(`/workspaces/${workspaceId}/oa`, { token });
+      } catch (fetchError) {
+        if (fetchError instanceof ComviaApiError && (fetchError.statusCode === 404 || fetchError.statusCode === 403)) return null;
+        throw fetchError;
+      }
+    },
+    [workspaceId],
+  );
+  const { data: oa } = useComviaQuery(Boolean(workspaceId), oaFetcher);
 
   const status = (data?.status ?? "").toUpperCase();
   const requiresOwnerRevision = Boolean(data?.requiresOwnerRevision);
@@ -99,15 +124,11 @@ export default function TemplateDetailPage() {
   }, [data, isAppAdmin]);
 
   const placeholdersParsed = useMemo(() => rowsToPlaceholders(placeholderRows), [placeholderRows]);
-  /** Khi đã duyệt chỉ xem — preview lấy từ dữ liệu server, không phụ thuộc state form có thể chỉnh. */
-  const preview = useMemo(() => {
-    if (!data) return "";
-    if (!editable) {
-      return previewTemplateContent(data.content ?? "", data.placeholdersJson ?? {});
-    }
-    if (!placeholdersParsed.ok) return content;
-    return previewTemplateContent(content, placeholdersParsed.data);
-  }, [data, editable, content, placeholdersParsed]);
+  // Không fallback label về slug — biến không nhập Nhãn thì bị loại khỏi bảng ở TablePreview.
+  const previewLabels = useMemo(
+    () => Object.fromEntries(placeholderRows.filter((row) => row.slug.trim() && slugLooksValid(row.slug.trim()) && row.label.trim()).map((row) => [row.slug.trim(), row.label.trim()])),
+    [placeholderRows],
+  );
 
   const filledSlugs = useMemo(() => {
     return placeholderRows
@@ -546,12 +567,19 @@ export default function TemplateDetailPage() {
 
         <Card className="flex min-h-0 flex-col gap-3">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Xem trước</p>
-          <p className="text-xs text-muted-foreground">
-            Thay thế <code className="rounded bg-surface-muted px-1">{"{{slug}}"}</code> theo giá trị mẫu đã khai báo.
-          </p>
-          <pre className="max-h-[min(520px,70vh)] min-h-[280px] flex-1 overflow-auto rounded-xl bg-surface-muted p-4 text-xs whitespace-pre-wrap text-foreground">
-            {preview || "—"}
-          </pre>
+          <div className="flex-1 overflow-auto rounded-xl bg-surface-muted p-4">
+            <TemplatePreview
+              type={toPreviewType(data.type)}
+              title={data.title ?? ""}
+              content={editable ? content : (data.content ?? "")}
+              placeholders={editable ? (placeholdersParsed.ok ? placeholdersParsed.data : {}) : (data.placeholdersJson ?? {})}
+              placeholderLabels={editable ? previewLabels : (data.placeholder_labels ?? undefined)}
+              secondaryContent={data.secondaryContent ?? ""}
+              minutes={String(data.otpExpiryMinutes ?? 5)}
+              logoUrl={resolvePublicAssetUrl(oa?.logoLightUrl)}
+              ctaButtons={ctaButtons}
+            />
+          </div>
         </Card>
       </div>
     </div>

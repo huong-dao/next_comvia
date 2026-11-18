@@ -15,7 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input, Textarea } from "@/components/ui/input";
-import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
+import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
+import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
 import { getAccessToken } from "@/lib/auth";
 import { ctaTypeLabel, type TemplateCtaButton } from "@/lib/template-cta";
 import { useComviaQuery } from "@/lib/use-comvia-query";
@@ -24,8 +25,13 @@ type TemplateDetail = {
   id: string;
   name?: string;
   code?: string;
+  type?: string;
+  title?: string;
   content?: string;
+  secondaryContent?: string;
+  otpExpiryMinutes?: number;
   placeholdersJson?: Record<string, unknown>;
+  placeholder_labels?: Record<string, string> | null;
   ctaButtons?: TemplateCtaButton[];
   providerTemplateId?: string | null;
   status?: string;
@@ -58,6 +64,14 @@ type TemplateDetail = {
   }>;
 };
 
+type OaPreviewAsset = { logoLightUrl?: string | null };
+
+function toPreviewType(type?: string): TemplateMessageType {
+  if (type?.toUpperCase() === "TEXT") return "van_ban";
+  if (type?.toUpperCase() === "OTP") return "otp";
+  return "bang";
+}
+
 const detailTabs = [
   { key: "overview", label: "Tổng quan", icon: HiOutlineSquares2X2, suffix: "" },
   { key: "workspace", label: "Thông tin workspace", icon: HiOutlineBuildingOffice2, suffix: "/workspace" },
@@ -81,6 +95,21 @@ export function StaffTemplateReviewDetail({
     [templateId],
   );
   const { data: template, loading, error, refetch } = useComviaQuery(Boolean(templateId), fetcher);
+
+  const previewWorkspaceId = template?.workspace?.id;
+  const oaFetcher = useCallback(
+    async (token: string): Promise<OaPreviewAsset | null> => {
+      try {
+        return await comviaFetch<OaPreviewAsset>(`/workspaces/${previewWorkspaceId}/oa`, { token });
+      } catch (fetchError) {
+        // Endpoint chỉ cho thành viên workspace; staff không có quyền thì bỏ qua, preview dùng placeholder "OA".
+        if (fetchError instanceof ComviaApiError && (fetchError.statusCode === 404 || fetchError.statusCode === 403)) return null;
+        throw fetchError;
+      }
+    },
+    [previewWorkspaceId],
+  );
+  const { data: oa } = useComviaQuery(Boolean(previewWorkspaceId), oaFetcher);
 
   async function updateStatus(
     path: string,
@@ -201,10 +230,20 @@ export function StaffTemplateReviewDetail({
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(340px,1fr)]">
           <div className="space-y-6">
             <Card className="space-y-3 p-4">
-              <p className="text-xs font-semibold uppercase text-muted-foreground">Nội dung mẫu tin</p>
-              <pre className="max-h-[360px] overflow-auto rounded-xl bg-surface-muted p-4 text-xs whitespace-pre-wrap">
-                {template.content ?? "Không có nội dung"}
-              </pre>
+              <p className="text-xs font-semibold uppercase text-muted-foreground">Xem trước</p>
+              <div className="max-h-[560px] overflow-auto rounded-xl bg-surface-muted p-4">
+                <TemplatePreview
+                  type={toPreviewType(template.type)}
+                  title={template.title ?? ""}
+                  content={template.content ?? ""}
+                  placeholders={Object.fromEntries(Object.entries(template.placeholdersJson ?? {}).map(([k, v]) => [k, String(v ?? "")]))}
+                  placeholderLabels={template.placeholder_labels ?? undefined}
+                  secondaryContent={template.secondaryContent ?? ""}
+                  minutes={String(template.otpExpiryMinutes ?? 5)}
+                  logoUrl={resolvePublicAssetUrl(oa?.logoLightUrl)}
+                  ctaButtons={(template.ctaButtons ?? []).map((b) => ({ ...b, label: b.label ?? "", target: b.target ?? "" }))}
+                />
+              </div>
             </Card>
 
             <Card className="space-y-3 p-4">
