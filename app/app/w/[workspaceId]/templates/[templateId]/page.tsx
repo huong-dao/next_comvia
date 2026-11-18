@@ -91,6 +91,7 @@ export default function TemplateDetailPage() {
   const canSubmit = owner && editable;
 
   const [name, setName] = useState("");
+  const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [placeholderRows, setPlaceholderRows] = useState<PlaceholderRow[]>(() => [newPlaceholderRow()]);
   const [unitPrice, setUnitPrice] = useState("");
@@ -104,6 +105,7 @@ export default function TemplateDetailPage() {
   useEffect(() => {
     if (!data) return;
     setName(data.name ?? "");
+    setTitle(data.title ?? "");
     setContent(data.content ?? "");
     setPlaceholderRows(recordToPlaceholderRows(data.placeholdersJson, data.placeholder_labels));
     setUnitPrice(
@@ -177,6 +179,7 @@ export default function TemplateDetailPage() {
         token,
         body: JSON.stringify({
           name: name || data.name,
+          title: title.trim(),
           content: content || data.content,
           placeholdersJson: ph.data,
           placeholder_labels: rowsToPlaceholderLabels(placeholderRows),
@@ -397,6 +400,10 @@ export default function TemplateDetailPage() {
                 <label className="mb-1 block text-xs text-muted-foreground">Tên</label>
                 <Input value={name} onChange={(e) => setName(e.target.value)} />
               </div>
+              <div>
+                <label className="mb-1 block text-xs text-muted-foreground">Tựa đề</label>
+                <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+              </div>
 
               <div className="min-h-0 flex-1 space-y-3 overflow-y-auto">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -570,7 +577,7 @@ export default function TemplateDetailPage() {
           <div className="flex-1 overflow-auto rounded-xl bg-surface-muted p-4">
             <TemplatePreview
               type={toPreviewType(data.type)}
-              title={data.title ?? ""}
+              title={editable ? title : (data.title ?? "")}
               content={editable ? content : (data.content ?? "")}
               placeholders={editable ? (placeholdersParsed.ok ? placeholdersParsed.data : {}) : (data.placeholdersJson ?? {})}
               placeholderLabels={editable ? previewLabels : (data.placeholder_labels ?? undefined)}

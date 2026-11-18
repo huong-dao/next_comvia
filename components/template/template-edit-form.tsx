@@ -57,6 +57,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId && templateId), fetcher);
   const { data: oa } = useComviaQuery(Boolean(workspaceId), oaFetcher);
   const [name, setName] = useState("");
+  const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [placeholderRows, setPlaceholderRows] = useState<PlaceholderRow[]>(() => [newPlaceholderRow()]);
   const [ctaButtons, setCtaButtons] = useState<TemplateCtaDraft[]>([]);
@@ -66,6 +67,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
   useEffect(() => {
     if (!data) return;
     setName(data.name ?? "");
+    setTitle(data.title ?? "");
     setContent(data.content ?? "");
     setPlaceholderRows(recordToPlaceholderRows(data.placeholdersJson, data.placeholder_labels));
     setCtaButtons((data.ctaButtons ?? []).map(({ id, type, label, target, position }) => ({
@@ -111,6 +113,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
         token,
         body: JSON.stringify({
           name: name.trim() || data.name,
+          title: title.trim(),
           content: content.trim() || data.content,
           placeholdersJson: placeholders.data,
           placeholder_labels: rowsToPlaceholderLabels(placeholderRows),
@@ -182,6 +185,10 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
           <Input value={name} disabled={formDisabled} onChange={(event) => setName(event.target.value)} />
         </div>
         <div>
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tựa đề</label>
+          <Input value={title} disabled={formDisabled} onChange={(event) => setTitle(event.target.value)} />
+        </div>
+        <div>
           <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung</label>
           <Textarea rows={12} value={content} disabled={formDisabled} onChange={(event) => setContent(event.target.value)} />
         </div>
@@ -238,7 +245,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
         <div className="flex-1 overflow-auto rounded-xl bg-surface-muted p-4">
           <TemplatePreview
             type={toPreviewType(data.type)}
-            title={data.title ?? ""}
+            title={title}
             content={content}
             placeholders={placeholdersParsed.ok ? placeholdersParsed.data : {}}
             placeholderLabels={previewLabels}
