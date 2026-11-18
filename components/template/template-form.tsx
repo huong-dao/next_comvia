@@ -10,7 +10,6 @@ import { PlaceholderMoveButtons } from "@/components/template/placeholder-move-b
 import { getAccessToken } from "@/lib/auth";
 import {
   newPlaceholderRow,
-  movePlaceholderRow,
   applyContentInput,
   rowsToPlaceholderLabels,
   rowsToPlaceholders,
@@ -537,7 +536,6 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
             minutes={otpMinutes}
             logoUrl={previewLogoUrl}
             ctaButtons={ctaButtons}
-            onMoveRow={(slug, dir) => setPlaceholderRows((rows) => movePlaceholderRow(rows, slug, dir))}
           />
         </div>
       </Card>

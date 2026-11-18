@@ -18,8 +18,6 @@ type TemplatePreviewProps = {
   minutes: string;
   logoUrl?: string | null;
   ctaButtons?: TemplateCtaDraft[];
-  /** Có truyền thì mỗi dòng biến trong bảng có nút lên/xuống để đổi thứ tự (chỉ dùng khi đang sửa mẫu tin). */
-  onMoveRow?: (slug: string, dir: -1 | 1) => void;
 };
 
 /** Chọn preview trực quan theo loại tin. Chỉ render phía client, không gửi gì thêm lên API. */
@@ -33,7 +31,6 @@ export function TemplatePreview({
   minutes,
   logoUrl,
   ctaButtons = [],
-  onMoveRow,
 }: TemplatePreviewProps) {
   // Chuẩn hóa nhãn chung cho mọi nơi xem trước: bỏ nhãn rỗng, KHÔNG fallback về slug.
   const labels = Object.fromEntries(
@@ -52,7 +49,6 @@ export function TemplatePreview({
           secondaryContent={secondaryContent}
           logoUrl={logoUrl}
           ctaButtons={ctaButtons}
-          onMoveRow={onMoveRow}
         />
       );
     case "van_ban":

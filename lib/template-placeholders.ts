@@ -71,22 +71,6 @@ export function recordToPlaceholderRows(record: unknown, labels?: Record<string,
   }));
 }
 
-/**
- * Đổi chỗ một biến với biến liền kề (dir = -1 lên, +1 xuống) trong danh sách đang hiện ở bảng xem trước
- * (biến hợp lệ + có Nhãn). Chỉ hoán đổi vị trí hai dòng trong `rows`, các dòng còn lại giữ nguyên.
- */
-export function movePlaceholderRow(rows: PlaceholderRow[], slug: string, dir: -1 | 1): PlaceholderRow[] {
-  const visible = rows
-    .map((row, index) => ({ index, slug: row.slug.trim(), shown: slugLooksValid(row.slug.trim()) && Boolean(row.label.trim()) }))
-    .filter((item) => item.shown);
-  const pos = visible.findIndex((item) => item.slug === slug);
-  const target = visible[pos + dir];
-  if (pos < 0 || !target) return rows;
-  const next = [...rows];
-  [next[visible[pos].index], next[target.index]] = [next[target.index], next[visible[pos].index]];
-  return next;
-}
-
 /** Ô nội dung mẫu tin: "<" → "{{" và ">" → "}}" (gõ hoặc dán đều áp dụng). */
 export function angleToBraces(text: string): string {
   return text.replace(/</g, "{{").replace(/>/g, "}}");
