@@ -113,6 +113,16 @@ export default function AdminTemplatesPage() {
     });
   }, [allRows, applied.oaId, oaRows]);
 
+  /** Tên OA: ưu tiên dữ liệu kèm theo mẫu tin, nếu thiếu thì tra danh sách OA theo id/oaId; không hiển thị id thô. */
+  function oaNameOf(row: TemplateRow): string {
+    const oa = row.oaConnection;
+    if (!oa) return "—";
+    const direct = oa.oaName || oa.name;
+    if (direct) return direct;
+    const found = oaRows.find((x) => x.id === oa.id || (oa.oaId && x.connection?.oaId === oa.oaId));
+    return found?.connection?.oaName || found?.name || "—";
+  }
+
   const { rows, page, totalPages, total, pageSize, setPage } = useClientPagination(visibleRows);
 
   /** Đổi workspace thì bỏ OA đang chọn, vì OA đó có thể không thuộc workspace mới. */
@@ -192,7 +202,7 @@ export default function AdminTemplatesPage() {
               { key: "name", header: "Mẫu tin", cell: (row) => <Link className="font-medium text-secondary hover:underline" href={"/admin/templates/" + row.id}>{row.name ?? row.code ?? row.id}</Link> },
               { key: "code", header: "Mã", cell: (row) => row.code ?? "—" },
               { key: "workspace", header: "Workspace", cell: (row) => row.workspace?.name ?? row.workspace?.id ?? "—" },
-              { key: "oa", header: "Zalo OA", cell: (row) => row.oaConnection?.oaName ?? row.oaConnection?.name ?? row.oaConnection?.id ?? "—" },
+              { key: "oa", header: "Zalo OA", cell: (row) => oaNameOf(row) },
               { key: "status", header: "Trạng thái", cell: (row) => row.status ? <EntityStatusBadge value={row.status} label={TEMPLATE_STATUS_LABELS[row.status.toUpperCase()]} /> : "—" },
               { key: "updated", header: "Cập nhật", cell: (row) => row.updatedAt ? new Date(row.updatedAt).toLocaleString("vi-VN") : "—" },
             ]}
