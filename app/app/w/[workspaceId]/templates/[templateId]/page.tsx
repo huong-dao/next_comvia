@@ -85,6 +85,7 @@ export default function TemplateDetailPage() {
   );
   const { data: oa } = useComviaQuery(Boolean(workspaceId), oaFetcher);
 
+  const isTable = toPreviewType(data?.type) === "bang";
   const status = (data?.status ?? "").toUpperCase();
   const requiresOwnerRevision = Boolean(data?.requiresOwnerRevision);
   const editable = Boolean(data && (status === "DRAFT" || (status === "SUBMITTED" && requiresOwnerRevision)));
@@ -92,6 +93,7 @@ export default function TemplateDetailPage() {
 
   const [name, setName] = useState("");
   const [title, setTitle] = useState("");
+  const [secondaryContent, setSecondaryContent] = useState("");
   const [content, setContent] = useState("");
   const [placeholderRows, setPlaceholderRows] = useState<PlaceholderRow[]>(() => [newPlaceholderRow()]);
   const [unitPrice, setUnitPrice] = useState("");
@@ -106,6 +108,7 @@ export default function TemplateDetailPage() {
     if (!data) return;
     setName(data.name ?? "");
     setTitle(data.title ?? "");
+    setSecondaryContent(data.secondaryContent ?? "");
     setContent(data.content ?? "");
     setPlaceholderRows(recordToPlaceholderRows(data.placeholdersJson, data.placeholder_labels));
     setUnitPrice(
@@ -180,6 +183,7 @@ export default function TemplateDetailPage() {
         body: JSON.stringify({
           name: name || data.name,
           title: title.trim(),
+          ...(isTable ? { secondaryContent: secondaryContent.trim() || null } : {}),
           content: content || data.content,
           placeholdersJson: ph.data,
           placeholder_labels: rowsToPlaceholderLabels(placeholderRows),
@@ -381,6 +385,12 @@ export default function TemplateDetailPage() {
                   Thêm biến hợp lệ ở cột Thông tin để hiện nút chèn.
                 </p>
               )}
+              {isTable ? (
+                <div>
+                  <label className="mb-1 block text-xs text-muted-foreground">Nội dung phụ</label>
+                  <Textarea rows={4} value={secondaryContent} placeholder="Nội dung phụ hiển thị dưới bảng thông tin." onChange={(e) => setSecondaryContent(e.target.value)} />
+                </div>
+              ) : null}
             </>
           ) : (
             <>
@@ -581,7 +591,7 @@ export default function TemplateDetailPage() {
               content={editable ? content : (data.content ?? "")}
               placeholders={editable ? (placeholdersParsed.ok ? placeholdersParsed.data : {}) : (data.placeholdersJson ?? {})}
               placeholderLabels={editable ? previewLabels : (data.placeholder_labels ?? undefined)}
-              secondaryContent={data.secondaryContent ?? ""}
+              secondaryContent={editable ? secondaryContent : (data.secondaryContent ?? "")}
               minutes={String(data.otpExpiryMinutes ?? 5)}
               logoUrl={resolvePublicAssetUrl(oa?.logoLightUrl)}
               ctaButtons={ctaButtons}
