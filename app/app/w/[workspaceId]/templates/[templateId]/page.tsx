@@ -16,6 +16,7 @@ import { getAccessToken, getStoredUser } from "@/lib/auth";
 import { formatVND } from "@/lib/utils";
 import { workspacePath } from "@/lib/paths";
 import {
+  movePlaceholderRow,
   newPlaceholderRow,
   recordToPlaceholderRows,
   rowsToPlaceholderLabels,
@@ -595,6 +596,7 @@ export default function TemplateDetailPage() {
               minutes={String(data.otpExpiryMinutes ?? 5)}
               logoUrl={resolvePublicAssetUrl(oa?.logoLightUrl)}
               ctaButtons={ctaButtons}
+              onMoveRow={editable ? (slug, dir) => setPlaceholderRows((rows) => movePlaceholderRow(rows, slug, dir)) : undefined}
             />
           </div>
         </Card>

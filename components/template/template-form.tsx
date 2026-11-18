@@ -9,6 +9,7 @@ import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comvia
 import { getAccessToken } from "@/lib/auth";
 import {
   newPlaceholderRow,
+  movePlaceholderRow,
   rowsToPlaceholderLabels,
   rowsToPlaceholders,
   slugLooksValid,
@@ -533,6 +534,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
             minutes={otpMinutes}
             logoUrl={previewLogoUrl}
             ctaButtons={ctaButtons}
+            onMoveRow={(slug, dir) => setPlaceholderRows((rows) => movePlaceholderRow(rows, slug, dir))}
           />
         </div>
       </Card>

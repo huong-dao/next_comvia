@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Input, Textarea } from "@/components/ui/input";
 import { getAccessToken } from "@/lib/auth";
 import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
-import { newPlaceholderRow, recordToPlaceholderRows, rowsToPlaceholderLabels, rowsToPlaceholders, slugLooksValid, type PlaceholderRow } from "@/lib/template-placeholders";
+import { movePlaceholderRow, newPlaceholderRow, recordToPlaceholderRows, rowsToPlaceholderLabels, rowsToPlaceholders, slugLooksValid, type PlaceholderRow } from "@/lib/template-placeholders";
 import { normalizeCtaButtons, validateCtaButtons, type TemplateCtaButton, type TemplateCtaDraft } from "@/lib/template-cta";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { isWorkspaceOwner, useWorkspaceContext } from "@/components/workspace/workspace-gate";
@@ -263,6 +263,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
             minutes={String(data.otpExpiryMinutes ?? 5)}
             logoUrl={resolvePublicAssetUrl(oa?.logoLightUrl)}
             ctaButtons={ctaButtons}
+            onMoveRow={formDisabled ? undefined : (slug, dir) => setPlaceholderRows((rows) => movePlaceholderRow(rows, slug, dir))}
           />
         </div>
       </Card>
