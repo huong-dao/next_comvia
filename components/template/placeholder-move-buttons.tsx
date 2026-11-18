@@ -31,7 +31,7 @@ export function PlaceholderMoveButtons({
     });
   }
   return (
-    <div className="flex shrink-0 flex-col justify-center self-center">
+    <div className="flex shrink-0 flex-col justify-center self-center mt-5">
       <button type="button" className={BTN} title="Chuyển lên" aria-label="Chuyển lên" disabled={disabled || index <= 0} onClick={() => move(-1)}>
         <HiOutlineChevronUp className="size-3.5" />
       </button>
