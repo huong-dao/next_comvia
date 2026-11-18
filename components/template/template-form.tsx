@@ -65,7 +65,9 @@ type CreateTemplateBody = {
   title?: string;
   trackingId?: string;
   content?: string;
+  content2?: string;
   secondaryContent?: string;
+  secondaryContent2?: string;
   otpExpiryMinutes?: number;
   placeholdersJson?: Record<string, string>;
   placeholder_labels?: Record<string, string>;
@@ -105,7 +107,9 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
   const [trackingId, setTrackingId] = useState("");
   const [type, setType] = useState<TemplateMessageType>("bang");
   const [title, setTitle] = useState("");
+  const [content2, setContent2] = useState("");
   const [secondaryContent, setSecondaryContent] = useState("");
+  const [secondaryContent2, setSecondaryContent2] = useState("");
   const [otpMinutes, setOtpMinutes] = useState("5");
 
   // Field gửi lên API.
@@ -196,6 +200,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
     if (trackingId.trim()) body.trackingId = trackingId.trim();
 
     if (secondaryContent.trim()) body.secondaryContent = secondaryContent.trim();
+    if (secondaryContent2.trim()) body.secondaryContent2 = secondaryContent2.trim();
 
     if (type === "otp") {
       const mins = Number(otpMinutes);
@@ -217,6 +222,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
       return { ok: false, message: "Nội dung là bắt buộc." };
     }
     body.content = content;
+    if (content2.trim()) body.content2 = content2.trim();
     body.placeholdersJson = ph.data;
     body.placeholder_labels = rowsToPlaceholderLabels(placeholderRows);
     body.placeholderOrder = rowsToPlaceholderOrder(placeholderRows);
@@ -330,7 +336,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
         {showContentFields ? (
           <>
             <div>
-              <label className={LABEL_CLASS}>Nội dung</label>
+              <label className={LABEL_CLASS}>Nội dung 1</label>
               <Textarea
                 ref={contentRef}
                 rows={10}
@@ -373,6 +379,11 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
                   Thêm các trường thông tin bên dưới để hiện nút chèn vào nội dung.
                 </p>
               )}
+            </div>
+
+            <div>
+              <label className={LABEL_CLASS}>Nội dung 2</label>
+              <Textarea rows={6} value={content2} onChange={(e) => applyContentInput(e.currentTarget, setContent2)} />
             </div>
 
             <div className="space-y-3">
@@ -452,11 +463,20 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
         ) : null}
 
           <div>
-            <label className={LABEL_CLASS}>Nội dung phụ</label>
+            <label className={LABEL_CLASS}>Nội dung phụ 1</label>
             <Textarea
               rows={4}
               value={secondaryContent}
               onChange={(e) => setSecondaryContent(e.target.value)}
+              placeholder="Nội dung phụ hiển thị cuối tin nhắn."
+            />
+          </div>
+          <div>
+            <label className={LABEL_CLASS}>Nội dung phụ 2</label>
+            <Textarea
+              rows={4}
+              value={secondaryContent2}
+              onChange={(e) => setSecondaryContent2(e.target.value)}
               placeholder="Nội dung phụ hiển thị cuối tin nhắn."
             />
           </div>
@@ -531,7 +551,9 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
             content={content}
             placeholders={previewPlaceholders}
             placeholderLabels={previewPlaceholderLabels}
+            content2={content2}
             secondaryContent={secondaryContent}
+            secondaryContent2={secondaryContent2}
             minutes={otpMinutes}
             logoUrl={previewLogoUrl}
             ctaButtons={ctaButtons}

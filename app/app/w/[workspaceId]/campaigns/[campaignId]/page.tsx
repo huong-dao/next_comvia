@@ -64,7 +64,9 @@ type TemplateOption = {
   code?: string;
   title?: string | null;
   content?: string | null;
+  content2?: string | null;
   secondaryContent?: string | null;
+  secondaryContent2?: string | null;
   status?: string;
   otpExpiryMinutes?: number | null;
   placeholdersJson?: Record<string, string>;
@@ -671,6 +673,8 @@ export default function CampaignDetailPage() {
               minutes={String(selectedTemplate.otpExpiryMinutes ?? 5)}
               logoUrl={resolvePublicAssetUrl(oa?.logoLightUrl)}
               placeholderOrder={selectedTemplate.placeholderOrder}
+              content2={selectedTemplate.content2 ?? ""}
+              secondaryContent2={selectedTemplate.secondaryContent2 ?? ""}
               ctaButtons={(selectedTemplate.ctaButtons ?? []).map((b) => ({
                 ...b,
                 label: b.label ?? "",

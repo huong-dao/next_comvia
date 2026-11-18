@@ -38,7 +38,9 @@ type TemplateDetail = {
   title?: string;
   trackingId?: string;
   content?: string;
+  content2?: string | null;
   secondaryContent?: string;
+  secondaryContent2?: string | null;
   otpExpiryMinutes?: number;
   status?: string;
   requiresOwnerRevision?: boolean;
@@ -104,7 +106,9 @@ export default function AdminTemplateDetailPage() {
   const [title, setTitle] = useState("");
   const [trackingId, setTrackingId] = useState("");
   const [content, setContent] = useState("");
+  const [content2, setContent2] = useState("");
   const [secondaryContent, setSecondaryContent] = useState("");
+  const [secondaryContent2, setSecondaryContent2] = useState("");
   const [otpMinutes, setOtpMinutes] = useState("5");
   const [placeholderRows, setPlaceholderRows] = useState<PlaceholderRow[]>(() => [newPlaceholderRow()]);
   const [unitPrice, setUnitPrice] = useState("");
@@ -125,7 +129,9 @@ export default function AdminTemplateDetailPage() {
     setTitle(data.title ?? "");
     setTrackingId(data.trackingId ?? "");
     setContent(data.content ?? "");
+    setContent2(data.content2 ?? "");
     setSecondaryContent(data.secondaryContent ?? "");
+    setSecondaryContent2(data.secondaryContent2 ?? "");
     setOtpMinutes(data.otpExpiryMinutes != null ? String(data.otpExpiryMinutes) : "5");
     setPlaceholderRows(recordToPlaceholderRows(data.placeholdersJson, data.placeholder_labels ?? data.placeholderLabels, data.placeholderOrder));
     setUnitPrice(data.unitPricePerMessage != null ? String(data.unitPricePerMessage) : "");
@@ -240,6 +246,9 @@ export default function AdminTemplateDetailPage() {
         })),
       };
       body.secondaryContent = secondaryContent.trim() || null;
+      // Field mới: chỉ gửi khi có giá trị hoặc khi cần xóa giá trị đã lưu.
+      if (secondaryContent2.trim()) body.secondaryContent2 = secondaryContent2.trim();
+      else if (data.secondaryContent2) body.secondaryContent2 = null;
       if (type === "OTP") {
         const mins = Number(otpMinutes);
         if (!otpMinutes.trim() || !Number.isInteger(mins) || mins < 1) {
@@ -255,6 +264,8 @@ export default function AdminTemplateDetailPage() {
           return;
         }
         body.content = content;
+        if (content2.trim()) body.content2 = content2.trim();
+        else if (data.content2) body.content2 = null;
         body.placeholdersJson = placeholdersJson;
         body.placeholderOrder = rowsToPlaceholderOrder(placeholderRows);
         body.placeholder_labels = rowsToPlaceholderLabels(placeholderRows);
@@ -317,13 +328,18 @@ export default function AdminTemplateDetailPage() {
 
           {showContentFields ? (
             <div>
-              <label className={LABEL_CLASS}>Nội dung</label>
+              <label className={LABEL_CLASS}>Nội dung 1</label>
               <Textarea rows={10} value={content} onChange={(e) => applyContentInput(e.currentTarget, setContent)} />
               {filledSlugs.length > 0 ? <p className="mt-2 text-xs text-muted-foreground">Biến hiện có: {filledSlugs.map((s) => `{{${s}}}`).join(", ")}</p> : null}
             </div>
           ) : null}
 
-          <div><label className={LABEL_CLASS}>Nội dung phụ</label><Textarea rows={4} value={secondaryContent} onChange={(e) => setSecondaryContent(e.target.value)} /></div>
+          {showContentFields ? (
+            <div><label className={LABEL_CLASS}>Nội dung 2</label><Textarea rows={6} value={content2} onChange={(e) => applyContentInput(e.currentTarget, setContent2)} /></div>
+          ) : null}
+
+          <div><label className={LABEL_CLASS}>Nội dung phụ 1</label><Textarea rows={4} value={secondaryContent} onChange={(e) => setSecondaryContent(e.target.value)} /></div>
+          <div><label className={LABEL_CLASS}>Nội dung phụ 2</label><Textarea rows={4} value={secondaryContent2} onChange={(e) => setSecondaryContent2(e.target.value)} /></div>
 
           {type === "OTP" ? (
             <div><label className={LABEL_CLASS}>Số phút hết hạn</label><Input type="number" min={1} value={otpMinutes} onChange={(e) => setOtpMinutes(e.target.value)} /></div>
@@ -431,7 +447,9 @@ export default function AdminTemplateDetailPage() {
               content={content}
               placeholders={placeholdersParsed.ok ? placeholdersParsed.data : {}}
               placeholderLabels={previewLabels}
+              content2={content2}
               secondaryContent={secondaryContent}
+              secondaryContent2={secondaryContent2}
               minutes={otpMinutes}
               logoUrl={previewLogoUrl}
               ctaButtons={ctaButtons}

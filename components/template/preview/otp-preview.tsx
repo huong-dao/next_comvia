@@ -8,12 +8,13 @@ type OtpPreviewProps = {
   title: string;
   minutes: string;
   secondaryContent?: string;
+  secondaryContent2?: string;
   logoUrl?: string | null;
   ctaButtons: TemplateCtaDraft[];
 };
 
 /** Preview mẫu tin "Dạng OTP" (hình 6): tiêu đề + mã lớn + icon copy + cảnh báo bảo mật + thời hạn. */
-export function OtpPreview({ title, minutes, secondaryContent, logoUrl, ctaButtons }: OtpPreviewProps) {
+export function OtpPreview({ title, minutes, secondaryContent, secondaryContent2, logoUrl, ctaButtons }: OtpPreviewProps) {
   const displayMinutes = minutes.trim() || "5";
 
   return (
@@ -29,6 +30,7 @@ export function OtpPreview({ title, minutes, secondaryContent, logoUrl, ctaButto
         {displayMinutes} phút.
       </p>
       {secondaryContent ? <p className="mt-2 whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-600">{secondaryContent}</p> : null}
+      {secondaryContent2 ? <p className="mt-2 whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-600">{secondaryContent2}</p> : null}
       <PreviewCtas buttons={ctaButtons} />
     </PreviewFrame>
   );

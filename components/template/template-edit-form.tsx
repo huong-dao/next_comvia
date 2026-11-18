@@ -22,7 +22,9 @@ type EditableTemplate = {
   type?: string;
   title?: string;
   content?: string;
+  content2?: string | null;
   secondaryContent?: string;
+  secondaryContent2?: string | null;
   otpExpiryMinutes?: number;
   status?: string;
   requiresOwnerRevision?: boolean;
@@ -60,7 +62,9 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
   const { data: oa } = useComviaQuery(Boolean(workspaceId), oaFetcher);
   const [name, setName] = useState("");
   const [title, setTitle] = useState("");
+  const [content2, setContent2] = useState("");
   const [secondaryContent, setSecondaryContent] = useState("");
+  const [secondaryContent2, setSecondaryContent2] = useState("");
   const [content, setContent] = useState("");
   const [placeholderRows, setPlaceholderRows] = useState<PlaceholderRow[]>(() => [newPlaceholderRow()]);
   const [ctaButtons, setCtaButtons] = useState<TemplateCtaDraft[]>([]);
@@ -71,7 +75,9 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
     if (!data) return;
     setName(data.name ?? "");
     setTitle(data.title ?? "");
+    setContent2(data.content2 ?? "");
     setSecondaryContent(data.secondaryContent ?? "");
+    setSecondaryContent2(data.secondaryContent2 ?? "");
     setContent(data.content ?? "");
     setPlaceholderRows(recordToPlaceholderRows(data.placeholdersJson, data.placeholder_labels, data.placeholderOrder));
     setCtaButtons((data.ctaButtons ?? []).map(({ id, type, label, target, position }) => ({
@@ -119,6 +125,9 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
           name: name.trim() || data.name,
           title: title.trim(),
           secondaryContent: secondaryContent.trim() || null,
+          // Field mới: chỉ gửi khi có giá trị, hoặc khi cần xóa giá trị đã lưu (tránh lỗi nếu API chưa nhận field).
+          content2: content2.trim() || (data.content2 ? null : undefined),
+          secondaryContent2: secondaryContent2.trim() || (data.secondaryContent2 ? null : undefined),
           content: content.trim() || data.content,
           placeholdersJson: placeholders.data,
           placeholderOrder: rowsToPlaceholderOrder(placeholderRows),
@@ -195,12 +204,20 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
           <Input value={title} disabled={formDisabled} onChange={(event) => setTitle(event.target.value)} />
         </div>
         <div>
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung</label>
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung 1</label>
           <Textarea rows={12} value={content} disabled={formDisabled} onChange={(event) => applyContentInput(event.currentTarget, setContent)} />
         </div>
+        <div>
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung 2</label>
+          <Textarea rows={6} value={content2} disabled={formDisabled} onChange={(event) => applyContentInput(event.currentTarget, setContent2)} />
+        </div>
           <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung phụ</label>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung phụ 1</label>
             <Textarea rows={4} value={secondaryContent} disabled={formDisabled} placeholder="Nội dung phụ hiển thị cuối tin nhắn." onChange={(event) => setSecondaryContent(event.target.value)} />
+          </div>
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung phụ 2</label>
+            <Textarea rows={4} value={secondaryContent2} disabled={formDisabled} placeholder="Nội dung phụ hiển thị cuối tin nhắn." onChange={(event) => setSecondaryContent2(event.target.value)} />
           </div>
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Các trường thông tin</p>
@@ -260,7 +277,9 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
             content={content}
             placeholders={placeholdersParsed.ok ? placeholdersParsed.data : {}}
             placeholderLabels={previewLabels}
+            content2={content2}
             secondaryContent={secondaryContent}
+            secondaryContent2={secondaryContent2}
             minutes={String(data.otpExpiryMinutes ?? 5)}
             logoUrl={resolvePublicAssetUrl(oa?.logoLightUrl)}
             ctaButtons={ctaButtons}

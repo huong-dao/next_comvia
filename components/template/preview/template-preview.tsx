@@ -14,7 +14,9 @@ type TemplatePreviewProps = {
   content: string;
   placeholders: Record<string, string>;
   placeholderLabels?: Record<string, string>;
+  content2?: string;
   secondaryContent: string;
+  secondaryContent2?: string;
   minutes: string;
   logoUrl?: string | null;
   ctaButtons?: TemplateCtaDraft[];
@@ -29,7 +31,9 @@ export function TemplatePreview({
   content,
   placeholders,
   placeholderLabels,
+  content2,
   secondaryContent,
+  secondaryContent2,
   minutes,
   logoUrl,
   ctaButtons = [],
@@ -49,15 +53,17 @@ export function TemplatePreview({
           content={content}
           placeholders={placeholders}
           placeholderLabels={labels}
+          content2={content2}
           secondaryContent={secondaryContent}
+          secondaryContent2={secondaryContent2}
           logoUrl={logoUrl}
           ctaButtons={ctaButtons}
           placeholderOrder={placeholderOrder}
         />
       );
     case "van_ban":
-      return <TextPreview title={title} content={content} placeholders={placeholders} secondaryContent={secondaryContent} logoUrl={logoUrl} ctaButtons={ctaButtons} />;
+      return <TextPreview title={title} content={content} placeholders={placeholders} content2={content2} secondaryContent={secondaryContent} secondaryContent2={secondaryContent2} logoUrl={logoUrl} ctaButtons={ctaButtons} />;
     case "otp":
-      return <OtpPreview title={title} minutes={minutes} secondaryContent={secondaryContent} logoUrl={logoUrl} ctaButtons={ctaButtons} />;
+      return <OtpPreview title={title} minutes={minutes} secondaryContent={secondaryContent} secondaryContent2={secondaryContent2} logoUrl={logoUrl} ctaButtons={ctaButtons} />;
   }
 }

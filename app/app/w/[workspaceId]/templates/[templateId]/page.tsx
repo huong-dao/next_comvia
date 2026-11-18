@@ -39,7 +39,9 @@ type TemplateDetail = {
   type?: string;
   title?: string;
   content?: string;
+  content2?: string | null;
   secondaryContent?: string;
+  secondaryContent2?: string | null;
   otpExpiryMinutes?: number;
   status?: string;
   requiresOwnerRevision?: boolean;
@@ -97,7 +99,9 @@ export default function TemplateDetailPage() {
 
   const [name, setName] = useState("");
   const [title, setTitle] = useState("");
+  const [content2, setContent2] = useState("");
   const [secondaryContent, setSecondaryContent] = useState("");
+  const [secondaryContent2, setSecondaryContent2] = useState("");
   const [content, setContent] = useState("");
   const [placeholderRows, setPlaceholderRows] = useState<PlaceholderRow[]>(() => [newPlaceholderRow()]);
   const [unitPrice, setUnitPrice] = useState("");
@@ -112,7 +116,9 @@ export default function TemplateDetailPage() {
     if (!data) return;
     setName(data.name ?? "");
     setTitle(data.title ?? "");
+    setContent2(data.content2 ?? "");
     setSecondaryContent(data.secondaryContent ?? "");
+    setSecondaryContent2(data.secondaryContent2 ?? "");
     setContent(data.content ?? "");
     setPlaceholderRows(recordToPlaceholderRows(data.placeholdersJson, data.placeholder_labels, data.placeholderOrder));
     setUnitPrice(
@@ -188,6 +194,9 @@ export default function TemplateDetailPage() {
           name: name || data.name,
           title: title.trim(),
           secondaryContent: secondaryContent.trim() || null,
+          // Field mới: chỉ gửi khi có giá trị, hoặc khi cần xóa giá trị đã lưu.
+          content2: content2.trim() || (data.content2 ? null : undefined),
+          secondaryContent2: secondaryContent2.trim() || (data.secondaryContent2 ? null : undefined),
           content: content || data.content,
           placeholdersJson: ph.data,
           placeholderOrder: rowsToPlaceholderOrder(placeholderRows),
@@ -345,7 +354,7 @@ export default function TemplateDetailPage() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="flex min-h-0 flex-col gap-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung 1</p>
           {editable ? (
             <>
               <Textarea
@@ -391,8 +400,16 @@ export default function TemplateDetailPage() {
                 </p>
               )}
                 <div>
-                  <label className="mb-1 block text-xs text-muted-foreground">Nội dung phụ</label>
+                  <label className="mb-1 block text-xs text-muted-foreground">Nội dung 2</label>
+                  <Textarea rows={6} value={content2} onChange={(e) => applyContentInput(e.currentTarget, setContent2)} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-muted-foreground">Nội dung phụ 1</label>
                   <Textarea rows={4} value={secondaryContent} placeholder="Nội dung phụ hiển thị cuối tin nhắn." onChange={(e) => setSecondaryContent(e.target.value)} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-muted-foreground">Nội dung phụ 2</label>
+                  <Textarea rows={4} value={secondaryContent2} placeholder="Nội dung phụ hiển thị cuối tin nhắn." onChange={(e) => setSecondaryContent2(e.target.value)} />
                 </div>
             </>
           ) : (
@@ -595,7 +612,9 @@ export default function TemplateDetailPage() {
               content={editable ? content : (data.content ?? "")}
               placeholders={editable ? (placeholdersParsed.ok ? placeholdersParsed.data : {}) : (data.placeholdersJson ?? {})}
               placeholderLabels={editable ? previewLabels : (data.placeholder_labels ?? undefined)}
+              content2={editable ? content2 : (data.content2 ?? "")}
               secondaryContent={editable ? secondaryContent : (data.secondaryContent ?? "")}
+              secondaryContent2={editable ? secondaryContent2 : (data.secondaryContent2 ?? "")}
               minutes={String(data.otpExpiryMinutes ?? 5)}
               logoUrl={resolvePublicAssetUrl(oa?.logoLightUrl)}
               ctaButtons={ctaButtons}

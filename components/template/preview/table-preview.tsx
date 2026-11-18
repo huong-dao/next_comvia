@@ -9,15 +9,18 @@ type TablePreviewProps = {
   content: string;
   placeholders: Record<string, string>;
   placeholderLabels?: Record<string, string>;
+  content2?: string;
   secondaryContent: string;
+  secondaryContent2?: string;
   logoUrl?: string | null;
   ctaButtons: TemplateCtaDraft[];
   placeholderOrder?: string[] | null;
 };
 
 /** Preview mẫu tin "Dạng bảng" (hình 4): tiêu đề + đoạn mở + bảng key-value + nội dung phụ + CTA. */
-export function TablePreview({ title, content, placeholders, placeholderLabels, secondaryContent, logoUrl, ctaButtons, placeholderOrder }: TablePreviewProps) {
+export function TablePreview({ title, content, placeholders, placeholderLabels, content2, secondaryContent, secondaryContent2, logoUrl, ctaButtons, placeholderOrder }: TablePreviewProps) {
   const rendered = previewTemplateContent(content, placeholders);
+  const rendered2 = previewTemplateContent(content2 ?? "", placeholders);
   // Chỉ hiện trong bảng những biến có nhập Nhãn — biến chỉ dùng trong content (không có nhãn) thì ẩn khỏi bảng.
   const rows = orderedSlugs(Object.keys(placeholders), placeholderOrder)
     .filter((slug) => Boolean(placeholderLabels?.[slug]))
@@ -29,6 +32,7 @@ export function TablePreview({ title, content, placeholders, placeholderLabels, 
       {rendered ? (
         <p className="mb-2 whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-600">{rendered}</p>
       ) : null}
+      {rendered2 ? <p className="mb-2 whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-600">{rendered2}</p> : null}
       {rows.length > 0 ? (
         <dl className="my-3 space-y-1.5">
           {rows.map(([slug, value]) => (
@@ -42,6 +46,7 @@ export function TablePreview({ title, content, placeholders, placeholderLabels, 
       {secondaryContent ? (
         <p className="mb-2 whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-600">{secondaryContent}</p>
       ) : null}
+      {secondaryContent2 ? <p className="mb-2 whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-600">{secondaryContent2}</p> : null}
       <PreviewCtas buttons={ctaButtons} />
     </PreviewFrame>
   );
