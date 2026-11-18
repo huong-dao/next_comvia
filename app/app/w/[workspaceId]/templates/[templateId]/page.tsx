@@ -11,6 +11,7 @@ import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input, Textarea } from "@/components/ui/input";
 import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
+import { PlaceholderMoveButtons } from "@/components/template/placeholder-move-buttons";
 import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
 import { getAccessToken, getStoredUser } from "@/lib/auth";
 import { formatVND } from "@/lib/utils";
@@ -471,6 +472,7 @@ export default function TemplateDetailPage() {
                         />
                       </div>
                       <div className="flex items-end justify-end sm:justify-center">
+                        <PlaceholderMoveButtons rows={placeholderRows} rowId={row.id} setRows={setPlaceholderRows} />
                         <Button
                           type="button"
                           variant="ghost"

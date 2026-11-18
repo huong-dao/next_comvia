@@ -7,6 +7,7 @@ import { TemplateCtaFields } from "@/components/template/template-cta-fields";
 import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { PlaceholderMoveButtons } from "@/components/template/placeholder-move-buttons";
 import { Input, Textarea } from "@/components/ui/input";
 import { getAccessToken } from "@/lib/auth";
 import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
@@ -225,6 +226,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
                 <Input value={row.defaultValue} disabled={formDisabled} onChange={(event) => updateRow(row.id, { defaultValue: event.target.value })} placeholder="vd: Nguyễn Văn A" />
               </div>
               <div className="flex items-end justify-end sm:justify-center">
+                <PlaceholderMoveButtons rows={placeholderRows} rowId={row.id} setRows={setPlaceholderRows} disabled={formDisabled} />
                 <Button type="button" variant="ghost" size="sm" disabled={formDisabled} className="shrink-0 px-2 text-muted-foreground hover:text-danger" title="Xóa trường" aria-label="Xóa trường" icon={<HiOutlineTrash className="size-4" />} onClick={() => removeRow(row.id)} />
               </div>
             </li>

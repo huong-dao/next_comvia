@@ -13,6 +13,7 @@ import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
 import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
+import { PlaceholderMoveButtons } from "@/components/template/placeholder-move-buttons";
 import { getAccessToken } from "@/lib/auth";
 import {
   newPlaceholderRow,
@@ -341,6 +342,7 @@ export default function AdminTemplateDetailPage() {
                     <div><label className="mb-1 block text-xs font-medium text-muted-foreground">Biến</label><Input value={row.slug} onChange={(e) => updateRow(row.id, { slug: e.target.value })} className="font-mono text-sm" aria-invalid={row.slug.trim().length > 0 && !slugLooksValid(row.slug.trim())} /></div>
                     <div><label className="mb-1 block text-xs font-medium text-muted-foreground">Giá trị mẫu</label><Input value={row.defaultValue} onChange={(e) => updateRow(row.id, { defaultValue: e.target.value })} /></div>
                     <div className="flex items-end justify-end sm:justify-center">
+                      <PlaceholderMoveButtons rows={placeholderRows} rowId={row.id} setRows={setPlaceholderRows} />
                       <Button type="button" variant="ghost" size="sm" className="shrink-0 px-2 text-muted-foreground hover:text-danger" icon={<HiOutlineTrash className="size-4" />} onClick={() => removeRow(row.id)} />
                     </div>
                   </li>

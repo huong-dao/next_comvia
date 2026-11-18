@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
+import { PlaceholderMoveButtons } from "@/components/template/placeholder-move-buttons";
 import { getAccessToken } from "@/lib/auth";
 import {
   newPlaceholderRow,
@@ -428,6 +429,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
                       />
                     </div>
                     <div className="flex items-end justify-end sm:justify-center">
+                      <PlaceholderMoveButtons rows={placeholderRows} rowId={row.id} setRows={setPlaceholderRows} />
                       <Button
                         type="button"
                         variant="ghost"
