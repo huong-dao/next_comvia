@@ -13,11 +13,11 @@ import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Input, Select, Textarea } from "@/components/ui/input";
 import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
 import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
+import { VariableField } from "@/components/template/variable-field";
 import { PlaceholderMoveButtons } from "@/components/template/placeholder-move-buttons";
 import { getAccessToken } from "@/lib/auth";
 import {
   newPlaceholderRow,
-  applyContentInput,
   recordToPlaceholderRows,
   rowsToPlaceholderLabels,
   rowsToPlaceholderOrder,
@@ -321,25 +321,20 @@ export default function AdminTemplateDetailPage() {
                 {TYPE_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
               </Select>
             </div>
-            <div><label className={LABEL_CLASS}>Tựa đề</label><Input value={title} onChange={(e) => setTitle(e.target.value)} /></div>
+            <VariableField label="Tựa đề" labelClassName={LABEL_CLASS} value={title} onChange={setTitle} slugs={showContentFields ? filledSlugs : []} />
             <div><label className={LABEL_CLASS}>Tracking ID</label><Input value={trackingId} onChange={(e) => setTrackingId(e.target.value)} /></div>
             <div><label className={LABEL_CLASS}>Provider Template ID (Zalo)</label><Input value={providerTemplateId} onChange={(e) => setProviderTemplateId(e.target.value)} className="font-mono text-sm" /></div>
           </div>
 
           {showContentFields ? (
-            <div>
-              <label className={LABEL_CLASS}>Nội dung 1</label>
-              <Textarea rows={10} value={content} onChange={(e) => applyContentInput(e.currentTarget, setContent)} />
-              {filledSlugs.length > 0 ? <p className="mt-2 text-xs text-muted-foreground">Biến hiện có: {filledSlugs.map((s) => `{{${s}}}`).join(", ")}</p> : null}
-            </div>
+            <>
+              <VariableField label="Nội dung 1" labelClassName={LABEL_CLASS} rows={10} value={content} onChange={setContent} slugs={filledSlugs} />
+              <VariableField label="Nội dung 2" labelClassName={LABEL_CLASS} rows={6} value={content2} onChange={setContent2} slugs={filledSlugs} />
+            </>
           ) : null}
 
-          {showContentFields ? (
-            <div><label className={LABEL_CLASS}>Nội dung 2</label><Textarea rows={6} value={content2} onChange={(e) => applyContentInput(e.currentTarget, setContent2)} /></div>
-          ) : null}
-
-          <div><label className={LABEL_CLASS}>Nội dung phụ 1</label><Textarea rows={4} value={secondaryContent} onChange={(e) => setSecondaryContent(e.target.value)} /></div>
-          <div><label className={LABEL_CLASS}>Nội dung phụ 2</label><Textarea rows={4} value={secondaryContent2} onChange={(e) => setSecondaryContent2(e.target.value)} /></div>
+          <VariableField label="Nội dung phụ 1" labelClassName={LABEL_CLASS} rows={4} value={secondaryContent} onChange={setSecondaryContent} slugs={showContentFields ? filledSlugs : []} />
+          <VariableField label="Nội dung phụ 2" labelClassName={LABEL_CLASS} rows={4} value={secondaryContent2} onChange={setSecondaryContent2} slugs={showContentFields ? filledSlugs : []} />
 
           {type === "OTP" ? (
             <div><label className={LABEL_CLASS}>Số phút hết hạn</label><Input type="number" min={1} value={otpMinutes} onChange={(e) => setOtpMinutes(e.target.value)} /></div>

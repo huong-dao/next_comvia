@@ -7,11 +7,12 @@ import { TemplateCtaFields } from "@/components/template/template-cta-fields";
 import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { VariableField } from "@/components/template/variable-field";
 import { PlaceholderMoveButtons } from "@/components/template/placeholder-move-buttons";
-import { Input, Textarea } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { getAccessToken } from "@/lib/auth";
 import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
-import { applyContentInput, newPlaceholderRow, recordToPlaceholderRows, rowsToPlaceholderLabels, rowsToPlaceholderOrder, rowsToPlaceholders, slugLooksValid, type PlaceholderRow } from "@/lib/template-placeholders";
+import { newPlaceholderRow, recordToPlaceholderRows, rowsToPlaceholderLabels, rowsToPlaceholderOrder, rowsToPlaceholders, slugLooksValid, type PlaceholderRow } from "@/lib/template-placeholders";
 import { normalizeCtaButtons, validateCtaButtons, type TemplateCtaButton, type TemplateCtaDraft } from "@/lib/template-cta";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { isWorkspaceOwner, useWorkspaceContext } from "@/components/workspace/workspace-gate";
@@ -85,6 +86,11 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
     })));
   }, [data]);
 
+  const LABEL = "mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground";
+  const slugsForInsert = useMemo(
+    () => placeholderRows.map((row) => row.slug.trim()).filter((slug) => slug && slugLooksValid(slug)),
+    [placeholderRows],
+  );
   const placeholdersParsed = useMemo(() => rowsToPlaceholders(placeholderRows), [placeholderRows]);
   // Không fallback label về slug — biến không nhập Nhãn thì bị loại khỏi bảng ở TablePreview.
   const previewLabels = useMemo(
@@ -199,26 +205,11 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
           <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tên mẫu tin</label>
           <Input value={name} disabled={formDisabled} onChange={(event) => setName(event.target.value)} />
         </div>
-        <div>
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tựa đề</label>
-          <Input value={title} disabled={formDisabled} onChange={(event) => setTitle(event.target.value)} />
-        </div>
-        <div>
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung 1</label>
-          <Textarea rows={12} value={content} disabled={formDisabled} onChange={(event) => applyContentInput(event.currentTarget, setContent)} />
-        </div>
-        <div>
-          <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung 2</label>
-          <Textarea rows={6} value={content2} disabled={formDisabled} onChange={(event) => applyContentInput(event.currentTarget, setContent2)} />
-        </div>
-          <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung phụ 1</label>
-            <Textarea rows={4} value={secondaryContent} disabled={formDisabled} placeholder="Nội dung phụ hiển thị cuối tin nhắn." onChange={(event) => setSecondaryContent(event.target.value)} />
-          </div>
-          <div>
-            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung phụ 2</label>
-            <Textarea rows={4} value={secondaryContent2} disabled={formDisabled} placeholder="Nội dung phụ hiển thị cuối tin nhắn." onChange={(event) => setSecondaryContent2(event.target.value)} />
-          </div>
+        <VariableField label="Tựa đề" labelClassName={LABEL} value={title} onChange={setTitle} slugs={slugsForInsert} disabled={formDisabled} />
+        <VariableField label="Nội dung 1" labelClassName={LABEL} rows={12} value={content} onChange={setContent} slugs={slugsForInsert} disabled={formDisabled} />
+        <VariableField label="Nội dung 2" labelClassName={LABEL} rows={6} value={content2} onChange={setContent2} slugs={slugsForInsert} disabled={formDisabled} />
+        <VariableField label="Nội dung phụ 1" labelClassName={LABEL} rows={4} placeholder="Nội dung phụ hiển thị cuối tin nhắn." value={secondaryContent} onChange={setSecondaryContent} slugs={slugsForInsert} disabled={formDisabled} />
+        <VariableField label="Nội dung phụ 2" labelClassName={LABEL} rows={4} placeholder="Nội dung phụ hiển thị cuối tin nhắn." value={secondaryContent2} onChange={setSecondaryContent2} slugs={slugsForInsert} disabled={formDisabled} />
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Các trường thông tin</p>
           <Button type="button" variant="outline" size="sm" icon={<HiOutlinePlus className="size-4" />} disabled={formDisabled} onClick={() => setPlaceholderRows((rows) => [...rows, newPlaceholderRow()])}>

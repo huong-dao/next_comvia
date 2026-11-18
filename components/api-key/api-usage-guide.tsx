@@ -5,6 +5,7 @@ import { HiOutlineClipboardDocument, HiOutlineCodeBracketSquare } from "react-ic
 import { Card } from "@/components/ui/card";
 import { Select } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
+import { orderedSlugs } from "@/lib/template-placeholders";
 import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
 import { ComviaApiError, comviaFetch, getComviaApiBaseUrl, resolvePublicAssetUrl } from "@/lib/comviaFetch";
 import { type TemplateCtaButton } from "@/lib/template-cta";
@@ -45,8 +46,9 @@ const FALLBACK_CODE = "123456";
 function sampleDataOf(template?: TemplateRow): Record<string, SampleValue> {
   if (!template) return { name: "Minh" };
   const data: Record<string, SampleValue> = {};
-  for (const [key, value] of Object.entries(template.placeholdersJson ?? {})) {
-    data[key] = value || "...";
+  const source = template.placeholdersJson ?? {};
+  for (const key of orderedSlugs(Object.keys(source), template.placeholderOrder)) {
+    data[key] = source[key] || "...";
   }
   if (template.type?.toUpperCase() === "OTP") {
     data.otp = data.otp && data.otp !== "..." ? data.otp : "123456";

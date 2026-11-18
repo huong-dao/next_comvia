@@ -2,22 +2,22 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { isWorkspaceOwner, useWorkspaceContext } from "@/components/workspace/workspace-gate";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
-import { Input, Textarea } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
+import { VariableField } from "@/components/template/variable-field";
 import { PlaceholderMoveButtons } from "@/components/template/placeholder-move-buttons";
 import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
 import { getAccessToken, getStoredUser } from "@/lib/auth";
 import { formatVND } from "@/lib/utils";
 import { workspacePath } from "@/lib/paths";
 import {
-  applyContentInput,
   newPlaceholderRow,
   recordToPlaceholderRows,
   rowsToPlaceholderLabels,
@@ -109,8 +109,6 @@ export default function TemplateDetailPage() {
   const [ctaUnitPrices, setCtaUnitPrices] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
-  const contentRef = useRef<HTMLTextAreaElement>(null);
-  const contentSelectionRef = useRef<{ start: number; end: number }>({ start: 0, end: 0 });
 
   useEffect(() => {
     if (!data) return;
@@ -151,24 +149,6 @@ export default function TemplateDetailPage() {
       .filter((s) => s.length > 0 && slugLooksValid(s));
   }, [placeholderRows]);
 
-  const insertPlaceholder = useCallback(
-    (slug: string) => {
-      const token = `{{${slug.trim()}}}`;
-      const el = contentRef.current;
-      const { start, end } = contentSelectionRef.current;
-      const before = content.slice(0, start);
-      const after = content.slice(end);
-      const next = before + token + after;
-      setContent(next);
-      const caret = start + token.length;
-      contentSelectionRef.current = { start: caret, end: caret };
-      queueMicrotask(() => {
-        el?.focus();
-        el?.setSelectionRange(caret, caret);
-      });
-    },
-    [content],
-  );
 
   async function savePatch() {
     if (!data || !editable) return;
@@ -357,60 +337,10 @@ export default function TemplateDetailPage() {
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung 1</p>
           {editable ? (
             <>
-              <Textarea
-                ref={contentRef}
-                rows={14}
-                className="min-h-[280px] flex-1"
-                value={content}
-                onChange={(e) => applyContentInput(e.currentTarget, setContent)}
-                onSelect={(e) => {
-                  contentSelectionRef.current = {
-                    start: e.currentTarget.selectionStart,
-                    end: e.currentTarget.selectionEnd,
-                  };
-                }}
-                onBlur={(e) => {
-                  contentSelectionRef.current = {
-                    start: e.currentTarget.selectionStart,
-                    end: e.currentTarget.selectionEnd,
-                  };
-                }}
-              />
-              {filledSlugs.length > 0 ? (
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground">Chèn biến vào vị trí con trỏ:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {filledSlugs.map((slug) => (
-                      <Button
-                        key={slug}
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="font-mono text-xs"
-                        onClick={() => insertPlaceholder(slug)}
-                      >
-                        {`{{${slug}}}`}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  Thêm biến hợp lệ ở cột Thông tin để hiện nút chèn.
-                </p>
-              )}
-                <div>
-                  <label className="mb-1 block text-xs text-muted-foreground">Nội dung 2</label>
-                  <Textarea rows={6} value={content2} onChange={(e) => applyContentInput(e.currentTarget, setContent2)} />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs text-muted-foreground">Nội dung phụ 1</label>
-                  <Textarea rows={4} value={secondaryContent} placeholder="Nội dung phụ hiển thị cuối tin nhắn." onChange={(e) => setSecondaryContent(e.target.value)} />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs text-muted-foreground">Nội dung phụ 2</label>
-                  <Textarea rows={4} value={secondaryContent2} placeholder="Nội dung phụ hiển thị cuối tin nhắn." onChange={(e) => setSecondaryContent2(e.target.value)} />
-                </div>
+              <VariableField rows={14} value={content} onChange={setContent} slugs={filledSlugs} />
+              <VariableField label="Nội dung 2" labelClassName="mb-1 block text-xs text-muted-foreground" rows={6} value={content2} onChange={setContent2} slugs={filledSlugs} />
+              <VariableField label="Nội dung phụ 1" labelClassName="mb-1 block text-xs text-muted-foreground" rows={4} placeholder="Nội dung phụ hiển thị cuối tin nhắn." value={secondaryContent} onChange={setSecondaryContent} slugs={filledSlugs} />
+              <VariableField label="Nội dung phụ 2" labelClassName="mb-1 block text-xs text-muted-foreground" rows={4} placeholder="Nội dung phụ hiển thị cuối tin nhắn." value={secondaryContent2} onChange={setSecondaryContent2} slugs={filledSlugs} />
             </>
           ) : (
             <>
@@ -430,10 +360,7 @@ export default function TemplateDetailPage() {
                 <label className="mb-1 block text-xs text-muted-foreground">Tên</label>
                 <Input value={name} onChange={(e) => setName(e.target.value)} />
               </div>
-              <div>
-                <label className="mb-1 block text-xs text-muted-foreground">Tựa đề</label>
-                <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-              </div>
+              <VariableField label="Tựa đề" labelClassName="mb-1 block text-xs text-muted-foreground" value={title} onChange={setTitle} slugs={filledSlugs} />
 
               <div className="min-h-0 flex-1 space-y-3 overflow-y-auto">
                 <div className="flex flex-wrap items-center justify-between gap-2">

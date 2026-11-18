@@ -90,12 +90,12 @@ export function angleToBraces(text: string): string {
 }
 
 /** Dùng trong onChange của ô nội dung: đổi ký tự rồi giữ nguyên vị trí con trỏ (vì state controlled sẽ đẩy con trỏ về cuối). */
-export function applyContentInput(el: HTMLTextAreaElement, apply: (value: string) => void) {
+export function applyContentInput(el: HTMLTextAreaElement | HTMLInputElement, apply: (value: string) => void) {
   const raw = el.value;
   const converted = angleToBraces(raw);
   apply(converted);
   if (converted !== raw) {
-    const caret = angleToBraces(raw.slice(0, el.selectionStart)).length;
+    const caret = angleToBraces(raw.slice(0, el.selectionStart ?? raw.length)).length;
     requestAnimationFrame(() => el.setSelectionRange(caret, caret));
   }
 }

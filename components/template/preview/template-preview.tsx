@@ -1,5 +1,6 @@
 "use client";
 
+import { previewTemplateContent } from "@/lib/template-placeholders";
 import { OtpPreview } from "./otp-preview";
 import { TablePreview } from "./table-preview";
 import { TextPreview } from "./text-preview";
@@ -45,6 +46,11 @@ export function TemplatePreview({
       .map(([slug, label]) => [slug, (label ?? "").trim()] as const)
       .filter(([, label]) => label),
   );
+  // Tiêu đề và nội dung phụ cũng được thay biến {{slug}} bằng giá trị mẫu.
+  const fill = (text?: string) => previewTemplateContent(text ?? "", placeholders);
+  title = fill(title);
+  secondaryContent = fill(secondaryContent);
+  secondaryContent2 = fill(secondaryContent2);
   switch (type) {
     case "bang":
       return (

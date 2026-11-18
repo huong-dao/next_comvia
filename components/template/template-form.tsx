@@ -1,16 +1,16 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input, Select, Textarea } from "@/components/ui/input";
+import { Input, Select } from "@/components/ui/input";
 import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
+import { VariableField } from "@/components/template/variable-field";
 import { PlaceholderMoveButtons } from "@/components/template/placeholder-move-buttons";
 import { getAccessToken } from "@/lib/auth";
 import {
   newPlaceholderRow,
-  applyContentInput,
   rowsToPlaceholderLabels,
   rowsToPlaceholderOrder,
   rowsToPlaceholders,
@@ -122,8 +122,6 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const contentRef = useRef<HTMLTextAreaElement>(null);
-  const contentSelectionRef = useRef<{ start: number; end: number }>({ start: 0, end: 0 });
 
   const showContentFields = type === "bang" || type === "van_ban";
   const showOtpField = type === "otp";
@@ -153,24 +151,6 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
       .filter((s) => s.length > 0 && slugLooksValid(s));
   }, [placeholderRows]);
 
-  const insertPlaceholder = useCallback(
-    (slug: string) => {
-      const token = `{{${slug.trim()}}}`;
-      const el = contentRef.current;
-      const { start, end } = contentSelectionRef.current;
-      const before = content.slice(0, start);
-      const after = content.slice(end);
-      const next = before + token + after;
-      setContent(next);
-      const caret = start + token.length;
-      contentSelectionRef.current = { start: caret, end: caret };
-      queueMicrotask(() => {
-        el?.focus();
-        el?.setSelectionRange(caret, caret);
-      });
-    },
-    [content],
-  );
 
   function updateRow(id: string, patch: Partial<Pick<PlaceholderRow, "label" | "slug" | "defaultValue">>) {
     setPlaceholderRows((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -328,63 +308,13 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
           </Select>
         </div>
 
-        <div>
-          <label className={LABEL_CLASS}>Tựa đề</label>
-          <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-        </div>
+        <VariableField label="Tựa đề" labelClassName={LABEL_CLASS} value={title} onChange={setTitle} slugs={showContentFields ? filledSlugs : []} />
 
         {showContentFields ? (
           <>
-            <div>
-              <label className={LABEL_CLASS}>Nội dung 1</label>
-              <Textarea
-                ref={contentRef}
-                rows={10}
-                value={content}
-                onChange={(e) => applyContentInput(e.currentTarget, setContent)}
-                onSelect={(e) => {
-                  contentSelectionRef.current = {
-                    start: e.currentTarget.selectionStart,
-                    end: e.currentTarget.selectionEnd,
-                  };
-                }}
-                onBlur={(e) => {
-                  contentSelectionRef.current = {
-                    start: e.currentTarget.selectionStart,
-                    end: e.currentTarget.selectionEnd,
-                  };
-                }}
-                required
-              />
-              {filledSlugs.length > 0 ? (
-                <div className="mt-2 space-y-2">
-                  <p className="text-xs text-muted-foreground">Chèn biến vào vị trí con trỏ:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {filledSlugs.map((slug) => (
-                      <Button
-                        key={slug}
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="font-mono text-xs"
-                        onClick={() => insertPlaceholder(slug)}
-                      >
-                        {`{{${slug}}}`}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Thêm các trường thông tin bên dưới để hiện nút chèn vào nội dung.
-                </p>
-              )}
-            </div>
+            <VariableField label="Nội dung 1" labelClassName={LABEL_CLASS} rows={10} required value={content} onChange={setContent} slugs={filledSlugs} />
 
-            <div>
-              <label className={LABEL_CLASS}>Nội dung 2</label>
-              <Textarea rows={6} value={content2} onChange={(e) => applyContentInput(e.currentTarget, setContent2)} />
-            </div>
+            <VariableField label="Nội dung 2" labelClassName={LABEL_CLASS} rows={6} value={content2} onChange={setContent2} slugs={filledSlugs} />
 
             <div className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -462,24 +392,8 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
           </>
         ) : null}
 
-          <div>
-            <label className={LABEL_CLASS}>Nội dung phụ 1</label>
-            <Textarea
-              rows={4}
-              value={secondaryContent}
-              onChange={(e) => setSecondaryContent(e.target.value)}
-              placeholder="Nội dung phụ hiển thị cuối tin nhắn."
-            />
-          </div>
-          <div>
-            <label className={LABEL_CLASS}>Nội dung phụ 2</label>
-            <Textarea
-              rows={4}
-              value={secondaryContent2}
-              onChange={(e) => setSecondaryContent2(e.target.value)}
-              placeholder="Nội dung phụ hiển thị cuối tin nhắn."
-            />
-          </div>
+        <VariableField label="Nội dung phụ 1" labelClassName={LABEL_CLASS} rows={4} placeholder="Nội dung phụ hiển thị cuối tin nhắn." value={secondaryContent} onChange={setSecondaryContent} slugs={showContentFields ? filledSlugs : []} />
+        <VariableField label="Nội dung phụ 2" labelClassName={LABEL_CLASS} rows={4} placeholder="Nội dung phụ hiển thị cuối tin nhắn." value={secondaryContent2} onChange={setSecondaryContent2} slugs={showContentFields ? filledSlugs : []} />
 
         {showOtpField ? (
           <div>
