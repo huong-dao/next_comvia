@@ -7,12 +7,13 @@ import type { TemplateCtaDraft } from "@/lib/template-cta";
 type OtpPreviewProps = {
   title: string;
   minutes: string;
+  secondaryContent?: string;
   logoUrl?: string | null;
   ctaButtons: TemplateCtaDraft[];
 };
 
 /** Preview mẫu tin "Dạng OTP" (hình 6): tiêu đề + mã lớn + icon copy + cảnh báo bảo mật + thời hạn. */
-export function OtpPreview({ title, minutes, logoUrl, ctaButtons }: OtpPreviewProps) {
+export function OtpPreview({ title, minutes, secondaryContent, logoUrl, ctaButtons }: OtpPreviewProps) {
   const displayMinutes = minutes.trim() || "5";
 
   return (
@@ -27,6 +28,7 @@ export function OtpPreview({ title, minutes, logoUrl, ctaButtons }: OtpPreviewPr
         Tuyệt đối KHÔNG chia sẻ mã xác thực cho bất kỳ ai dưới bất kỳ hình thức nào. Mã xác thực có hiệu lực trong{" "}
         {displayMinutes} phút.
       </p>
+      {secondaryContent ? <p className="mt-2 whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-600">{secondaryContent}</p> : null}
       <PreviewCtas buttons={ctaButtons} />
     </PreviewFrame>
   );

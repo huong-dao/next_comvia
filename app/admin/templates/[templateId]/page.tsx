@@ -239,6 +239,7 @@ export default function AdminTemplateDetailPage() {
           ...(button.unitPrice.trim() !== "" ? { unitPrice: Number(button.unitPrice) } : {}),
         })),
       };
+      body.secondaryContent = secondaryContent.trim() || null;
       if (type === "OTP") {
         const mins = Number(otpMinutes);
         if (!otpMinutes.trim() || !Number.isInteger(mins) || mins < 1) {
@@ -257,7 +258,6 @@ export default function AdminTemplateDetailPage() {
         body.placeholdersJson = placeholdersJson;
         body.placeholderOrder = rowsToPlaceholderOrder(placeholderRows);
         body.placeholder_labels = rowsToPlaceholderLabels(placeholderRows);
-        if (type === "TABLE") body.secondaryContent = secondaryContent.trim() || null;
       }
 
       await comviaFetch("/admin/templates/" + templateId, { method: "PATCH", token, body: JSON.stringify(body) });
@@ -323,9 +323,7 @@ export default function AdminTemplateDetailPage() {
             </div>
           ) : null}
 
-          {type === "TABLE" ? (
-            <div><label className={LABEL_CLASS}>Nội dung phụ</label><Textarea rows={4} value={secondaryContent} onChange={(e) => setSecondaryContent(e.target.value)} /></div>
-          ) : null}
+          <div><label className={LABEL_CLASS}>Nội dung phụ</label><Textarea rows={4} value={secondaryContent} onChange={(e) => setSecondaryContent(e.target.value)} /></div>
 
           {type === "OTP" ? (
             <div><label className={LABEL_CLASS}>Số phút hết hạn</label><Input type="number" min={1} value={otpMinutes} onChange={(e) => setOtpMinutes(e.target.value)} /></div>

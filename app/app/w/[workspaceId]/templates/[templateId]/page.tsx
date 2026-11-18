@@ -90,7 +90,6 @@ export default function TemplateDetailPage() {
   );
   const { data: oa } = useComviaQuery(Boolean(workspaceId), oaFetcher);
 
-  const isTable = toPreviewType(data?.type) === "bang";
   const status = (data?.status ?? "").toUpperCase();
   const requiresOwnerRevision = Boolean(data?.requiresOwnerRevision);
   const editable = Boolean(data && (status === "DRAFT" || (status === "SUBMITTED" && requiresOwnerRevision)));
@@ -188,7 +187,7 @@ export default function TemplateDetailPage() {
         body: JSON.stringify({
           name: name || data.name,
           title: title.trim(),
-          ...(isTable ? { secondaryContent: secondaryContent.trim() || null } : {}),
+          secondaryContent: secondaryContent.trim() || null,
           content: content || data.content,
           placeholdersJson: ph.data,
           placeholderOrder: rowsToPlaceholderOrder(placeholderRows),
@@ -391,12 +390,10 @@ export default function TemplateDetailPage() {
                   Thêm biến hợp lệ ở cột Thông tin để hiện nút chèn.
                 </p>
               )}
-              {isTable ? (
                 <div>
                   <label className="mb-1 block text-xs text-muted-foreground">Nội dung phụ</label>
-                  <Textarea rows={4} value={secondaryContent} placeholder="Nội dung phụ hiển thị dưới bảng thông tin." onChange={(e) => setSecondaryContent(e.target.value)} />
+                  <Textarea rows={4} value={secondaryContent} placeholder="Nội dung phụ hiển thị cuối tin nhắn." onChange={(e) => setSecondaryContent(e.target.value)} />
                 </div>
-              ) : null}
             </>
           ) : (
             <>

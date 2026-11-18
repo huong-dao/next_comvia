@@ -122,7 +122,6 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
   const contentSelectionRef = useRef<{ start: number; end: number }>({ start: 0, end: 0 });
 
   const showContentFields = type === "bang" || type === "van_ban";
-  const showSecondaryContent = type === "bang";
   const showOtpField = type === "otp";
 
   const placeholdersParsed = useMemo(() => rowsToPlaceholders(placeholderRows), [placeholderRows]);
@@ -196,6 +195,8 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
     if (title.trim()) body.title = title.trim();
     if (trackingId.trim()) body.trackingId = trackingId.trim();
 
+    if (secondaryContent.trim()) body.secondaryContent = secondaryContent.trim();
+
     if (type === "otp") {
       const mins = Number(otpMinutes);
       if (!otpMinutes.trim() || !Number.isInteger(mins) || mins < 1) {
@@ -219,9 +220,6 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
     body.placeholdersJson = ph.data;
     body.placeholder_labels = rowsToPlaceholderLabels(placeholderRows);
     body.placeholderOrder = rowsToPlaceholderOrder(placeholderRows);
-    if (type === "bang" && secondaryContent.trim()) {
-      body.secondaryContent = secondaryContent.trim();
-    }
     return { ok: true, body };
   }
 
@@ -453,17 +451,15 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
           </>
         ) : null}
 
-        {showSecondaryContent ? (
           <div>
             <label className={LABEL_CLASS}>Nội dung phụ</label>
             <Textarea
               rows={4}
               value={secondaryContent}
               onChange={(e) => setSecondaryContent(e.target.value)}
-              placeholder="Nội dung phụ hiển thị dưới bảng thông tin."
+              placeholder="Nội dung phụ hiển thị cuối tin nhắn."
             />
           </div>
-        ) : null}
 
         {showOtpField ? (
           <div>

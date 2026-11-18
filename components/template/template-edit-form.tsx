@@ -79,7 +79,6 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
     })));
   }, [data]);
 
-  const isTable = toPreviewType(data?.type) === "bang";
   const placeholdersParsed = useMemo(() => rowsToPlaceholders(placeholderRows), [placeholderRows]);
   // Không fallback label về slug — biến không nhập Nhãn thì bị loại khỏi bảng ở TablePreview.
   const previewLabels = useMemo(
@@ -119,7 +118,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
         body: JSON.stringify({
           name: name.trim() || data.name,
           title: title.trim(),
-          ...(isTable ? { secondaryContent: secondaryContent.trim() || null } : {}),
+          secondaryContent: secondaryContent.trim() || null,
           content: content.trim() || data.content,
           placeholdersJson: placeholders.data,
           placeholderOrder: rowsToPlaceholderOrder(placeholderRows),
@@ -199,12 +198,10 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
           <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung</label>
           <Textarea rows={12} value={content} disabled={formDisabled} onChange={(event) => applyContentInput(event.currentTarget, setContent)} />
         </div>
-        {isTable ? (
           <div>
             <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung phụ</label>
-            <Textarea rows={4} value={secondaryContent} disabled={formDisabled} placeholder="Nội dung phụ hiển thị dưới bảng thông tin." onChange={(event) => setSecondaryContent(event.target.value)} />
+            <Textarea rows={4} value={secondaryContent} disabled={formDisabled} placeholder="Nội dung phụ hiển thị cuối tin nhắn." onChange={(event) => setSecondaryContent(event.target.value)} />
           </div>
-        ) : null}
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Các trường thông tin</p>
           <Button type="button" variant="outline" size="sm" icon={<HiOutlinePlus className="size-4" />} disabled={formDisabled} onClick={() => setPlaceholderRows((rows) => [...rows, newPlaceholderRow()])}>

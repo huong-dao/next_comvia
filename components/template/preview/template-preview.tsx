@@ -56,8 +56,8 @@ export function TemplatePreview({
         />
       );
     case "van_ban":
-      return <TextPreview title={title} content={content} placeholders={placeholders} logoUrl={logoUrl} ctaButtons={ctaButtons} />;
+      return <TextPreview title={title} content={content} placeholders={placeholders} secondaryContent={secondaryContent} logoUrl={logoUrl} ctaButtons={ctaButtons} />;
     case "otp":
-      return <OtpPreview title={title} minutes={minutes} logoUrl={logoUrl} ctaButtons={ctaButtons} />;
+      return <OtpPreview title={title} minutes={minutes} secondaryContent={secondaryContent} logoUrl={logoUrl} ctaButtons={ctaButtons} />;
   }
 }
