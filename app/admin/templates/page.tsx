@@ -86,6 +86,7 @@ export default function AdminTemplatesPage() {
     const params = new URLSearchParams({ limit: applied.limit });
     if (applied.status) params.set("status", applied.status);
     if (applied.workspaceId.trim()) params.set("workspaceId", applied.workspaceId.trim());
+    if (applied.oaId.trim()) params.set("oaId", applied.oaId.trim());
     if (applied.keyword.trim()) params.set("keyword", applied.keyword.trim());
     return params.toString();
   }, [applied]);
@@ -109,7 +110,8 @@ export default function AdminTemplatesPage() {
     );
     return allRows.filter((row) => {
       const oa = row.oaConnection;
-      return Boolean((oa?.id && aliases.has(oa.id)) || (oa?.oaId && aliases.has(oa.oaId)));
+      if (!oa?.id && !oa?.oaId) return false;
+      return Boolean((oa.id && aliases.has(oa.id)) || (oa.oaId && aliases.has(oa.oaId)));
     });
   }, [allRows, applied.oaId, oaRows]);
 
