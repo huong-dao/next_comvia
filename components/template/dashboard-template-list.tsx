@@ -2,9 +2,10 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { HiMiniPlus, HiOutlineDocumentText, HiOutlineEye } from "react-icons/hi2";
+import { HiMiniPlus, HiOutlineDocumentText, HiOutlineEye, HiOutlineMagnifyingGlass } from "react-icons/hi2";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { Modal } from "@/components/ui/modal";
 import { PageError, PageLoading } from "@/components/app/page-state";
@@ -30,6 +31,11 @@ type TemplateRow = {
   status?: string;
   updatedAt?: string;
 };
+
+/** Bỏ dấu + hạ chữ thường để tìm tên mẫu không phân biệt dấu/hoa thường. */
+function normalizeSearch(text: string): string {
+  return text.normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").toLowerCase().trim();
+}
 
 /** Số dòng mỗi trang trên dashboard. */
 const PAGE_SIZE = 5;
@@ -57,6 +63,7 @@ export function DashboardTemplateList({ className }: { className?: string }) {
   const [createOpen, setCreateOpen] = useState(false);
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
   const [filter, setFilter] = useState<(typeof STATUS_FILTERS)[number]["value"]>("ALL");
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
 
   const fetcher = useCallback(
@@ -66,10 +73,13 @@ export function DashboardTemplateList({ className }: { className?: string }) {
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId), fetcher);
 
   const matching = useMemo(() => {
-    return filter === "ALL"
-      ? data ?? []
-      : (data ?? []).filter((template) => (template.status ?? "").toUpperCase() === filter);
-  }, [data, filter]);
+    const keyword = normalizeSearch(search);
+    return (data ?? []).filter(
+      (template) =>
+        (filter === "ALL" || (template.status ?? "").toUpperCase() === filter) &&
+        (!keyword || normalizeSearch(template.name ?? "").includes(keyword)),
+    );
+  }, [data, filter, search]);
 
   const totalPages = Math.max(1, Math.ceil(matching.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -81,6 +91,11 @@ export function DashboardTemplateList({ className }: { className?: string }) {
 
   function handleFilterChange(value: (typeof STATUS_FILTERS)[number]["value"]) {
     setFilter(value);
+    setPage(1);
+  }
+
+  function handleSearchChange(value: string) {
+    setSearch(value);
     setPage(1);
   }
 
@@ -104,6 +119,17 @@ export function DashboardTemplateList({ className }: { className?: string }) {
           Danh sách mẫu tin ZBS
         </h2>
         <div className="flex flex-wrap items-center gap-2">
+          <form className="w-56" role="search" onSubmit={(event) => event.preventDefault()}>
+            <Input
+              type="search"
+              leadingIcon={<HiOutlineMagnifyingGlass className="size-4" aria-hidden />}
+              value={search}
+              onChange={(event) => handleSearchChange(event.target.value)}
+              placeholder="Tìm theo tên mẫu"
+              aria-label="Tìm mẫu tin theo tên"
+              className="h-9"
+            />
+          </form>
           <Button size="sm" icon={<HiMiniPlus className="size-4" />} onClick={() => setCreateOpen(true)}>
             Tạo mẫu tin
           </Button>
