@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Input, Textarea } from "@/components/ui/input";
 import { getAccessToken } from "@/lib/auth";
 import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
-import { movePlaceholderRow, newPlaceholderRow, recordToPlaceholderRows, rowsToPlaceholderLabels, rowsToPlaceholders, slugLooksValid, type PlaceholderRow } from "@/lib/template-placeholders";
+import { applyContentInput, movePlaceholderRow, newPlaceholderRow, recordToPlaceholderRows, rowsToPlaceholderLabels, rowsToPlaceholders, slugLooksValid, type PlaceholderRow } from "@/lib/template-placeholders";
 import { normalizeCtaButtons, validateCtaButtons, type TemplateCtaButton, type TemplateCtaDraft } from "@/lib/template-cta";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { isWorkspaceOwner, useWorkspaceContext } from "@/components/workspace/workspace-gate";
@@ -194,7 +194,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
         </div>
         <div>
           <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Nội dung</label>
-          <Textarea rows={12} value={content} disabled={formDisabled} onChange={(event) => setContent(event.target.value)} />
+          <Textarea rows={12} value={content} disabled={formDisabled} onChange={(event) => applyContentInput(event.currentTarget, setContent)} />
         </div>
         {isTable ? (
           <div>

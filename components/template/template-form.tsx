@@ -10,6 +10,7 @@ import { getAccessToken } from "@/lib/auth";
 import {
   newPlaceholderRow,
   movePlaceholderRow,
+  applyContentInput,
   rowsToPlaceholderLabels,
   rowsToPlaceholders,
   slugLooksValid,
@@ -333,7 +334,7 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
                 ref={contentRef}
                 rows={10}
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
+                onChange={(e) => applyContentInput(e.currentTarget, setContent)}
                 onSelect={(e) => {
                   contentSelectionRef.current = {
                     start: e.currentTarget.selectionStart,

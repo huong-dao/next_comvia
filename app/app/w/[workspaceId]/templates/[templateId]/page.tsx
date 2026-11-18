@@ -17,6 +17,7 @@ import { formatVND } from "@/lib/utils";
 import { workspacePath } from "@/lib/paths";
 import {
   movePlaceholderRow,
+  applyContentInput,
   newPlaceholderRow,
   recordToPlaceholderRows,
   rowsToPlaceholderLabels,
@@ -349,7 +350,7 @@ export default function TemplateDetailPage() {
                 rows={14}
                 className="min-h-[280px] flex-1"
                 value={content}
-                onChange={(e) => setContent(e.target.value)}
+                onChange={(e) => applyContentInput(e.currentTarget, setContent)}
                 onSelect={(e) => {
                   contentSelectionRef.current = {
                     start: e.currentTarget.selectionStart,

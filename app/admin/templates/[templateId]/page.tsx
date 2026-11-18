@@ -17,6 +17,7 @@ import { getAccessToken } from "@/lib/auth";
 import {
   newPlaceholderRow,
   movePlaceholderRow,
+  applyContentInput,
   recordToPlaceholderRows,
   rowsToPlaceholderLabels,
   rowsToPlaceholders,
@@ -314,7 +315,7 @@ export default function AdminTemplateDetailPage() {
           {showContentFields ? (
             <div>
               <label className={LABEL_CLASS}>Nội dung</label>
-              <Textarea rows={10} value={content} onChange={(e) => setContent(e.target.value)} />
+              <Textarea rows={10} value={content} onChange={(e) => applyContentInput(e.currentTarget, setContent)} />
               {filledSlugs.length > 0 ? <p className="mt-2 text-xs text-muted-foreground">Biến hiện có: {filledSlugs.map((s) => `{{${s}}}`).join(", ")}</p> : null}
             </div>
           ) : null}
