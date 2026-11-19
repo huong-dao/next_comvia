@@ -220,6 +220,20 @@ export default function CampaignDetailPage() {
     pendingFetcher,
   );
 
+  const failedFetcher = useCallback(
+    (token: string) =>
+      comviaFetch<CampaignDataRow[]>(
+        `/workspaces/${workspaceId}/campaigns/${campaignId}/rows?status=FAILED&limit=500`,
+        { token },
+      ),
+    [workspaceId, campaignId],
+  );
+
+  const { data: failedRows, refetch: refetchFailed } = useComviaQuery(
+    Boolean(workspaceId && campaignId),
+    failedFetcher,
+  );
+
   const rowList = useMemo(() => rows ?? [], [rows]);
   const {
     rows: pagedRows,
@@ -239,6 +253,10 @@ export default function CampaignDetailPage() {
   const isLocked = ["RUNNING", "CANCELLED"].includes(statusUpper);
   const pendingCount = pendingRows?.length ?? 0;
   const canReconcileCsv = hasExecuted && !isLocked;
+  const failedCount = failedRows?.length ?? 0;
+  /** Không có dòng PENDING (chưa reconcile CSV) → "Gửi lại" dùng `retry` trực tiếp các dòng FAILED. */
+  const retryFailedDirectly = hasExecuted && pendingCount === 0 && failedCount > 0;
+  const canResend = (pendingCount > 0 || failedCount > 0) && !isLocked;
   const canExecute = pendingCount > 0 && !isLocked;
 
   const approvedTemplates = useMemo(
@@ -314,6 +332,7 @@ export default function CampaignDetailPage() {
       void refetchCampaign();
       void refetchRows();
       void refetchPending();
+      void refetchFailed();
     } catch (e) {
       const raw = csvErrorsOf(e);
       setMsg(
@@ -352,8 +371,10 @@ export default function CampaignDetailPage() {
 
       const fromCampaign = Number(campaign.rowCount ?? campaign.totalData ?? 0);
       const count = hasExecuted
-        ? pendingCount
-        : Number.isFinite(fromCampaign) && fromCampaign > 0
+        ? retryFailedDirectly
+          ? failedCount
+          : pendingCount
+        :Number.isFinite(fromCampaign) && fromCampaign > 0
           ? fromCampaign
           : rowList.length;
 
@@ -383,15 +404,24 @@ export default function CampaignDetailPage() {
     setBusy(true);
     setMsg(null);
     try {
-      await comviaFetch(`/workspaces/${workspaceId}/campaigns/${campaignId}/execute`, {
-        method: "POST",
-        token,
-      });
+      if (retryFailedDirectly) {
+        await comviaFetch(`/workspaces/${workspaceId}/campaigns/${campaignId}/retry`, {
+          method: "POST",
+          token,
+          body: JSON.stringify({ rowIds: (failedRows ?? []).map((r) => r.id) }),
+        });
+      } else {
+        await comviaFetch(`/workspaces/${workspaceId}/campaigns/${campaignId}/execute`, {
+          method: "POST",
+          token,
+        });
+      }
       setMsg("Đã bắt đầu gửi chiến dịch.");
       setPreflightOpen(false);
       void refetchCampaign();
       void refetchRows();
       void refetchPending();
+      void refetchFailed();
     } catch (e) {
       setMsg(formatComviaError(e, "Không thực hiện được gửi chiến dịch."));
     } finally {
@@ -413,6 +443,7 @@ export default function CampaignDetailPage() {
       void refetchCampaign();
       void refetchRows();
       void refetchPending();
+      void refetchFailed();
     } catch (e) {
       setMsg(formatComviaError(e, "Không xóa được dòng."));
     } finally {
@@ -435,6 +466,7 @@ export default function CampaignDetailPage() {
       setEditRow(null);
       void refetchRows();
       void refetchPending();
+      void refetchFailed();
     } catch (e) {
       setMsg(formatComviaError(e, "Không lưu được dòng."));
     } finally {
@@ -814,17 +846,16 @@ export default function CampaignDetailPage() {
               type="button"
               size="sm"
               icon={<HiArrowPath className="size-4" />}
-              disabled={busy || !canExecute}
+              disabled={busy || !canResend}
               onClick={() => void openPreflight()}
             >
               Gửi lại tin bị lỗi
             </Button>
           </div>
-          {!canExecute ? (
-            <p className="text-xs text-muted-foreground">
-              Upload CSV dữ liệu đã sửa lỗi (giữ nguyên cột <code>row_id</code>) để bật nút gửi lại.
-            </p>
-          ) : null}
+          <p className="text-xs text-muted-foreground">
+            Sửa nhanh từng dòng bằng nút “Sửa” rồi bấm “Gửi lại tin bị lỗi”, hoặc upload CSV dữ liệu đã sửa lỗi (giữ
+            nguyên cột <code>row_id</code>) để sửa hàng loạt.
+          </p>
         </Card>
       ) : null}
 
