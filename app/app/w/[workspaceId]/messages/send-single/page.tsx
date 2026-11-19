@@ -11,6 +11,7 @@ import { Input, Textarea } from "@/components/ui/input";
 import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
 import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
 import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
+import { ensureOaConnected } from "@/lib/oa-guard";
 import { getAccessToken } from "@/lib/auth";
 import { type TemplateCtaButton } from "@/lib/template-cta";
 import { useComviaQuery } from "@/lib/use-comvia-query";
@@ -194,6 +195,11 @@ export default function SendSinglePage() {
     const payload = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, v.trim()]));
     setSending(true);
     try {
+      const oaGuard = await ensureOaConnected(workspaceId, token);
+      if (!oaGuard.ok) {
+        showAlert({ type: "error", message: oaGuard.message });
+        return;
+      }
       const res = await comviaFetch<{ status?: string; providerMessageId?: string; messageLogId?: string }>(
         `/workspaces/${workspaceId}/messages/send-single`,
         {

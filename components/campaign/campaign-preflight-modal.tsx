@@ -1,5 +1,6 @@
 "use client";
 
+import { oaBlockedMessage } from "@/lib/oa-guard";
 import Link from "next/link";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
@@ -127,7 +128,7 @@ export function CampaignPreflightModal({
         <p className="text-sm text-danger">Chưa có dữ liệu — hãy tải CSV mẫu, điền và upload trước khi gửi.</p>
       ) : null}
       {!oaConnected ? (
-        <p className="text-sm text-danger">Zalo OA chưa kết nối — kết nối OA trước khi gửi.</p>
+        <p className="text-sm text-danger">{oaBlockedMessage(data.oaStatus)}</p>
       ) : null}
       {!templateApproved ? (
         <p className="text-sm text-danger">Mẫu tin chưa được duyệt — không thể gửi chiến dịch.</p>

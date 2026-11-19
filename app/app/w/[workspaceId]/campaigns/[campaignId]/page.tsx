@@ -35,6 +35,7 @@ import { comviaDownloadBlob } from "@/lib/comvia-download";
 import { ComviaApiError, comviaFetch, comviaMultipartFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
 import { getAccessToken, getStoredUser } from "@/lib/auth";
 import { workspacePath } from "@/lib/paths";
+import { ensureOaConnected } from "@/lib/oa-guard";
 import { type TemplateCtaButton } from "@/lib/template-cta";
 import { useClientPagination } from "@/lib/use-client-pagination";
 import { useComviaQuery } from "@/lib/use-comvia-query";
@@ -404,6 +405,13 @@ export default function CampaignDetailPage() {
     setBusy(true);
     setMsg(null);
     try {
+      // Kiểm tra lại OA ngay trước khi gửi/gửi lại: trạng thái lúc mở hộp xác nhận có thể đã cũ.
+      const oaGuard = await ensureOaConnected(workspaceId, token);
+      if (!oaGuard.ok) {
+        setPreflightOpen(false);
+        setMsg(oaGuard.message);
+        return;
+      }
       if (retryFailedDirectly) {
         await comviaFetch(`/workspaces/${workspaceId}/campaigns/${campaignId}/retry`, {
           method: "POST",
