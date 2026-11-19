@@ -1,12 +1,12 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
 import { FilterCard, FilterField } from "@/components/app/filter-card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
-import { Select } from "@/components/ui/input";
+import { Input, Select } from "@/components/ui/input";
 import { SimpleTable } from "@/components/ui/simple-table";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { comviaFetch } from "@/lib/comviaFetch";
@@ -35,8 +35,13 @@ const SEND_TYPE_LABELS: Record<string, string> = {
 
 type TemplateOption = { id: string; name?: string; code?: string };
 
-type Filters = { status: string; sendType: string; limit: string };
-const INITIAL_FILTERS: Filters = { status: "", sendType: "", limit: "50" };
+type Filters = { status: string; sendType: string; limit: string; phone: string };
+const INITIAL_FILTERS: Filters = { status: "", sendType: "", limit: "50", phone: "" };
+
+/** Độ trễ trước khi áp dụng ô tìm số điện thoại khi đang gõ. */
+const PHONE_DEBOUNCE_MS = 300;
+
+const normalizePhone = (v: string) => v.replace(/[\s.\-()+]/g, "");
 
 export default function MessageLogsPage() {
   const params = useParams();
@@ -57,8 +62,28 @@ export default function MessageLogsPage() {
   );
 
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId), fetcher);
-  const allRows = useMemo(() => data ?? [], [data]);
+  const phoneKeyword = normalizePhone(applied.phone);
+  const allRows = useMemo(() => {
+    const list = data ?? [];
+    if (!phoneKeyword) return list;
+    return list.filter((r) => normalizePhone(r.phoneNumber ?? "").includes(phoneKeyword));
+  }, [data, phoneKeyword]);
   const { rows, page, totalPages, total, pageSize, setPage } = useClientPagination(allRows);
+
+  // Select đổi là áp dụng ngay; ô số điện thoại áp dụng sau khi ngừng gõ.
+  const changeSelect = (key: "status" | "sendType" | "limit", value: string) => {
+    setDraft((d) => ({ ...d, [key]: value }));
+    setApplied((a) => ({ ...a, [key]: value }));
+    setPage(1);
+  };
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setApplied((a) => (a.phone === draft.phone ? a : { ...a, phone: draft.phone }));
+      setPage(1);
+    }, PHONE_DEBOUNCE_MS);
+    return () => clearTimeout(t);
+  }, [draft.phone, setPage]);
 
   const templatesFetcher = useCallback(
     (token: string) => comviaFetch<TemplateOption[]>(`/workspaces/${workspaceId}/templates`, { token }),
@@ -75,7 +100,7 @@ export default function MessageLogsPage() {
       <PageHeader
         eyebrow="Messaging"
         title="Nhật ký gửi tin"
-        description="Lọc theo trạng thái và loại gửi (query API)."
+        description="Lọc theo số điện thoại, trạng thái và loại gửi; thay đổi bộ lọc được áp dụng ngay."
       />
 
       <FilterCard
@@ -85,11 +110,21 @@ export default function MessageLogsPage() {
         }}
         onRefresh={() => void refetch()}
       >
+        <FilterField label="Số điện thoại" htmlFor="logs-phone" className="sm:w-56">
+          <Input
+            id="logs-phone"
+            type="search"
+            inputMode="tel"
+            placeholder="Tìm theo SĐT"
+            value={draft.phone}
+            onChange={(e) => setDraft((value) => ({ ...value, phone: e.target.value }))}
+          />
+        </FilterField>
         <FilterField label="Trạng thái" htmlFor="logs-status" className="sm:w-48">
           <Select
             id="logs-status"
             value={draft.status}
-            onChange={(e) => setDraft((value) => ({ ...value, status: e.target.value }))}
+            onChange={(e) => changeSelect("status", e.target.value)}
           >
             <option value="">Mọi trạng thái</option>
             <option value="SUCCESS">Thành công</option>
@@ -100,7 +135,7 @@ export default function MessageLogsPage() {
           <Select
             id="logs-send-type"
             value={draft.sendType}
-            onChange={(e) => setDraft((value) => ({ ...value, sendType: e.target.value }))}
+            onChange={(e) => changeSelect("sendType", e.target.value)}
           >
             <option value="">Mọi loại</option>
             <option value="SINGLE">Đơn lẻ</option>
@@ -112,7 +147,7 @@ export default function MessageLogsPage() {
           <Select
             id="logs-limit"
             value={draft.limit}
-            onChange={(e) => setDraft((value) => ({ ...value, limit: e.target.value }))}
+            onChange={(e) => changeSelect("limit", e.target.value)}
           >
             {LIMIT_OPTIONS.map((n) => (
               <option key={n} value={n}>
