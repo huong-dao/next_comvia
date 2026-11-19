@@ -40,9 +40,6 @@ const INITIAL_FILTERS: Filters = { status: "", sendType: "", limit: "50", phone:
 
 /** Độ trễ trước khi áp dụng ô tìm số điện thoại khi đang gõ. */
 const PHONE_DEBOUNCE_MS = 300;
-
-const normalizePhone = (v: string) => v.replace(/[\s.\-()+]/g, "");
-
 export default function MessageLogsPage() {
   const params = useParams();
   const workspaceId = params.workspaceId as string;
@@ -53,6 +50,7 @@ export default function MessageLogsPage() {
   if (applied.status) qs.set("status", applied.status);
   if (applied.sendType) qs.set("sendType", applied.sendType);
   if (applied.limit) qs.set("limit", applied.limit);
+  if (applied.phone.trim()) qs.set("phoneNumber", applied.phone.trim());
   const query = qs.toString();
 
   const fetcher = useCallback(
@@ -62,12 +60,7 @@ export default function MessageLogsPage() {
   );
 
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId), fetcher);
-  const phoneKeyword = normalizePhone(applied.phone);
-  const allRows = useMemo(() => {
-    const list = data ?? [];
-    if (!phoneKeyword) return list;
-    return list.filter((r) => normalizePhone(r.phoneNumber ?? "").includes(phoneKeyword));
-  }, [data, phoneKeyword]);
+  const allRows = useMemo(() => data ?? [], [data]);
   const { rows, page, totalPages, total, pageSize, setPage } = useClientPagination(allRows);
 
   // Select đổi là áp dụng ngay; ô số điện thoại áp dụng sau khi ngừng gõ.
