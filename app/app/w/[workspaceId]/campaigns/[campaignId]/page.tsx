@@ -54,6 +54,8 @@ type CampaignDetail = {
     placeholdersJson?: Record<string, string>;
   };
   lastRunAt?: string;
+  /** `OA_DISCONNECTED` khi campaign PAUSED vì OA mất kết nối; null/giá trị lạ → xử lý như PAUSED thường. */
+  pauseReason?: string | null;
   unitPriceAtCreate?: number | string | null;
   rowCount?: number;
   totalData?: number;
@@ -253,11 +255,12 @@ export default function CampaignDetailPage() {
   const statusUpper = (campaign?.status ?? "").toUpperCase();
   const isLocked = ["RUNNING", "CANCELLED"].includes(statusUpper);
   const pendingCount = pendingRows?.length ?? 0;
-  const canReconcileCsv = hasExecuted && !isLocked;
+  const pausedByOa = statusUpper === "PAUSED" && campaign?.pauseReason === "OA_DISCONNECTED";
+  const canReconcileCsv = hasExecuted && !isLocked && !pausedByOa;
   const failedCount = failedRows?.length ?? 0;
   /** Không có dòng PENDING (chưa reconcile CSV) → "Gửi lại" dùng `retry` trực tiếp các dòng FAILED. */
   const retryFailedDirectly = hasExecuted && pendingCount === 0 && failedCount > 0;
-  const canResend = (pendingCount > 0 || failedCount > 0) && !isLocked;
+  const canResend = (pendingCount > 0 || failedCount > 0) && !isLocked && !pausedByOa;
   const canExecute = pendingCount > 0 && !isLocked;
 
   const approvedTemplates = useMemo(
@@ -434,6 +437,32 @@ export default function CampaignDetailPage() {
       setMsg(formatComviaError(e, "Không thực hiện được gửi chiến dịch."));
     } finally {
       setBusy(false);
+    }
+  }
+
+  /** POST /resume: tiếp tục campaign bị tạm dừng vì OA mất kết nối (không trừ ví lần nữa). */
+  async function resumeCampaign() {
+    const token = getAccessToken();
+    if (!token) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      await comviaFetch(`/workspaces/${workspaceId}/campaigns/${campaignId}/resume`, { method: "POST", token });
+      setMsg("Đã tiếp tục gửi chiến dịch.");
+    } catch (e) {
+      const code = e instanceof ComviaApiError ? (e.details as { code?: string } | null)?.code : undefined;
+      if (code === "OA_NOT_CONNECTED") {
+        setMsg(`${formatComviaError(e, "Zalo OA chưa kết nối.")} Vui lòng kết nối lại OA rồi bấm Tiếp tục.`);
+      } else {
+        setMsg(formatComviaError(e, "Không tiếp tục được chiến dịch."));
+      }
+    } finally {
+      setBusy(false);
+      // Luôn tải lại: trạng thái campaign có thể đã đổi (vd. không còn bị dừng vì OA).
+      void refetchCampaign();
+      void refetchRows();
+      void refetchPending();
+      void refetchFailed();
     }
   }
 
@@ -738,6 +767,24 @@ export default function CampaignDetailPage() {
           )}
         </Card>
       </div>
+
+      {pausedByOa ? (
+        <Card className="mb-6 space-y-2 border-warning">
+          <p className="text-sm font-semibold text-foreground">Chiến dịch đang tạm dừng vì Zalo OA mất kết nối</p>
+          <p className="text-sm text-muted-foreground">
+            Các tin chưa gửi vẫn được giữ nguyên (trạng thái chờ gửi) và tiền đã được giữ sẵn, sẽ không bị trừ lại. Hãy{" "}
+            <Link className="font-medium text-primary underline" href={workspacePath(workspaceId, "oa")}>
+              kết nối lại Zalo OA
+            </Link>{" "}
+            rồi bấm “Tiếp tục”.
+          </p>
+          <div>
+            <Button type="button" icon={<HiOutlinePlay className="size-4" />} disabled={busy} onClick={() => void resumeCampaign()}>
+              Tiếp tục
+            </Button>
+          </div>
+        </Card>
+      ) : null}
 
       {!hasExecuted ? (
         <Card className="mb-6 space-y-4">

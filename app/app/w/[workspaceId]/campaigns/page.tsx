@@ -22,6 +22,7 @@ type CampaignRow = {
   id: string;
   name?: string;
   status?: string;
+  pauseReason?: string | null;
   template?: { name?: string; code?: string };
   lastRunAt?: string;
   createdAt?: string;
@@ -159,7 +160,12 @@ export default function CampaignsListPage() {
               header: "Trạng thái",
               cell: (r) =>
                 r.status ? (
-                  <EntityStatusBadge value={r.status} label={CAMPAIGN_STATUS_LABELS[r.status.toUpperCase()]} />
+                  <div className="space-y-1">
+                    <EntityStatusBadge value={r.status} label={CAMPAIGN_STATUS_LABELS[r.status.toUpperCase()]} />
+                    {r.status.toUpperCase() === "PAUSED" && r.pauseReason === "OA_DISCONNECTED" ? (
+                      <p className="text-xs text-danger">OA mất kết nối — vào chi tiết để tiếp tục</p>
+                    ) : null}
+                  </div>
                 ) : (
                   "—"
                 ),
