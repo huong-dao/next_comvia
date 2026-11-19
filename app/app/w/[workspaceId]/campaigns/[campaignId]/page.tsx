@@ -25,6 +25,7 @@ import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/s
 import { SimpleTable } from "@/components/ui/simple-table";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { formatComviaError } from "@/lib/api-message";
+import { localizeCsvErrors } from "@/lib/campaign-csv-errors";
 import {
   campaignRowFailureText,
   payloadToStringMap,
@@ -314,8 +315,19 @@ export default function CampaignDetailPage() {
       void refetchRows();
       void refetchPending();
     } catch (e) {
-      setMsg(formatComviaError(e, "Import CSV thất bại."));
-      setCsvErrors(csvErrorsOf(e));
+      const raw = csvErrorsOf(e);
+      setMsg(
+        raw.length > 0
+          ? "File CSV có dữ liệu chưa hợp lệ, chưa có dòng nào được lưu. Vui lòng sửa các dòng sau rồi upload lại:"
+          : formatComviaError(e, "Import CSV thất bại."),
+      );
+      let text: string | undefined;
+      try {
+        text = await file.text();
+      } catch {
+        text = undefined;
+      }
+      setCsvErrors(localizeCsvErrors(raw, text));
     } finally {
       setBusy(false);
       if (fileRef.current) fileRef.current.value = "";
