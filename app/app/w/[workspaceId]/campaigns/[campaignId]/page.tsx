@@ -34,6 +34,7 @@ import {
 import { comviaDownloadBlob } from "@/lib/comvia-download";
 import { ComviaApiError, comviaFetch, comviaMultipartFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
 import { getAccessToken, getStoredUser } from "@/lib/auth";
+import { templateOptionLabel } from "@/lib/template-display";
 import { workspacePath } from "@/lib/paths";
 import { ensureOaConnected } from "@/lib/oa-guard";
 import { type TemplateCtaButton } from "@/lib/template-cta";
@@ -49,6 +50,7 @@ type CampaignDetail = {
     id?: string;
     name?: string;
     code?: string;
+  providerTemplateId?: string | null;
     status?: string;
     unitPricePerMessage?: number | string | null;
     placeholdersJson?: Record<string, string>;
@@ -66,6 +68,7 @@ type TemplateOption = {
   type?: string;
   name?: string;
   code?: string;
+  providerTemplateId?: string | null;
   title?: string | null;
   content?: string | null;
   content2?: string | null;
@@ -271,7 +274,7 @@ export default function CampaignDetailPage() {
     () =>
       approvedTemplates.map((t) => ({
         value: t.id,
-        label: t.name ? (t.code ? `${t.name} (${t.code})` : t.name) : (t.code ?? t.id),
+        label: templateOptionLabel(t),
       })),
     [approvedTemplates],
   );
@@ -383,7 +386,7 @@ export default function CampaignDetailPage() {
           : rowList.length;
 
       setPreflightData({
-        templateName: campaign.template?.name ?? campaign.template?.code,
+        templateName: campaign.template?.name,
         templateStatus: campaign.template?.status,
         oaStatus: oaStatusRes.status,
         oaName: oaStatusRes.oaName,
@@ -663,7 +666,7 @@ export default function CampaignDetailPage() {
             </label>
             {hasExecuted ? (
               <p className="text-sm text-foreground">
-                {campaign.template?.name ?? campaign.template?.code ?? "—"}{" "}
+                {campaign.template?.name ?? "—"}{" "}
                 <span className="text-xs text-muted-foreground">(đã gửi — không đổi được mẫu)</span>
               </p>
             ) : approvedTemplates.length === 0 ? (

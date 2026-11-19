@@ -153,7 +153,7 @@ export default function CampaignsListPage() {
             {
               key: "template",
               header: "Mẫu tin",
-              cell: (r) => r.template?.name ?? r.template?.code ?? "—",
+              cell: (r) => r.template?.name ?? "—",
             },
             {
               key: "status",

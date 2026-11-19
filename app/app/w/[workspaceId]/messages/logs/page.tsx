@@ -94,7 +94,7 @@ export default function MessageLogsPage() {
   );
   const { data: templates } = useComviaQuery(Boolean(workspaceId), templatesFetcher);
   const templateNames = useMemo(
-    () => new Map((templates ?? []).map((t) => [t.id, t.name ?? t.code ?? t.id])),
+    () => new Map((templates ?? []).map((t) => [t.id, t.name ?? t.id])),
     [templates],
   );
 

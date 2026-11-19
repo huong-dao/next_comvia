@@ -17,6 +17,7 @@ import { TemplatePreview, type TemplateMessageType } from "@/components/template
 import { getAccessToken, getStoredUser } from "@/lib/auth";
 import { formatVND } from "@/lib/utils";
 import { workspacePath } from "@/lib/paths";
+import { PROVIDER_TEMPLATE_ID_LABEL } from "@/lib/template-display";
 import {
   newPlaceholderRow,
   recordToPlaceholderRows,
@@ -36,6 +37,7 @@ type TemplateDetail = {
   id: string;
   name?: string;
   code?: string;
+  providerTemplateId?: string | null;
   type?: string;
   title?: string;
   content?: string;
@@ -310,8 +312,8 @@ export default function TemplateDetailPage() {
     <div>
       <PageHeader
         eyebrow="Template"
-        title={data.name ?? data.code ?? data.id}
-        description={data.code ? `Mã: ${data.code}` : undefined}
+        title={data.name ?? data.id}
+        description={data.providerTemplateId ? `${PROVIDER_TEMPLATE_ID_LABEL}: ${data.providerTemplateId}` : undefined}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {data.status ? <EntityStatusBadge value={data.status} kind="template" /> : null}
