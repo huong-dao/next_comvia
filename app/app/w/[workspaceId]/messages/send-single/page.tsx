@@ -11,7 +11,6 @@ import { Input, Textarea } from "@/components/ui/input";
 import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
 import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
 import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
-import { templateOptionLabel } from "@/lib/template-display";
 import { ensureOaConnected } from "@/lib/oa-guard";
 import { getAccessToken } from "@/lib/auth";
 import { type TemplateCtaButton } from "@/lib/template-cta";
@@ -23,7 +22,6 @@ type TemplateRow = {
   type?: string;
   name?: string;
   code?: string;
-  providerTemplateId?: string | null;
   title?: string | null;
   content?: string | null;
   content2?: string | null;
@@ -116,7 +114,7 @@ export default function SendSinglePage() {
     () =>
       approved.map((t) => ({
         value: t.id,
-        label: templateOptionLabel(t),
+        label: t.name ? (t.code ? `${t.name} (${t.code})` : t.name) : (t.code ?? t.id),
       })),
     [approved],
   );
