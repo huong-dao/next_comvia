@@ -40,6 +40,16 @@ const INITIAL_FILTERS: Filters = { status: "", sendType: "", limit: "50", phone:
 
 /** Độ trễ trước khi áp dụng ô tìm số điện thoại khi đang gõ. */
 const PHONE_DEBOUNCE_MS = 300;
+const pad2 = (n: number) => String(n).padStart(2, "0");
+
+/** Định dạng d/m/Y H:i:s (giờ local), ví dụ 05/03/2026 14:07:09. */
+function formatSentAt(value?: string) {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return `${pad2(d.getDate())}/${pad2(d.getMonth() + 1)}/${d.getFullYear()} ${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+}
+
 export default function MessageLogsPage() {
   const params = useParams();
   const workspaceId = params.workspaceId as string;
@@ -162,7 +172,7 @@ export default function MessageLogsPage() {
             {
               key: "sent",
               header: "Gửi lúc",
-              cell: (r) => (r.sentAt ? new Date(r.sentAt).toLocaleString() : "—"),
+              cell: (r) => formatSentAt(r.sentAt),
             },
             { key: "phone", header: "SĐT", cell: (r) => r.phoneNumber ?? "—" },
             {
