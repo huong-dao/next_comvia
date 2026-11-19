@@ -12,14 +12,13 @@ import { SimpleTable } from "@/components/ui/simple-table";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { workspacePath } from "@/lib/paths";
-import { PROVIDER_TEMPLATE_ID_LABEL, providerTemplateIdText } from "@/lib/template-display";
 import { useClientPagination } from "@/lib/use-client-pagination";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
 type TemplateRow = {
   id: string;
   name?: string;
-  providerTemplateId?: string | null;
+  code?: string;
   status?: string;
   updatedAt?: string;
 };
@@ -99,7 +98,7 @@ export default function TemplatesListPage() {
               </Link>
             ),
           },
-          { key: "providerTemplateId", header: PROVIDER_TEMPLATE_ID_LABEL, cell: (r) => providerTemplateIdText(r) },
+          { key: "code", header: "Mã", cell: (r) => r.code ?? "—" },
           {
             key: "status",
             header: "Trạng thái",

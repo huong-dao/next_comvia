@@ -17,7 +17,7 @@ import { TemplatePreview, type TemplateMessageType } from "@/components/template
 import { getAccessToken, getStoredUser } from "@/lib/auth";
 import { formatVND } from "@/lib/utils";
 import { workspacePath } from "@/lib/paths";
-import { PROVIDER_TEMPLATE_ID_LABEL } from "@/lib/template-display";
+import { PROVIDER_TEMPLATE_ID_LABEL, providerTemplateIdText } from "@/lib/template-display";
 import {
   newPlaceholderRow,
   recordToPlaceholderRows,
@@ -312,8 +312,8 @@ export default function TemplateDetailPage() {
     <div>
       <PageHeader
         eyebrow="Template"
-        title={data.name ?? data.id}
-        description={data.providerTemplateId ? `${PROVIDER_TEMPLATE_ID_LABEL}: ${data.providerTemplateId}` : undefined}
+        title={data.name ?? data.code ?? data.id}
+        description={`Mã mẫu tin: ${data.code ?? "—"} · ${PROVIDER_TEMPLATE_ID_LABEL}: ${providerTemplateIdText(data)}`}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             {data.status ? <EntityStatusBadge value={data.status} kind="template" /> : null}

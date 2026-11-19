@@ -15,10 +15,13 @@ import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comvia
 import { newPlaceholderRow, recordToPlaceholderRows, rowsToPlaceholderLabels, rowsToPlaceholderOrder, rowsToPlaceholders, slugLooksValid, type PlaceholderRow } from "@/lib/template-placeholders";
 import { normalizeCtaButtons, validateCtaButtons, type TemplateCtaButton, type TemplateCtaDraft } from "@/lib/template-cta";
 import { useComviaQuery } from "@/lib/use-comvia-query";
+import { PROVIDER_TEMPLATE_ID_LABEL, providerTemplateIdText } from "@/lib/template-display";
 import { isWorkspaceOwner, useWorkspaceContext } from "@/components/workspace/workspace-gate";
 
 type EditableTemplate = {
   id: string;
+  code?: string;
+  providerTemplateId?: string | null;
   name?: string;
   type?: string;
   title?: string;
@@ -204,6 +207,16 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
         <div>
           <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tên mẫu tin</label>
           <Input value={name} disabled={formDisabled} onChange={(event) => setName(event.target.value)} />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Mã mẫu tin</label>
+            <Input value={data.code ?? "—"} readOnly disabled className="font-mono text-sm" />
+          </div>
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">{PROVIDER_TEMPLATE_ID_LABEL}</label>
+            <Input value={providerTemplateIdText(data)} readOnly disabled className="font-mono text-sm" />
+          </div>
         </div>
         <VariableField label="Tựa đề" labelClassName={LABEL} value={title} onChange={setTitle} slugs={slugsForInsert} disabled={formDisabled} />
         <VariableField label="Nội dung 1" labelClassName={LABEL} rows={12} value={content} onChange={setContent} slugs={slugsForInsert} disabled={formDisabled} />

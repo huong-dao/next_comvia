@@ -16,7 +16,6 @@ import { TemplateEditForm } from "@/components/template/template-edit-form";
 import { useToast } from "@/components/ui/toast";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { TEMPLATE_STATUS_LABELS } from "@/lib/status-labels";
-import { providerTemplateIdText } from "@/lib/template-display";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { formatDate } from "@/lib/utils";
 
@@ -28,7 +27,7 @@ import { formatDate } from "@/lib/utils";
 type TemplateRow = {
   id: string;
   name?: string;
-  providerTemplateId?: string | null;
+  code?: string;
   status?: string;
   updatedAt?: string;
 };
@@ -180,7 +179,7 @@ export function DashboardTemplateList({ className }: { className?: string }) {
                       {r.name ?? r.id}
                     </button>
                     <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-mono text-xs text-muted-foreground">{providerTemplateIdText(r)}</span>
+                      <span className="font-mono text-xs text-muted-foreground">{r.code ?? "—"}</span>
                       {r.status ? (
                         <EntityStatusBadge value={r.status} label={TEMPLATE_STATUS_LABELS[r.status.toUpperCase()]} />
                       ) : null}

@@ -14,7 +14,6 @@ import { TemplatePreview, type TemplateMessageType } from "@/components/template
 import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
 import { formatComviaError } from "@/lib/api-message";
 import { getAccessToken } from "@/lib/auth";
-import { templateOptionLabel } from "@/lib/template-display";
 import { workspacePath } from "@/lib/paths";
 import { type TemplateCtaButton } from "@/lib/template-cta";
 import { useComviaQuery } from "@/lib/use-comvia-query";
@@ -24,7 +23,6 @@ type TemplateOption = {
   type?: string;
   name?: string;
   code?: string;
-  providerTemplateId?: string | null;
   title?: string | null;
   content?: string | null;
   content2?: string | null;
@@ -86,7 +84,7 @@ export default function CampaignNewPage() {
     () =>
       approvedTemplates.map((t) => ({
         value: t.id,
-        label: templateOptionLabel(t),
+        label: t.name ? (t.code ? `${t.name} (${t.code})` : t.name) : (t.code ?? t.id),
       })),
     [approvedTemplates],
   );
