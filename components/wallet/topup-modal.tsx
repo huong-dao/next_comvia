@@ -12,6 +12,7 @@ import {
   type TopupStatusResponse,
 } from "@/lib/use-topup-status";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
+import { isPay2sUnavailableError, pay2sErrorMessage } from "@/lib/subscription";
 import { getAccessToken } from "@/lib/auth";
 import { formatVND } from "@/lib/utils";
 import { cn } from "@/lib/cn";
@@ -67,6 +68,8 @@ export function TopupModal({ open, onClose, workspaceId, onPaid }: TopupModalPro
   const [qr, setQr] = useState<CreateTopupResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  /** Lần tạo QR trước lỗi `PAY2S_UNAVAILABLE` → nút đổi thành "Thử lại" (tạo topup mới). */
+  const [retryable, setRetryable] = useState(false);
 
   const [moneyAccounts, setMoneyAccounts] = useState<MoneyAccountRow[]>([]);
   const [moneyAccountId, setMoneyAccountId] = useState("");
@@ -82,6 +85,7 @@ export function TopupModal({ open, onClose, workspaceId, onPaid }: TopupModalPro
     setStep("select");
     setQr(null);
     setErr(null);
+    setRetryable(false);
     setBusy(false);
     onClose();
   }, [onClose]);
@@ -170,6 +174,7 @@ export function TopupModal({ open, onClose, workspaceId, onPaid }: TopupModalPro
     }
     setBusy(true);
     setErr(null);
+    setRetryable(false);
     try {
       const res = await comviaFetch<CreateTopupResponse>(`/topups/create-with-pay2s`, {
         method: "POST",
@@ -182,7 +187,12 @@ export function TopupModal({ open, onClose, workspaceId, onPaid }: TopupModalPro
       setQr(res);
       setStep("qr");
     } catch (e) {
-      setErr(e instanceof ComviaApiError ? e.message : "Không tạo được QR.");
+      if (isPay2sUnavailableError(e)) {
+        setErr(pay2sErrorMessage(e));
+        setRetryable(true);
+      } else {
+        setErr(e instanceof ComviaApiError ? e.message : "Không tạo được QR.");
+      }
     } finally {
       setBusy(false);
     }
@@ -204,7 +214,7 @@ export function TopupModal({ open, onClose, workspaceId, onPaid }: TopupModalPro
               disabled={busy}
               onClick={() => void createQr()}
             >
-              {busy ? "Đang tạo…" : "Tạo QR"}
+              {busy ? "Đang tạo…" : retryable ? "Thử lại" : "Tạo QR"}
             </Button>
           </>
         ) : (

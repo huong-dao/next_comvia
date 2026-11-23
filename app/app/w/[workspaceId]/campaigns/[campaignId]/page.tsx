@@ -15,6 +15,8 @@ import {
 import { PageEmpty, PageError, PageLoading } from "@/components/app/page-state";
 import { CampaignPreflightModal, type CampaignPreflightData } from "@/components/campaign/campaign-preflight-modal";
 import { CampaignRowEditModal } from "@/components/campaign/campaign-row-edit-modal";
+import { SubscriptionBlockedNotice } from "@/components/subscription/subscription-blocked-notice";
+import { useCanSend } from "@/components/subscription/subscription-provider";
 import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
 import { isWorkspaceOwner, useWorkspaceContext } from "@/components/workspace/workspace-gate";
 import { Button } from "@/components/ui/button";
@@ -36,6 +38,7 @@ import { ComviaApiError, comviaFetch, comviaMultipartFetch, resolvePublicAssetUr
 import { getAccessToken, getStoredUser } from "@/lib/auth";
 import { workspacePath } from "@/lib/paths";
 import { ensureOaConnected } from "@/lib/oa-guard";
+import { isSubscriptionBlockedError } from "@/lib/subscription";
 import { type TemplateCtaButton } from "@/lib/template-cta";
 import { useClientPagination } from "@/lib/use-client-pagination";
 import { useComviaQuery } from "@/lib/use-comvia-query";
@@ -54,7 +57,10 @@ type CampaignDetail = {
     placeholdersJson?: Record<string, string>;
   };
   lastRunAt?: string;
-  /** `OA_DISCONNECTED` khi campaign PAUSED vì OA mất kết nối; null/giá trị lạ → xử lý như PAUSED thường. */
+  /**
+   * `OA_DISCONNECTED` (OA mất kết nối) hoặc `SUBSCRIPTION_EXPIRED` (gói hết hạn giữa chừng) khi campaign PAUSED;
+   * null/giá trị lạ → xử lý như PAUSED thường.
+   */
   pauseReason?: string | null;
   unitPriceAtCreate?: number | string | null;
   rowCount?: number;
@@ -152,6 +158,10 @@ export default function CampaignDetailPage() {
   const [rowFilter, setRowFilter] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  /** `message` của SUBSCRIPTION_REQUIRED/EXPIRED khi server chặn execute/retry/resume. */
+  const [subscriptionBlock, setSubscriptionBlock] = useState<string | null>(null);
+  /** `false` khi `/current` báo chưa có gói/hết hạn; `undefined` khi chưa tải xong. */
+  const canSend = useCanSend();
   const [csvErrors, setCsvErrors] = useState<string[]>([]);
   const [preflightOpen, setPreflightOpen] = useState(false);
   const [preflightData, setPreflightData] = useState<CampaignPreflightData | null>(null);
@@ -256,12 +266,17 @@ export default function CampaignDetailPage() {
   const isLocked = ["RUNNING", "CANCELLED"].includes(statusUpper);
   const pendingCount = pendingRows?.length ?? 0;
   const pausedByOa = statusUpper === "PAUSED" && campaign?.pauseReason === "OA_DISCONNECTED";
-  const canReconcileCsv = hasExecuted && !isLocked && !pausedByOa;
+  const pausedBySubscription = statusUpper === "PAUSED" && campaign?.pauseReason === "SUBSCRIPTION_EXPIRED";
+  /** Đang dừng có lý do: chỉ cho "Tiếp tục"; Retry/Reconcile/Execute bị ẩn (server trả lỗi tiếng Anh không có `code`). */
+  const pausedByReason = pausedByOa || pausedBySubscription;
+  /** Gói không cho gửi: khóa nút gửi, nhưng server vẫn là nơi quyết định (gói có thể hết giữa chừng). */
+  const subscriptionLocked = canSend === false;
+  const canReconcileCsv = hasExecuted && !isLocked && !pausedByReason;
   const failedCount = failedRows?.length ?? 0;
   /** Không có dòng PENDING (chưa reconcile CSV) → "Gửi lại" dùng `retry` trực tiếp các dòng FAILED. */
   const retryFailedDirectly = hasExecuted && pendingCount === 0 && failedCount > 0;
-  const canResend = (pendingCount > 0 || failedCount > 0) && !isLocked && !pausedByOa;
-  const canExecute = pendingCount > 0 && !isLocked;
+  const canResend = (pendingCount > 0 || failedCount > 0) && !isLocked && !pausedByReason && !subscriptionLocked;
+  const canExecute = pendingCount > 0 && !isLocked && !pausedByReason && !subscriptionLocked;
 
   const approvedTemplates = useMemo(
     () => (templates ?? []).filter((t) => (t.status ?? "").toUpperCase() === "APPROVED"),
@@ -407,6 +422,7 @@ export default function CampaignDetailPage() {
     if (!token) return;
     setBusy(true);
     setMsg(null);
+    setSubscriptionBlock(null);
     try {
       // Kiểm tra lại OA ngay trước khi gửi/gửi lại: trạng thái lúc mở hộp xác nhận có thể đã cũ.
       const oaGuard = await ensureOaConnected(workspaceId, token);
@@ -434,24 +450,33 @@ export default function CampaignDetailPage() {
       void refetchPending();
       void refetchFailed();
     } catch (e) {
-      setMsg(formatComviaError(e, "Không thực hiện được gửi chiến dịch."));
+      if (isSubscriptionBlockedError(e)) {
+        // Không trừ ví, không tạo MessageLog (guide 9B.6): đóng hộp xác nhận và dẫn tới trang gói.
+        setPreflightOpen(false);
+        setSubscriptionBlock(formatComviaError(e));
+      } else {
+        setMsg(formatComviaError(e, "Không thực hiện được gửi chiến dịch."));
+      }
     } finally {
       setBusy(false);
     }
   }
 
-  /** POST /resume: tiếp tục campaign bị tạm dừng vì OA mất kết nối (không trừ ví lần nữa). */
+  /** POST /resume: tiếp tục campaign bị tạm dừng vì OA mất kết nối hoặc gói hết hạn (không trừ ví lần nữa). */
   async function resumeCampaign() {
     const token = getAccessToken();
     if (!token) return;
     setBusy(true);
     setMsg(null);
+    setSubscriptionBlock(null);
     try {
       await comviaFetch(`/workspaces/${workspaceId}/campaigns/${campaignId}/resume`, { method: "POST", token });
       setMsg("Đã tiếp tục gửi chiến dịch.");
     } catch (e) {
       const code = e instanceof ComviaApiError ? (e.details as { code?: string } | null)?.code : undefined;
-      if (code === "OA_NOT_CONNECTED") {
+      if (isSubscriptionBlockedError(e)) {
+        setSubscriptionBlock(formatComviaError(e));
+      } else if (code === "OA_NOT_CONNECTED") {
         setMsg(`${formatComviaError(e, "Zalo OA chưa kết nối.")} Vui lòng kết nối lại OA rồi bấm Tiếp tục.`);
       } else {
         setMsg(formatComviaError(e, "Không tiếp tục được chiến dịch."));
@@ -784,6 +809,42 @@ export default function CampaignDetailPage() {
             </Button>
           </div>
         </Card>
+      ) : null}
+
+      {pausedBySubscription ? (
+        <Card className="mb-6 space-y-2 border-warning">
+          <p className="text-sm font-semibold text-foreground">Chiến dịch đang tạm dừng vì gói dịch vụ đã hết hạn</p>
+          <p className="text-sm text-muted-foreground">
+            Các tin chưa gửi vẫn được giữ nguyên (trạng thái chờ gửi) và tiền đã được giữ sẵn, sẽ không bị trừ lại.{" "}
+            {owner ? (
+              <>
+                Hãy{" "}
+                <Link className="font-medium text-primary underline" href={workspacePath(workspaceId, "subscription")}>
+                  gia hạn gói
+                </Link>{" "}
+                rồi bấm “Tiếp tục”.
+              </>
+            ) : (
+              "Liên hệ chủ sở hữu workspace để gia hạn gói rồi bấm “Tiếp tục”."
+            )}
+          </p>
+          <div>
+            {/* Chỉ bật khi `/current` có canSend=true (guide 9B.6). */}
+            <Button
+              type="button"
+              icon={<HiOutlinePlay className="size-4" />}
+              disabled={busy || canSend !== true}
+              title={canSend !== true ? "Gia hạn gói trước khi tiếp tục." : undefined}
+              onClick={() => void resumeCampaign()}
+            >
+              Tiếp tục
+            </Button>
+          </div>
+        </Card>
+      ) : null}
+
+      {subscriptionBlock ? (
+        <SubscriptionBlockedNotice className="mb-6" message={subscriptionBlock} workspaceId={workspaceId} owner={owner} />
       ) : null}
 
       {!hasExecuted ? (

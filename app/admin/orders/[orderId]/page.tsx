@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { comviaFetch } from "@/lib/comviaFetch";
+import { orderTypeLabel } from "@/lib/subscription";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { formatVND } from "@/lib/utils";
 
@@ -26,6 +27,8 @@ type OrderItemRow = {
 type AdminOrderDetail = {
   id?: string;
   orderCode?: string;
+  /** `TOPUP` | `SUBSCRIPTION` — quyết định bố cục chi tiết. */
+  type?: string;
   orderType?: string;
   workspaceId?: string;
   workspace?: {
@@ -36,10 +39,12 @@ type AdminOrderDetail = {
     fullName?: string;
     email?: string;
   };
+  /** `null` với đơn `SUBSCRIPTION` (BE không include thông tin purchase). */
   topupRequest?: {
     id?: string;
     topupCode?: string;
-  };
+  } | null;
+  subscriptionPurchaseId?: string | null;
   ownerUserId?: string;
   status?: string;
   totalAmountExclVat?: number | string;
@@ -93,16 +98,23 @@ export default function AdminOrderDetailPage() {
             </div>
             <div>
               <p className="text-xs uppercase text-muted-foreground">Loại đơn</p>
-              <p className="font-medium">{data.orderType ?? "—"}</p>
+              <p className="font-medium">{orderTypeLabel(data.type) ?? data.orderType ?? "—"}</p>
             </div>
             <div>
               <p className="text-xs uppercase text-muted-foreground">Người dùng</p>
               <p className="text-sm">{data.owner?.fullName ?? "—"}</p>
             </div>
-            <div>
-              <p className="text-xs uppercase text-muted-foreground">Mã Topup</p>
-              <p className="text-sm">{data.topupRequest?.topupCode ?? "—"}</p>
-            </div>
+            {data.type === "SUBSCRIPTION" ? (
+              <div>
+                <p className="text-xs uppercase text-muted-foreground">Mã đơn mua gói</p>
+                <p className="break-all font-mono text-sm">{data.subscriptionPurchaseId ?? "—"}</p>
+              </div>
+            ) : (
+              <div>
+                <p className="text-xs uppercase text-muted-foreground">Mã Topup</p>
+                <p className="text-sm">{data.topupRequest?.topupCode ?? "—"}</p>
+              </div>
+            )}
             <div>
               <p className="text-xs uppercase text-muted-foreground">Trước VAT</p>
               <p className="font-medium tabular-nums">{formatVND(Number(data.totalAmountExclVat))}</p>

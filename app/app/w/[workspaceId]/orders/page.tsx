@@ -10,12 +10,15 @@ import { SimpleTable } from "@/components/ui/simple-table";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { workspacePath } from "@/lib/paths";
+import { orderTypeLabel } from "@/lib/subscription";
 import { useClientPagination } from "@/lib/use-client-pagination";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
 type OrderRow = {
   id?: string;
   orderCode?: string;
+  /** `TOPUP` | `SUBSCRIPTION` — nhãn hiển thị; `orderType` là trường cũ (nhà cung cấp thanh toán). */
+  type?: string;
   orderType?: string;
   totalAmountInclVat?: string;
   status?: string;
@@ -58,7 +61,7 @@ export default function OrdersListPage() {
                 r.orderCode ?? "—"
               ),
           },
-          { key: "type", header: "Loại", cell: (r) => r.orderType ?? "—" },
+          { key: "type", header: "Loại", cell: (r) => orderTypeLabel(r.type) ?? r.orderType ?? "—" },
           { key: "total", header: "Tổng (gồm VAT)", cell: (r) => r.totalAmountInclVat ?? "—" },
           {
             key: "st",

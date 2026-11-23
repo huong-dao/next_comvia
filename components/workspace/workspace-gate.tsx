@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { HiOutlineArrowLeftOnRectangle } from "react-icons/hi2";
 import { PageForbidden, PageLoading } from "@/components/app/page-state";
+import { SubscriptionBanner } from "@/components/subscription/subscription-banner";
+import { SubscriptionProvider } from "@/components/subscription/subscription-provider";
 import { Button } from "@/components/ui/button";
 import { clearImpersonationSession, getImpersonationMeta, isImpersonating } from "@/lib/auth";
 import { comviaFetch } from "@/lib/comviaFetch";
@@ -130,8 +132,12 @@ export function WorkspaceGate({ children }: { children: ReactNode }) {
 
   return (
     <WorkspaceRoleContext.Provider value={value}>
-      {impersonating ? <ImpersonationBanner /> : null}
-      {children}
+      {/* `key` theo workspace: đổi workspace là một instance mới, không giữ trạng thái gói của workspace trước. */}
+      <SubscriptionProvider key={workspaceId} workspaceId={workspaceId}>
+        {impersonating ? <ImpersonationBanner /> : null}
+        <SubscriptionBanner workspaceId={workspaceId} owner={isWorkspaceOwner(value.role)} />
+        {children}
+      </SubscriptionProvider>
     </WorkspaceRoleContext.Provider>
   );
 }

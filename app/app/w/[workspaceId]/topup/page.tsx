@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/input";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
+import { isPay2sUnavailableError, pay2sErrorMessage } from "@/lib/subscription";
 import { getAccessToken } from "@/lib/auth";
 import { formatVND } from "@/lib/utils";
 import { HiQrCode } from "react-icons/hi2";
@@ -45,6 +46,8 @@ export default function TopupPage() {
   const [qr, setQr] = useState<QrRes | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  /** Lần tạo QR trước lỗi `PAY2S_UNAVAILABLE` → nút đổi thành "Thử lại" (tạo topup mới). */
+  const [retryable, setRetryable] = useState(false);
 
   const [moneyAccounts, setMoneyAccounts] = useState<MoneyAccountRow[]>([]);
   const [moneyAccountId, setMoneyAccountId] = useState("");
@@ -87,6 +90,7 @@ export default function TopupPage() {
     if (!token) return;
     setBusy(true);
     setErr(null);
+    setRetryable(false);
     const n = Number(amount.replace(/\D/g, "")) || 0;
     if (n <= 0) {
       setErr("Số tiền phải lớn hơn 0.");
@@ -104,7 +108,12 @@ export default function TopupPage() {
       });
       setQr(res);
     } catch (e) {
-      setErr(e instanceof ComviaApiError ? e.message : "Không tạo được QR.");
+      if (isPay2sUnavailableError(e)) {
+        setErr(pay2sErrorMessage(e));
+        setRetryable(true);
+      } else {
+        setErr(e instanceof ComviaApiError ? e.message : "Không tạo được QR.");
+      }
     } finally {
       setBusy(false);
     }
@@ -153,7 +162,7 @@ export default function TopupPage() {
             </div>
           </div>
           <Button icon={<HiQrCode className="size-4" />} type="button" disabled={busy} onClick={() => void createQr()}>
-            {busy ? "Đang tạo…" : "Tạo QR"}
+            {busy ? "Đang tạo…" : retryable ? "Thử lại" : "Tạo QR"}
           </Button>
           {err ? <p className="text-sm text-danger">{err}</p> : null}
         </Card>

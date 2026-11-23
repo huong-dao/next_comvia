@@ -11,11 +11,13 @@ import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
 import { SimpleTable } from "@/components/ui/simple-table";
 import { comviaFetch } from "@/lib/comviaFetch";
 import { workspacePath } from "@/lib/paths";
+import { orderTypeLabel } from "@/lib/subscription";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
 type OrderDetail = {
   id?: string;
   orderCode?: string;
+  type?: string;
   orderType?: string;
   status?: string;
   totalAmountExclVat?: string;
@@ -64,7 +66,7 @@ export default function OrderDetailPage() {
       <Card className="mb-6 grid gap-3 sm:grid-cols-2">
         <div>
           <p className="text-xs uppercase text-muted-foreground">Loại</p>
-          <p className="font-medium">{data.orderType ?? "—"}</p>
+          <p className="font-medium">{orderTypeLabel(data.type) ?? data.orderType ?? "—"}</p>
         </div>
         <div>
           <p className="text-xs uppercase text-muted-foreground">Trạng thái</p>

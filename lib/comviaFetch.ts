@@ -2,6 +2,8 @@ import { clearAuthSession, getAccessToken, getRefreshToken, isImpersonating, upd
 
 export type ComviaApiErrorBody = {
   statusCode?: number;
+  /** Mã lỗi nghiệp vụ (vd `SUBSCRIPTION_EXPIRED`, `PAY2S_UNAVAILABLE`); lỗi thường không có. */
+  code?: string;
   message?: string | string[];
   error?: string;
 };
@@ -9,6 +11,8 @@ export type ComviaApiErrorBody = {
 export class ComviaApiError extends Error {
   readonly statusCode: number;
   readonly body: ComviaApiErrorBody | null;
+  /** `body.code` khi BE trả mã lỗi nghiệp vụ, ngược lại `null`. */
+  readonly code: string | null;
   /** Payload JSON đầy đủ khi có (vd. body lỗi verify PDF 422 với mismatches). */
   readonly details: unknown | null;
 
@@ -17,6 +21,7 @@ export class ComviaApiError extends Error {
     this.name = "ComviaApiError";
     this.statusCode = statusCode;
     this.body = body;
+    this.code = typeof body?.code === "string" && body.code ? body.code : null;
     this.details = details ?? body;
   }
 }

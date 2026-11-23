@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { HiOutlineChatBubbleLeftRight, HiOutlineCursorArrowRays } from "react-icons/hi2";
+import { HiOutlineBell, HiOutlineChatBubbleLeftRight, HiOutlineCursorArrowRays } from "react-icons/hi2";
 import { AdminRoleGate } from "@/components/admin/role-gate";
 import { PageHeader } from "@/components/app/page-header";
 import { Card } from "@/components/ui/card";
@@ -16,6 +16,12 @@ const configItems = [
     description: "Cấu hình đơn giá global theo từng loại nút CTA.",
     href: "/admin/config/cta-pricing",
     icon: HiOutlineCursorArrowRays,
+  },
+  {
+    title: "Nhắc nhở owner",
+    description: "Số ngày nhắc gói sắp hết hạn và ngưỡng nhắc ví sắp hết tiền.",
+    href: "/admin/config/general",
+    icon: HiOutlineBell,
   },
 ];
 

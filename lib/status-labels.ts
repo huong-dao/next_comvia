@@ -17,6 +17,7 @@ export type StatusKind =
   | "wallet"
   | "oa"
   | "workspace"
+  | "subscription"
   | "user";
 
 /** Nhãn mặc định — áp dụng khi không truyền `kind` hoặc `kind` không có override riêng. */
@@ -29,6 +30,10 @@ export const STATUS_LABELS: Record<string, string> = {
   REVOKED: "ĐÃ THU HỒI",
   EXPIRED: "ĐÃ HẾT HẠN",
   UNKNOWN: "KHÔNG XÁC ĐỊNH",
+
+  // Subscription (`/current` có NONE; `state` của kỳ có UPCOMING)
+  NONE: "CHƯA ĐĂNG KÝ",
+  UPCOMING: "CHƯA BẮT ĐẦU",
 
   // Duyệt mẫu tin
   DRAFT: "BẢN NHÁP",
@@ -87,6 +92,10 @@ export const STATUS_LABELS_BY_KIND: Partial<Record<StatusKind, Record<string, st
   },
   campaignRow: {
     PENDING: "CHƯA GỬI",
+  },
+  subscription: {
+    ACTIVE: "ĐANG HIỆU LỰC",
+    CANCELLED: "ĐÃ THU HỒI",
   },
 };
 

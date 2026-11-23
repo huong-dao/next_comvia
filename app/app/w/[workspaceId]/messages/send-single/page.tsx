@@ -9,9 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input, Textarea } from "@/components/ui/input";
 import { SearchableSelect, type SearchableSelectOption } from "@/components/ui/searchable-select";
+import { SubscriptionBlockedNotice } from "@/components/subscription/subscription-blocked-notice";
+import { useCanSend } from "@/components/subscription/subscription-provider";
 import { TemplatePreview, type TemplateMessageType } from "@/components/template/preview/template-preview";
+import { isWorkspaceOwner, useWorkspaceContext } from "@/components/workspace/workspace-gate";
 import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
 import { ensureOaConnected } from "@/lib/oa-guard";
+import { isSubscriptionBlockedError } from "@/lib/subscription";
 import { getAccessToken } from "@/lib/auth";
 import { type TemplateCtaButton } from "@/lib/template-cta";
 import { useComviaQuery } from "@/lib/use-comvia-query";
@@ -90,6 +94,11 @@ export default function SendSinglePage() {
 
   const { data, loading, error, refetch } = useComviaQuery(Boolean(workspaceId), bundleFetcher);
   const { showAlert } = useAlertModal();
+  const { role } = useWorkspaceContext();
+  const owner = isWorkspaceOwner(role);
+  /** `false` khi `/current` báo chưa có gói/hết hạn → khóa nút gửi; vẫn xử lý lỗi từ server (gói có thể hết giữa chừng). */
+  const canSend = useCanSend();
+  const [subscriptionBlock, setSubscriptionBlock] = useState<string | null>(null);
 
   const oaPreviewFetcher = useCallback(
     async (token: string): Promise<OaPreviewAsset | null> => {
@@ -194,6 +203,7 @@ export default function SendSinglePage() {
     }
     const payload = Object.fromEntries(Object.entries(values).map(([k, v]) => [k, v.trim()]));
     setSending(true);
+    setSubscriptionBlock(null);
     try {
       const oaGuard = await ensureOaConnected(workspaceId, token);
       if (!oaGuard.ok) {
@@ -222,7 +232,12 @@ export default function SendSinglePage() {
       setJsonText("{}");
       setJsonError(null);
     } catch (e) {
-      showAlert({ type: "error", message: e instanceof ComviaApiError ? e.message : "Gửi thất bại." });
+      if (isSubscriptionBlockedError(e)) {
+        // SUBSCRIPTION_REQUIRED/EXPIRED: không tạo MessageLog, không trừ ví — hiện `message` + nút tới trang gói.
+        setSubscriptionBlock((e as ComviaApiError).message);
+      } else {
+        showAlert({ type: "error", message: e instanceof ComviaApiError ? e.message : "Gửi thất bại." });
+      }
     } finally {
       setSending(false);
     }
@@ -307,7 +322,16 @@ export default function SendSinglePage() {
               />
             </div>
           </details>
-          <Button icon={<HiOutlinePaperAirplane className="size-4" />} type="button" disabled={sending} onClick={() => void send()}>
+          {subscriptionBlock ? (
+            <SubscriptionBlockedNotice message={subscriptionBlock} workspaceId={workspaceId} owner={owner} />
+          ) : null}
+          <Button
+            icon={<HiOutlinePaperAirplane className="size-4" />}
+            type="button"
+            disabled={sending || canSend === false}
+            title={canSend === false ? "Workspace chưa có gói còn hạn nên chưa gửi được tin." : undefined}
+            onClick={() => void send()}
+          >
             {sending ? "Đang gửi…" : "Gửi tin"}
           </Button>
         </Card>

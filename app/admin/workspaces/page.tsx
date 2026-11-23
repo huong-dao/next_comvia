@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { HiOutlineArrowTopRightOnSquare, HiOutlineNoSymbol, HiOutlineWallet } from "react-icons/hi2";
+import Link from "next/link";
+import { HiOutlineArrowTopRightOnSquare, HiOutlineNoSymbol, HiOutlineTicket, HiOutlineWallet } from "react-icons/hi2";
 import { FilterCard, FilterField } from "@/components/app/filter-card";
 import { PageHeader } from "@/components/app/page-header";
 import { PageError, PageLoading } from "@/components/app/page-state";
@@ -10,6 +11,7 @@ import {
   WalletAdjustmentModal,
   type WalletAdjustmentResult,
 } from "@/components/admin/wallet-adjustment-modal";
+import { SubscriptionGrantModal } from "@/components/admin/subscription-grant-modal";
 import { Button } from "@/components/ui/button";
 import { useAlertModal } from "@/components/ui/alert-modal";
 import { EntityStatusBadge } from "@/components/ui/entity-status-badge";
@@ -18,6 +20,7 @@ import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SimpleTable } from "@/components/ui/simple-table";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { getAccessToken, getStoredUser, type ImpersonationMeta, type StoredUser } from "@/lib/auth";
+import { formatDateTime, type AdminSubscription } from "@/lib/subscription";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { formatVND } from "@/lib/utils";
 
@@ -64,6 +67,7 @@ export default function AdminWorkspacesPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [impersonating, setImpersonating] = useState<string | null>(null);
   const [adjustTarget, setAdjustTarget] = useState<WsRow | null>(null);
+  const [grantTarget, setGrantTarget] = useState<WsRow | null>(null);
 
   const qs = useMemo(() => {
     const p = new URLSearchParams();
@@ -118,6 +122,16 @@ export default function AdminWorkspacesPage() {
       )} → ${formatVND(Number(result.balanceAfter))}`,
     });
     void refetch();
+  }
+
+  /** Cấp tay xong: báo hiệu lực của kỳ vừa cấp để admin đối chiếu (không có bước hoàn tác ngoài sửa/thu hồi kỳ). */
+  function handleGranted(result: AdminSubscription) {
+    setGrantTarget(null);
+    showAlert({
+      type: "success",
+      title: "Đã cấp gói",
+      message: `${result.plan.name} cho ${result.workspace.name ?? result.workspace.id}: ${formatDateTime(result.startsAt)} – ${formatDateTime(result.endsAt)}.`,
+    });
   }
 
   /**
@@ -249,6 +263,19 @@ export default function AdminWorkspacesPage() {
                         type="button"
                         size="sm"
                         variant="outline"
+                        title="Cấp tay một kỳ subscription (không qua thanh toán)."
+                        onClick={() => setGrantTarget(r)}
+                        icon={<HiOutlineTicket className="size-4" />}
+                      >
+                        Cấp gói
+                      </Button>
+                      <Button type="button" size="sm" variant="ghost" asChild>
+                        <Link href={`/admin/subscriptions?workspaceId=${encodeURIComponent(r.id)}`}>Gói đã cấp</Link>
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
                         disabled={inactive}
                         title={
                           inactive
@@ -307,6 +334,15 @@ export default function AdminWorkspacesPage() {
 
           {/* `key` theo workspace: mỗi lần mở là một instance mới nên số tiền/lý do của
               lần trước không bao giờ dính sang workspace khác. */}
+          {grantTarget ? (
+            <SubscriptionGrantModal
+              key={grantTarget.id}
+              workspace={{ id: grantTarget.id, name: grantTarget.name }}
+              onClose={() => setGrantTarget(null)}
+              onGranted={handleGranted}
+            />
+          ) : null}
+
           {adjustTarget ? (
             <WalletAdjustmentModal
               key={adjustTarget.id}

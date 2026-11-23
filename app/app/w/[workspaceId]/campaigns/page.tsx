@@ -165,6 +165,9 @@ export default function CampaignsListPage() {
                     {r.status.toUpperCase() === "PAUSED" && r.pauseReason === "OA_DISCONNECTED" ? (
                       <p className="text-xs text-danger">OA mất kết nối — vào chi tiết để tiếp tục</p>
                     ) : null}
+                    {r.status.toUpperCase() === "PAUSED" && r.pauseReason === "SUBSCRIPTION_EXPIRED" ? (
+                      <p className="text-xs text-danger">Gói đã hết hạn — gia hạn rồi vào chi tiết để tiếp tục</p>
+                    ) : null}
                   </div>
                 ) : (
                   "—"

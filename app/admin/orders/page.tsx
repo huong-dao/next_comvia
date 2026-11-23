@@ -14,6 +14,7 @@ import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { SimpleTable } from "@/components/ui/simple-table";
 import { comviaFetch } from "@/lib/comviaFetch";
+import { ORDER_TYPE_LABELS, orderTypeLabel } from "@/lib/subscription";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
 const PAGE_SIZE = 30;
@@ -28,6 +29,9 @@ type OrderRow = {
   totalAmountInclVat?: number | string;
   status?: string;
   paidAt?: string | null;
+  /** `TOPUP` | `SUBSCRIPTION`; đơn subscription có `subscriptionPurchaseId`, không có `topupRequestId`. */
+  type?: string;
+  subscriptionPurchaseId?: string | null;
   topupRequestId?: string | null;
   createdAt?: string;
   workspace?: {
@@ -71,6 +75,7 @@ type AppliedFilters = {
   ownerUserId: string;
   status: string;
   orderCode: string;
+  type: string;
 };
 
 const initialFilters = (): AppliedFilters => ({
@@ -78,6 +83,7 @@ const initialFilters = (): AppliedFilters => ({
   ownerUserId: "",
   status: "",
   orderCode: "",
+  type: "",
 });
 
 function isEndUserRole(role?: string) {
@@ -129,6 +135,7 @@ export default function AdminOrdersPage() {
     if (applied.ownerUserId.trim()) p.set("ownerUserId", applied.ownerUserId.trim());
     if (applied.status) p.set("status", applied.status);
     if (applied.orderCode.trim()) p.set("orderCode", applied.orderCode.trim());
+    if (applied.type) p.set("type", applied.type);
     return p.toString();
   }, [page, applied]);
 
@@ -166,7 +173,24 @@ export default function AdminOrdersPage() {
               <HiOutlineAdjustmentsHorizontal className="size-5 text-secondary" />
               <p className="text-sm font-semibold text-foreground">Bộ lọc</p>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+              <div>
+                <label className="mb-1 block text-xs text-muted-foreground" htmlFor="orders-filter-type">
+                  Loại đơn
+                </label>
+                <Select
+                  id="orders-filter-type"
+                  value={draft.type}
+                  onChange={(e) => patchDraft({ type: e.target.value })}
+                >
+                  <option value="">Tất cả</option>
+                  {Object.entries(ORDER_TYPE_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
               <div>
                 <label className="mb-1 block text-xs text-muted-foreground" htmlFor="orders-filter-code">
                   Mã đơn
@@ -250,6 +274,7 @@ export default function AdminOrdersPage() {
                   </Button>
                 ),
               },
+              { key: "type", header: "Loại", cell: (r) => orderTypeLabel(r.type) ?? "—" },
               { key: "ws", header: "Workspace", cell: (r) => r.workspace?.name ?? "—" },
               { key: "own", header: "Người dùng", cell: (r) => r.owner?.fullName ?? "—" },
               {
