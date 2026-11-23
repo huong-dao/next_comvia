@@ -133,7 +133,7 @@ export function OverviewSection() {
           <StatBlock
             icon={<HiOutlinePaperAirplane className="size-5" />}
             value={formatCount(data?.messagesSent.value)}
-            label="Tin nhắn đã gửi"
+            label="Tin gửi thành công"
             delta={toDelta(data?.messagesSent.changePercent)}
           />
           <StatBlock

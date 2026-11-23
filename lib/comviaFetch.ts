@@ -4,6 +4,8 @@ export type ComviaApiErrorBody = {
   statusCode?: number;
   /** Mã lỗi nghiệp vụ (vd `SUBSCRIPTION_EXPIRED`, `PAY2S_UNAVAILABLE`); lỗi thường không có. */
   code?: string;
+  /** Có ở mọi lỗi gửi đơn trừ khi `templateId` không tồn tại (không có mẫu để gắn log). */
+  messageLogId?: string;
   message?: string | string[];
   error?: string;
 };

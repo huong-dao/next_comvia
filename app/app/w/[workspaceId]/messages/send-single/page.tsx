@@ -233,10 +233,16 @@ export default function SendSinglePage() {
       setJsonError(null);
     } catch (e) {
       if (isSubscriptionBlockedError(e)) {
-        // SUBSCRIPTION_REQUIRED/EXPIRED: không tạo MessageLog, không trừ ví — hiện `message` + nút tới trang gói.
+        // SUBSCRIPTION_REQUIRED/EXPIRED: không trừ ví — hiện `message` + nút tới trang gói.
         setSubscriptionBlock((e as ComviaApiError).message);
       } else {
-        showAlert({ type: "error", message: e instanceof ComviaApiError ? e.message : "Gửi thất bại." });
+        // BE (2026-11-23) ghi MessageLog FAILED cho mọi lỗi gửi, trừ khi `templateId` không tồn tại → `messageLogId` có thể thiếu.
+        const base = e instanceof ComviaApiError ? e.message : "Gửi thất bại.";
+        const hasLog = e instanceof ComviaApiError && Boolean(e.body?.messageLogId);
+        showAlert({
+          type: "error",
+          message: hasLog ? `${base} Xem lại tin này ở mục Nhật ký gửi tin.` : base,
+        });
       }
     } finally {
       setSending(false);

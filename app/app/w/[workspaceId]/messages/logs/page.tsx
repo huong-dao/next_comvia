@@ -10,6 +10,7 @@ import { Input, Select } from "@/components/ui/input";
 import { SimpleTable } from "@/components/ui/simple-table";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { comviaFetch } from "@/lib/comviaFetch";
+import { describeFailure } from "@/lib/message-failure";
 import { useClientPagination } from "@/lib/use-client-pagination";
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
@@ -21,7 +22,9 @@ type LogRow = {
   sendType?: string;
   status?: string;
   providerMessageId?: string;
-  costAtTime?: string;
+  costAtTime?: string | null;
+  /** `"<CODE>: <chi tiết>"` (log từ 2026-11-23); log cũ là chuỗi thô, không có mã. */
+  errorCode?: string | null;
 };
 
 /** BE giới hạn limit là số nguyên trong khoảng 1–100. */
@@ -32,6 +35,26 @@ const SEND_TYPE_LABELS: Record<string, string> = {
   CAMPAIGN: "CHIẾN DỊCH",
   TEST: "GỬI THỬ",
 };
+
+/** Tin FAILED không bị tính phí: bỏ qua `costAtTime` (tin lỗi campaign mang đơn giá đã giữ, sẽ được hoàn). */
+function isFailed(r: LogRow) {
+  return r.status?.toUpperCase() === "FAILED";
+}
+
+function FailureReason({ row }: { row: LogRow }) {
+  const failure = describeFailure(row.errorCode);
+  if (!failure) return <>—</>;
+  // PENDING (campaign) có errorCode nhưng là tin chưa rõ kết quả, không phải lỗi chắc chắn.
+  const pending = row.status?.toUpperCase() === "PENDING";
+  return (
+    <span
+      className={pending ? "text-xs text-muted-foreground" : "text-xs text-danger"}
+      title={failure.detail ?? undefined}
+    >
+      {pending ? `Chưa rõ kết quả (cần đối soát): ${failure.label}` : failure.label}
+    </span>
+  );
+}
 
 type TemplateOption = { id: string; name?: string; code?: string };
 
@@ -195,7 +218,16 @@ export default function MessageLogsPage() {
               cell: (r) =>
                 r.status ? <EntityStatusBadge value={r.status} kind="message" /> : "—",
             },
-            { key: "cost", header: "Chi phí", cell: (r) => r.costAtTime ?? "—" },
+            {
+              key: "reason",
+              header: "Lý do lỗi",
+              cell: (r) => <FailureReason row={r} />,
+            },
+            {
+              key: "cost",
+              header: "Chi phí",
+              cell: (r) => (isFailed(r) ? "—" : (r.costAtTime ?? "—")),
+            },
           ]}
         />
       ) : null}

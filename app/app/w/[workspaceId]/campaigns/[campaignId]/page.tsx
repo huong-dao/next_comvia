@@ -29,7 +29,7 @@ import { TablePagination } from "@/components/ui/table-pagination";
 import { formatComviaError } from "@/lib/api-message";
 import { localizeCsvErrors } from "@/lib/campaign-csv-errors";
 import {
-  campaignRowFailureText,
+  campaignRowReason,
   payloadToStringMap,
   type CampaignDataRow,
 } from "@/lib/campaign-row-display";
@@ -1008,8 +1008,19 @@ export default function CampaignDetailPage() {
               key: "fail",
               header: "Lý do / log",
               cell: (r) => {
-                const text = campaignRowFailureText(r);
-                return text ? <span className="text-xs text-danger">{text}</span> : "—";
+                const reason = campaignRowReason(r);
+                if (!reason) return "—";
+                const toneClass =
+                  reason.tone === "danger"
+                    ? "text-danger"
+                    : reason.tone === "warning"
+                      ? "text-amber-600 dark:text-amber-400"
+                      : "text-muted-foreground";
+                return (
+                  <span className={`text-xs ${toneClass}`} title={reason.detail ?? undefined}>
+                    {reason.text}
+                  </span>
+                );
               },
             },
             {
