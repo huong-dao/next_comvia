@@ -29,7 +29,6 @@ type AdminOrderDetail = {
   orderCode?: string;
   /** `TOPUP` | `SUBSCRIPTION` — quyết định bố cục chi tiết. */
   type?: string;
-  orderType?: string;
   workspaceId?: string;
   workspace?: {
     name?: string;
@@ -98,7 +97,7 @@ export default function AdminOrderDetailPage() {
             </div>
             <div>
               <p className="text-xs uppercase text-muted-foreground">Loại đơn</p>
-              <p className="font-medium">{orderTypeLabel(data.type) ?? data.orderType ?? "—"}</p>
+              <p className="font-medium">{orderTypeLabel(data.type) ?? "—"}</p>
             </div>
             <div>
               <p className="text-xs uppercase text-muted-foreground">Người dùng</p>

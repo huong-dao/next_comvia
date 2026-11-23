@@ -13,14 +13,15 @@ import { workspacePath } from "@/lib/paths";
 import { orderTypeLabel } from "@/lib/subscription";
 import { useClientPagination } from "@/lib/use-client-pagination";
 import { useComviaQuery } from "@/lib/use-comvia-query";
+import { formatVNDOrDash } from "@/lib/utils";
 
 type OrderRow = {
   id?: string;
   orderCode?: string;
-  /** `TOPUP` | `SUBSCRIPTION` — nhãn hiển thị; `orderType` là trường cũ (nhà cung cấp thanh toán). */
+  /** `TOPUP` | `SUBSCRIPTION`. */
   type?: string;
-  orderType?: string;
-  totalAmountInclVat?: string;
+  /** Decimal → thường là string. */
+  totalAmountInclVat?: string | number;
   status?: string;
   paidAt?: string;
 };
@@ -61,8 +62,12 @@ export default function OrdersListPage() {
                 r.orderCode ?? "—"
               ),
           },
-          { key: "type", header: "Loại", cell: (r) => orderTypeLabel(r.type) ?? r.orderType ?? "—" },
-          { key: "total", header: "Tổng (gồm VAT)", cell: (r) => r.totalAmountInclVat ?? "—" },
+          { key: "type", header: "Loại", cell: (r) => orderTypeLabel(r.type) ?? "—" },
+          {
+            key: "total",
+            header: "Tổng (gồm VAT)",
+            cell: (r) => <span className="tabular-nums">{formatVNDOrDash(r.totalAmountInclVat)}</span>,
+          },
           {
             key: "st",
             header: "Trạng thái",

@@ -13,24 +13,25 @@ import { comviaFetch } from "@/lib/comviaFetch";
 import { workspacePath } from "@/lib/paths";
 import { orderTypeLabel } from "@/lib/subscription";
 import { useComviaQuery } from "@/lib/use-comvia-query";
+import { formatVNDOrDash } from "@/lib/utils";
 
 type OrderDetail = {
   id?: string;
   orderCode?: string;
   type?: string;
-  orderType?: string;
   status?: string;
-  totalAmountExclVat?: string;
-  totalVatAmount?: string;
-  totalAmountInclVat?: string;
+  /** Tiền là Decimal → thường là string, parse trước khi format. */
+  totalAmountExclVat?: string | number;
+  totalVatAmount?: string | number;
+  totalAmountInclVat?: string | number;
   paidAt?: string;
   items?: Array<{
     id?: string;
     name?: string;
     quantity?: number;
-    unitPrice?: string;
-    vatRate?: string;
-    totalAmountInclVat?: string;
+    unitPrice?: string | number;
+    vatRate?: string | number;
+    totalAmountInclVat?: string | number;
   }>;
 };
 
@@ -66,7 +67,7 @@ export default function OrderDetailPage() {
       <Card className="mb-6 grid gap-3 sm:grid-cols-2">
         <div>
           <p className="text-xs uppercase text-muted-foreground">Loại</p>
-          <p className="font-medium">{orderTypeLabel(data.type) ?? data.orderType ?? "—"}</p>
+          <p className="font-medium">{orderTypeLabel(data.type) ?? "—"}</p>
         </div>
         <div>
           <p className="text-xs uppercase text-muted-foreground">Trạng thái</p>
@@ -74,15 +75,15 @@ export default function OrderDetailPage() {
         </div>
         <div>
           <p className="text-xs uppercase text-muted-foreground">Trước VAT</p>
-          <p className="font-medium tabular-nums">{data.totalAmountExclVat ?? "—"}</p>
+          <p className="font-medium tabular-nums">{formatVNDOrDash(data.totalAmountExclVat)}</p>
         </div>
         <div>
           <p className="text-xs uppercase text-muted-foreground">VAT</p>
-          <p className="font-medium tabular-nums">{data.totalVatAmount ?? "—"}</p>
+          <p className="font-medium tabular-nums">{formatVNDOrDash(data.totalVatAmount)}</p>
         </div>
         <div>
           <p className="text-xs uppercase text-muted-foreground">Tổng thanh toán</p>
-          <p className="font-semibold tabular-nums">{data.totalAmountInclVat ?? "—"}</p>
+          <p className="font-semibold tabular-nums">{formatVNDOrDash(data.totalAmountInclVat)}</p>
         </div>
         <div>
           <p className="text-xs uppercase text-muted-foreground">Paid at</p>
@@ -97,9 +98,9 @@ export default function OrderDetailPage() {
         columns={[
           { key: "n", header: "Tên", cell: (r) => r.name ?? "—" },
           { key: "q", header: "SL", cell: (r) => String(r.quantity ?? "—") },
-          { key: "p", header: "Đơn giá", cell: (r) => r.unitPrice ?? "—" },
-          { key: "v", header: "VAT%", cell: (r) => r.vatRate ?? "—" },
-          { key: "t", header: "Tổng", cell: (r) => r.totalAmountInclVat ?? "—" },
+          { key: "p", header: "Đơn giá", cell: (r) => formatVNDOrDash(r.unitPrice) },
+          { key: "v", header: "VAT%", cell: (r) => (r.vatRate != null && r.vatRate !== "" ? String(r.vatRate) : "—") },
+          { key: "t", header: "Tổng", cell: (r) => formatVNDOrDash(r.totalAmountInclVat) },
         ]}
       />
     </div>
