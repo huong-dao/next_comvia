@@ -69,17 +69,22 @@ const formatCount = (raw: number | string | null | undefined): string => {
   return n === null ? "—" : numberFormatter.format(n);
 };
 
+/** Làm tròn tối đa 1 chữ số thập phân (83.05084… → 83,1; 100 → 100). */
+const roundPercent = (n: number): number => Math.round(n * 10) / 10;
+
+const percentFormatter = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 });
+
 /** Tỷ lệ phần trăm; null (mẫu số 0) → "—". */
 const formatPercent = (raw: number | string | null | undefined): string => {
   const n = toNumber(raw);
-  return n === null ? "—" : `${n}%`;
+  return n === null ? "—" : `${percentFormatter.format(n)}%`;
 };
 
 /** changePercent → delta cho StatBlock; null → undefined (ẩn badge). */
 const toDelta = (raw: number | string | null | undefined): StatBlockDelta | undefined => {
   const n = toNumber(raw);
   if (n === null) return undefined;
-  return { percent: n, direction: n >= 0 ? "up" : "down" };
+  return { percent: roundPercent(n), direction: n >= 0 ? "up" : "down" };
 };
 
 /**
