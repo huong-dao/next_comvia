@@ -32,6 +32,8 @@ import { useComviaQuery } from "@/lib/use-comvia-query";
 import { TemplateCtaFields } from "@/components/template/template-cta-fields";
 import { normalizeCtaButtons, validateCtaButtons, type TemplateCtaDraft } from "@/lib/template-cta";
 import { isWorkspaceOwner, useWorkspaceContext } from "@/components/workspace/workspace-gate";
+import { LibrarySourceSelect } from "@/components/template-library/library-source-select";
+import { libraryItemToFormValues, type LibraryItem } from "@/lib/template-library";
 
 export type CreateTemplateResponse = {
   id: string;
@@ -44,6 +46,8 @@ export type TemplateFormProps = {
   /** Gọi sau khi tạo (và submit nếu có) thành công. `submitted` = đã gửi duyệt. */
   onCreated: (tpl: CreateTemplateResponse, opts: { submitted: boolean }) => void;
   onCancel?: () => void;
+  /** Điền sẵn form từ mẫu thư viện (nút "Sử dụng" ở trang Thư viện mẫu tin). */
+  initialLibraryItem?: LibraryItem | null;
 };
 
 /** Enum loại tin backend (BR-05). FE dùng nhãn nội bộ bang/van_ban/otp → map sang đây khi gửi. */
@@ -85,7 +89,8 @@ const LABEL_CLASS = "mb-2 block text-xs font-semibold uppercase tracking-wider t
 
 type OaPreviewAsset = { logoLightUrl?: string | null };
 
-export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormProps) {
+export function TemplateForm({ workspaceId, onCreated, onCancel, initialLibraryItem }: TemplateFormProps) {
+  const [initial] = useState(() => (initialLibraryItem ? libraryItemToFormValues(initialLibraryItem) : null));
   const router = useRouter();
   const { role } = useWorkspaceContext();
   const owner = isWorkspaceOwner(role);
@@ -105,18 +110,18 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
 
   // Field mới (ISSUE-004) — gửi lên API theo tên chuẩn backend (BR-05).
   const [trackingId, setTrackingId] = useState("");
-  const [type, setType] = useState<TemplateMessageType>("bang");
-  const [title, setTitle] = useState("");
-  const [content2, setContent2] = useState("");
-  const [secondaryContent, setSecondaryContent] = useState("");
-  const [secondaryContent2, setSecondaryContent2] = useState("");
-  const [otpMinutes, setOtpMinutes] = useState("5");
+  const [type, setType] = useState<TemplateMessageType>(initial?.type ?? "bang");
+  const [title, setTitle] = useState(initial?.title ?? "");
+  const [content2, setContent2] = useState(initial?.content2 ?? "");
+  const [secondaryContent, setSecondaryContent] = useState(initial?.secondaryContent ?? "");
+  const [secondaryContent2, setSecondaryContent2] = useState(initial?.secondaryContent2 ?? "");
+  const [otpMinutes, setOtpMinutes] = useState(initial?.otpMinutes ?? "5");
 
   // Field gửi lên API.
-  const [name, setName] = useState("");
-  const [content, setContent] = useState("");
-  const [placeholderRows, setPlaceholderRows] = useState<PlaceholderRow[]>(() => [newPlaceholderRow()]);
-  const [ctaButtons, setCtaButtons] = useState<TemplateCtaDraft[]>([]);
+  const [name, setName] = useState(initial?.name ?? "");
+  const [content, setContent] = useState(initial?.content ?? "");
+  const [placeholderRows, setPlaceholderRows] = useState<PlaceholderRow[]>(() => initial?.placeholderRows ?? [newPlaceholderRow()]);
+  const [ctaButtons, setCtaButtons] = useState<TemplateCtaDraft[]>(initial?.ctaButtons ?? []);
   const [createdTemplate, setCreatedTemplate] = useState<CreateTemplateResponse | null>(null);
 
   const [error, setError] = useState<string | null>(null);
@@ -151,6 +156,34 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
       .filter((s) => s.length > 0 && slugLooksValid(s));
   }, [placeholderRows]);
 
+
+  /** Form đã có dữ liệu user nhập → hỏi xác nhận trước khi ghi đè từ thư viện. */
+  const isDirty = Boolean(
+    name.trim() ||
+      title.trim() ||
+      content.trim() ||
+      content2.trim() ||
+      secondaryContent.trim() ||
+      secondaryContent2.trim() ||
+      ctaButtons.length > 0 ||
+      placeholderRows.some((row) => row.slug.trim() || row.label.trim() || row.defaultValue.trim()),
+  );
+
+  /** Ghi đè toàn bộ nội dung form bằng mẫu thư viện; giữ nguyên Tracking ID (user tự nhập). */
+  function applyLibraryItem(item: LibraryItem) {
+    const values = libraryItemToFormValues(item);
+    setName(values.name);
+    setType(values.type);
+    setTitle(values.title);
+    setContent(values.content);
+    setContent2(values.content2);
+    setSecondaryContent(values.secondaryContent);
+    setSecondaryContent2(values.secondaryContent2);
+    setOtpMinutes(values.otpMinutes);
+    setPlaceholderRows(values.placeholderRows);
+    setCtaButtons(values.ctaButtons);
+    setError(null);
+  }
 
   function updateRow(id: string, patch: Partial<Pick<PlaceholderRow, "label" | "slug" | "defaultValue">>) {
     setPlaceholderRows((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -275,6 +308,8 @@ export function TemplateForm({ workspaceId, onCreated, onCancel }: TemplateFormP
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(320px,600px)]">
       <Card className="min-w-0 space-y-4">
         <fieldset disabled={createdTemplate !== null} className="space-y-4">
+        <LibrarySourceSelect isDirty={isDirty} onApply={applyLibraryItem} />
+
         <div>
           <label className={LABEL_CLASS}>Tên mẫu</label>
           <Input value={name} onChange={(e) => setName(e.target.value)} required />

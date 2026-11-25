@@ -25,6 +25,7 @@ export function Modal({
   onClose,
   footer,
   size = "md",
+  stacked = false,
 }: {
   open: boolean;
   title: string;
@@ -34,6 +35,8 @@ export function Modal({
   footer?: React.ReactNode;
   /** Chiều rộng tối đa của popup. Mặc định `md` (= `max-w-2xl`, giữ hành vi cũ). */
   size?: "md" | "lg" | "xl" | "full";
+  /** Modal mở chồng lên modal khác: nổi cao hơn (z-[45]) nhưng vẫn dưới alert (z-[1000]). */
+  stacked?: boolean;
 }) {
   // Guard SSR: `document` chưa tồn tại khi render trên server. Chỉ portal sau khi
   // mount client (cùng pattern mounted-guard với components/ui/toast.tsx).
@@ -66,7 +69,7 @@ export function Modal({
   // mọi containing block do tổ tiên tạo ra (vd Card có backdrop-blur). Giữ z-40
   // thấp hơn toast (z-50) để toast luôn nổi trên modal.
   return createPortal(
-    <div className="fixed inset-0 z-40 grid place-items-center bg-black/55 p-4">
+    <div className={cn("fixed inset-0 grid place-items-center bg-black/55 p-4", stacked ? "z-[45]" : "z-40")}>
       {/* Hộp popup: flex column, giới hạn chiều cao theo viewport (chừa lề p-4
           trên+dưới = 2rem). Header/footer cố định, chỉ phần body cuộn. */}
       <div

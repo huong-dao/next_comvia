@@ -12,6 +12,7 @@ import {
   HiOutlineCreditCard,
   HiOutlineDocumentText,
   HiOutlineMegaphone,
+  HiOutlineSquares2X2,
   HiOutlineHome,
   HiOutlineKey,
   HiOutlineRectangleStack,
@@ -38,6 +39,8 @@ type NavItem = {
   isActive: (pathname: string, workspaceId: string) => boolean;
   /** Route không nằm dưới /app/w/[id] (vd Cài đặt app). */
   appLevel?: boolean;
+  /** Chỉ hiện với các role này (so khớp user.role viết hoa); bỏ trống = mọi role. */
+  roles?: string[];
 };
 
 /** Cùng thứ tự & nhãn như layout ban đầu; href map sang route thật trong app. */
@@ -78,6 +81,13 @@ const navItems: NavItem[] = [
   //   href: (w) => workspacePath(w, "templates"),
   //   isActive: (p, w) => p.startsWith(workspacePath(w, "templates")),
   // },
+  {
+    label: "Thư viện mẫu tin",
+    icon: HiOutlineSquares2X2,
+    href: (w) => workspacePath(w, "template-library"),
+    isActive: (p, w) => p.startsWith(workspacePath(w, "template-library")),
+    roles: ["USER"],
+  },
   {
     label: "Chiến dịch",
     icon: HiOutlineMegaphone,
@@ -135,6 +145,7 @@ const adminItems: Array<{
   { label: "Gói subscription", href: "/admin/subscription-plans", icon: HiOutlineTicket },
   { label: "Subscriptions", href: "/admin/subscriptions", icon: HiOutlineSparkles },
   { label: "ZBS Templates", href: "/admin/templates", icon: HiOutlineDocumentText },
+  { label: "Thư viện mẫu tin", href: "/admin/template-library", icon: HiOutlineSquares2X2 },
   { label: "T\u00e0i kho\u1ea3n c\u00f4ng ty", href: "/admin/money-accounts", icon: HiOutlineCreditCard },
   { label: "\u0110\u01a1n h\u00e0ng", href: "/admin/orders", icon: HiOutlineShoppingCart },
   { label: "L\u1ecbch s\u1eed ho\u1ea1t \u0111\u1ed9ng", href: "/admin/audit-logs", icon: HiOutlineClipboardDocumentList },
@@ -153,7 +164,8 @@ export function WorkspaceSidebar({
   const workspaceFromUrl = resolveWorkspaceIdFromPath(pathname);
   const currentWorkspaceId = workspaceFromUrl || activeWorkspaceId;
   const isCompact = collapsed;
-  const isAdmin = String(getStoredUser()?.role ?? "").toUpperCase() === "ADMIN";
+  const userRole = String(getStoredUser()?.role ?? "").toUpperCase();
+  const isAdmin = userRole === "ADMIN";
 
   return (
     <aside
@@ -209,7 +221,7 @@ export function WorkspaceSidebar({
         />
 
         <nav className="space-y-1">
-          {navItems.map((item) => {
+          {navItems.filter((item) => !item.roles || item.roles.includes(userRole)).map((item) => {
             const href = item.appLevel
               ? item.href("")
               : currentWorkspaceId

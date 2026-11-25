@@ -17,6 +17,8 @@ import { normalizeCtaButtons, validateCtaButtons, type TemplateCtaButton, type T
 import { useComviaQuery } from "@/lib/use-comvia-query";
 import { PROVIDER_TEMPLATE_ID_LABEL, providerTemplateIdText } from "@/lib/template-display";
 import { isWorkspaceOwner, useWorkspaceContext } from "@/components/workspace/workspace-gate";
+import { LibrarySourceSelect } from "@/components/template-library/library-source-select";
+import { libraryItemToFormValues, previewToLibraryType, type LibraryItem } from "@/lib/template-library";
 
 type EditableTemplate = {
   id: string;
@@ -72,11 +74,14 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
   const [content, setContent] = useState("");
   const [placeholderRows, setPlaceholderRows] = useState<PlaceholderRow[]>(() => [newPlaceholderRow()]);
   const [ctaButtons, setCtaButtons] = useState<TemplateCtaDraft[]>([]);
+  // Số phút OTP chỉ có khi fill từ thư viện (form sửa không có ô riêng); null = giữ nguyên giá trị đã lưu.
+  const [otpMinutes, setOtpMinutes] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!data) return;
+    setOtpMinutes(null);
     setName(data.name ?? "");
     setTitle(data.title ?? "");
     setContent2(data.content2 ?? "");
@@ -106,6 +111,27 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
   const formDisabled = saving || !editable;
   const canSubmit = owner && editable;
   const canDisable = owner && status !== "DISABLED";
+
+  /** Form đang có nội dung → hỏi xác nhận trước khi ghi đè từ thư viện. */
+  const isDirty = Boolean(
+    name.trim() || title.trim() || content.trim() || content2.trim() || secondaryContent.trim() || secondaryContent2.trim() ||
+      ctaButtons.length > 0 || placeholderRows.some((row) => row.slug.trim() || row.label.trim() || row.defaultValue.trim()),
+  );
+
+  /** Chỉ thay nội dung trong form; mẫu chỉ đổi khi user bấm Lưu. Loại tin của mẫu tin không đổi (đã lọc cùng loại). */
+  function applyLibraryItem(item: LibraryItem) {
+    const values = libraryItemToFormValues(item);
+    setName(values.name);
+    setTitle(values.title);
+    setContent(values.content);
+    setContent2(values.content2);
+    setSecondaryContent(values.secondaryContent);
+    setSecondaryContent2(values.secondaryContent2);
+    setPlaceholderRows(values.placeholderRows);
+    setCtaButtons(values.ctaButtons);
+    if (item.type === "OTP") setOtpMinutes(values.otpMinutes);
+    setMessage(null);
+  }
 
   function updateRow(id: string, patch: Partial<Pick<PlaceholderRow, "label" | "slug" | "defaultValue">>) {
     setPlaceholderRows((rows) => rows.map((row) => (row.id === id ? { ...row, ...patch } : row)));
@@ -142,6 +168,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
           placeholderOrder: rowsToPlaceholderOrder(placeholderRows),
           placeholder_labels: rowsToPlaceholderLabels(placeholderRows),
           ctaButtons: normalizeCtaButtons(ctaButtons),
+          ...(otpMinutes !== null && Number.isInteger(Number(otpMinutes)) ? { otpExpiryMinutes: Number(otpMinutes) } : {}),
         }),
       });
       onSaved();
@@ -203,6 +230,14 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
             <p className="mt-1 text-muted-foreground">{data.revisionReason || "Staff đã trả mẫu tin về để bạn điều chỉnh."}</p>
             {data.returnedForRevisionAt ? <p className="mt-1 text-xs text-muted-foreground">Trả về lúc {new Date(data.returnedForRevisionAt).toLocaleString("vi-VN")}</p> : null}
           </div>
+        ) : null}
+        {status === "DRAFT" ? (
+          <LibrarySourceSelect
+            isDirty={isDirty}
+            onApply={applyLibraryItem}
+            lockedType={previewToLibraryType(toPreviewType(data.type))}
+            disabled={saving}
+          />
         ) : null}
         <div>
           <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">Tên mẫu tin</label>
@@ -284,7 +319,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
             content2={content2}
             secondaryContent={secondaryContent}
             secondaryContent2={secondaryContent2}
-            minutes={String(data.otpExpiryMinutes ?? 5)}
+            minutes={otpMinutes ?? String(data.otpExpiryMinutes ?? 5)}
             logoUrl={resolvePublicAssetUrl(oa?.logoLightUrl)}
             ctaButtons={ctaButtons}
           />
