@@ -76,12 +76,15 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
   const [ctaButtons, setCtaButtons] = useState<TemplateCtaDraft[]>([]);
   // Số phút OTP chỉ có khi fill từ thư viện (form sửa không có ô riêng); null = giữ nguyên giá trị đã lưu.
   const [otpMinutes, setOtpMinutes] = useState<string | null>(null);
+  // Loại tin mới khi fill từ thư viện (DRAFT được đổi loại); null = giữ loại đã lưu.
+  const [typeOverride, setTypeOverride] = useState<TemplateMessageType | null>(null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!data) return;
     setOtpMinutes(null);
+    setTypeOverride(null);
     setName(data.name ?? "");
     setTitle(data.title ?? "");
     setContent2(data.content2 ?? "");
@@ -129,7 +132,8 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
     setSecondaryContent2(values.secondaryContent2);
     setPlaceholderRows(values.placeholderRows);
     setCtaButtons(values.ctaButtons);
-    if (item.type === "OTP") setOtpMinutes(values.otpMinutes);
+    setTypeOverride(values.type);
+    setOtpMinutes(item.type === "OTP" ? values.otpMinutes : null);
     setMessage(null);
   }
 
@@ -142,6 +146,25 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
       return next.length > 0 ? next : [newPlaceholderRow()];
     });
   }
+  /** Đổi loại tin (chỉ khi fill từ thư viện làm khác loại đang lưu): gửi `type` + dọn field của loại cũ. */
+  function typeChangePatch(): Record<string, unknown> {
+    if (!typeOverride || typeOverride === toPreviewType(data?.type)) return {};
+    if (typeOverride === "otp") {
+      return {
+        type: previewToLibraryType(typeOverride),
+        placeholdersJson: { otp: "", phut: "" },
+        placeholderOrder: null,
+        placeholder_labels: null,
+        content: null,
+        content2: null,
+        secondaryContent: null,
+        secondaryContent2: null,
+        ctaButtons: null,
+      };
+    }
+    return { type: previewToLibraryType(typeOverride), otpExpiryMinutes: null };
+  }
+
   async function save() {
     if (!data || !editable) return;
     const placeholders = rowsToPlaceholders(placeholderRows);
@@ -169,6 +192,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
           placeholder_labels: rowsToPlaceholderLabels(placeholderRows),
           ctaButtons: normalizeCtaButtons(ctaButtons),
           ...(otpMinutes !== null && Number.isInteger(Number(otpMinutes)) ? { otpExpiryMinutes: Number(otpMinutes) } : {}),
+          ...typeChangePatch(),
         }),
       });
       onSaved();
@@ -235,7 +259,6 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
           <LibrarySourceSelect
             isDirty={isDirty}
             onApply={applyLibraryItem}
-            lockedType={previewToLibraryType(toPreviewType(data.type))}
             disabled={saving}
           />
         ) : null}
@@ -311,7 +334,7 @@ export function TemplateEditForm({ workspaceId, templateId, onSaved }: { workspa
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Xem trước</p>
         <div className="flex-1 overflow-auto rounded-xl bg-surface-muted p-4">
           <TemplatePreview
-            type={toPreviewType(data.type)}
+            type={typeOverride ?? toPreviewType(data.type)}
             title={title}
             content={content}
             placeholders={placeholdersParsed.ok ? placeholdersParsed.data : {}}
