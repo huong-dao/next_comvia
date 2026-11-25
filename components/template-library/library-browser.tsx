@@ -7,7 +7,7 @@ import { TemplatePreview } from "@/components/template/preview/template-preview"
 import { Input, Select } from "@/components/ui/input";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { cn } from "@/lib/cn";
-import { comviaFetch } from "@/lib/comviaFetch";
+import { ComviaApiError, comviaFetch, resolvePublicAssetUrl } from "@/lib/comviaFetch";
 import {
   buildLibraryQuery,
   libraryCtaToDrafts,
@@ -21,7 +21,7 @@ import {
 import { useComviaQuery } from "@/lib/use-comvia-query";
 
 /** Card một mẫu thư viện — trình bày như "Preview mẫu tin" ở form tạo/sửa. */
-export function LibraryCard({ item, actions }: { item: LibraryItem; actions?: ReactNode }) {
+export function LibraryCard({ item, actions, logoUrl }: { item: LibraryItem; actions?: ReactNode; logoUrl?: string | null }) {
   return (
     <div className="flex min-w-0 flex-col gap-3 rounded-2xl border border-border bg-card p-4">
       <div className="min-w-0">
@@ -50,6 +50,7 @@ export function LibraryCard({ item, actions }: { item: LibraryItem; actions?: Re
           secondaryContent2={item.secondaryContent2 ?? ""}
           minutes={String(item.otpExpiryMinutes ?? 5)}
           ctaButtons={libraryCtaToDrafts(item.ctaButtons)}
+          logoUrl={logoUrl}
         />
       </div>
       {actions ? <div className="flex flex-wrap justify-end gap-2">{actions}</div> : null}
@@ -80,6 +81,8 @@ type Props = {
   renderActions?: (item: LibraryItem, refresh: () => void) => ReactNode;
   /** Đổi giá trị để tải lại danh sách + danh mục (sau khi thêm/sửa/xóa). */
   reloadToken?: number;
+  /** Workspace đang xem: card hiển thị logo OA của workspace này (cá nhân hóa). Bỏ trống (Admin) = logo mặc định. */
+  workspaceId?: string;
   /** Hiện khi thư viện hoàn toàn trống (Admin: nút "Thêm mẫu tin"). */
   emptyAction?: ReactNode;
   className?: string;
@@ -97,6 +100,7 @@ export function LibraryBrowser({
   renderActions,
   reloadToken = 0,
   emptyAction,
+  workspaceId,
   className,
 }: Props) {
   const [categoryId, setCategoryId] = useState("");
@@ -142,6 +146,21 @@ export function LibraryBrowser({
     if (!data || data.data.length > 0 || page <= 1) return;
     setPage(Math.max(1, data.meta.totalPages));
   }, [data, page]);
+
+  // Logo OA của workspace hiện tại; workspace chưa kết nối OA (404) hoặc lỗi → dùng logo mặc định.
+  const oaFetcher = useCallback(
+    async (token: string): Promise<{ logoLightUrl?: string | null } | null> => {
+      try {
+        return await comviaFetch<{ logoLightUrl?: string | null }>(`/workspaces/${workspaceId}/oa`, { token });
+      } catch (oaError) {
+        if (oaError instanceof ComviaApiError) return null;
+        throw oaError;
+      }
+    },
+    [workspaceId],
+  );
+  const { data: oa } = useComviaQuery(Boolean(workspaceId), oaFetcher);
+  const logoUrl = resolvePublicAssetUrl(oa?.logoLightUrl);
 
   const refresh = useCallback(() => setLocalReload((value) => value + 1), []);
 
@@ -198,7 +217,7 @@ export function LibraryBrowser({
         <div className={cn(loading && "pointer-events-none opacity-60 transition-opacity")}>
           <div className={gridClassName}>
             {(data?.data ?? []).map((item) => (
-              <LibraryCard key={item.id} item={item} actions={renderActions?.(item, refresh)} />
+              <LibraryCard key={item.id} item={item} logoUrl={logoUrl} actions={renderActions?.(item, refresh)} />
             ))}
           </div>
         </div>

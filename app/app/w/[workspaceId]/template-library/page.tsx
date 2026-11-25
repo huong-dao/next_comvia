@@ -65,6 +65,7 @@ export default function TemplateLibraryPage() {
       />
       <LibraryBrowser
         apiBase={USER_LIBRARY_API}
+        workspaceId={workspaceId}
         limit={12}
         renderActions={(item, refresh) => (
           <Button size="sm" disabled={busyId !== null} onClick={() => void applyItem(item, refresh)}>

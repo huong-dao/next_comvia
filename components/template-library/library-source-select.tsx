@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
@@ -33,6 +34,7 @@ export function LibrarySourceSelect({
 }) {
   const role = useStoredRole();
   const { showToast } = useToast();
+  const workspaceId = useParams().workspaceId as string | undefined;
   const [source, setSource] = useState<Source>("manual");
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -77,6 +79,7 @@ export function LibrarySourceSelect({
       >
         <LibraryBrowser
           apiBase={USER_LIBRARY_API}
+          workspaceId={workspaceId}
           limit={3}
           lockedType={lockedType}
           gridClassName="grid gap-4 md:grid-cols-3"
