@@ -30,7 +30,7 @@ import { SidebarUserCard } from "@/components/layout/sidebar-user-card";
 import { WorkspaceSwitcher } from "@/components/layout/workspace-switcher";
 import Image from "next/image";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { getStoredUser } from "@/lib/auth";
+import { useStoredRole } from "@/lib/template-library";
 
 type NavItem = {
   label: string;
@@ -39,8 +39,8 @@ type NavItem = {
   isActive: (pathname: string, workspaceId: string) => boolean;
   /** Route không nằm dưới /app/w/[id] (vd Cài đặt app). */
   appLevel?: boolean;
-  /** Chỉ hiện với các role này (so khớp user.role viết hoa); bỏ trống = mọi role. */
-  roles?: string[];
+  /** Ẩn với các role này (user.role viết hoa). */
+  hideForRoles?: string[];
 };
 
 /** Cùng thứ tự & nhãn như layout ban đầu; href map sang route thật trong app. */
@@ -86,7 +86,7 @@ const navItems: NavItem[] = [
     icon: HiOutlineSquares2X2,
     href: (w) => workspacePath(w, "template-library"),
     isActive: (p, w) => p.startsWith(workspacePath(w, "template-library")),
-    roles: ["USER"],
+    hideForRoles: ["ADMIN", "STAFF"],
   },
   {
     label: "Chiến dịch",
@@ -164,7 +164,8 @@ export function WorkspaceSidebar({
   const workspaceFromUrl = resolveWorkspaceIdFromPath(pathname);
   const currentWorkspaceId = workspaceFromUrl || activeWorkspaceId;
   const isCompact = collapsed;
-  const userRole = String(getStoredUser()?.role ?? "").toUpperCase();
+  // Đọc role sau khi mount (useStoredRole) để SSR/hydration không lệch → menu theo role luôn hiện đúng.
+  const userRole = useStoredRole() ?? "";
   const isAdmin = userRole === "ADMIN";
 
   return (
@@ -221,7 +222,7 @@ export function WorkspaceSidebar({
         />
 
         <nav className="space-y-1">
-          {navItems.filter((item) => !item.roles || item.roles.includes(userRole)).map((item) => {
+          {navItems.filter((item) => !item.hideForRoles?.includes(userRole)).map((item) => {
             const href = item.appLevel
               ? item.href("")
               : currentWorkspaceId

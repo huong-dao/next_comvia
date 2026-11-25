@@ -13,7 +13,7 @@ import { formatComviaError } from "@/lib/api-message";
 import { getAccessToken } from "@/lib/auth";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
 import { APP_PATHS } from "@/lib/paths";
-import { USER_LIBRARY_API, useStoredRole, type LibraryItem } from "@/lib/template-library";
+import { USER_LIBRARY_API, isLibraryUserRole, useStoredRole, type LibraryItem } from "@/lib/template-library";
 
 /**
  * Thư viện mẫu tin (TPLLIB-01) cho USER: xem lưới card + "Sử dụng" → popup "Tạo mẫu tin" điền sẵn.
@@ -33,7 +33,7 @@ export default function TemplateLibraryPage() {
   }, [role, router]);
 
   if (role === null || role === "ADMIN") return <PageLoading />;
-  if (role !== "USER") {
+  if (!isLibraryUserRole(role)) {
     return <PageForbidden message="Tài khoản của bạn không có quyền dùng thư viện mẫu tin." backHref={APP_PATHS.workspaces} />;
   }
 

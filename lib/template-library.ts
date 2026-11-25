@@ -147,3 +147,8 @@ export function libraryItemToFormValues(item: LibraryItem): LibraryFormValues {
     ctaButtons: isOtp ? [] : libraryCtaToDrafts(item.ctaButtons),
   };
 }
+
+/** Người dùng workspace thường (Owner/Member): mọi role trừ ADMIN/STAFF. `null` = chưa biết. */
+export function isLibraryUserRole(role: string | null): boolean {
+  return role !== null && role !== "ADMIN" && role !== "STAFF";
+}

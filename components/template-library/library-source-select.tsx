@@ -9,7 +9,7 @@ import { LibraryBrowser } from "@/components/template-library/library-browser";
 import { formatComviaError } from "@/lib/api-message";
 import { getAccessToken } from "@/lib/auth";
 import { ComviaApiError, comviaFetch } from "@/lib/comviaFetch";
-import { USER_LIBRARY_API, useStoredRole, type LibraryItem, type LibraryItemType } from "@/lib/template-library";
+import { USER_LIBRARY_API, isLibraryUserRole, useStoredRole, type LibraryItem, type LibraryItemType } from "@/lib/template-library";
 
 type Source = "manual" | "library";
 
@@ -36,7 +36,7 @@ export function LibrarySourceSelect({
   const [source, setSource] = useState<Source>("manual");
   const [busyId, setBusyId] = useState<string | null>(null);
 
-  if (role !== "USER") return null;
+  if (!isLibraryUserRole(role)) return null;
 
   async function applyItem(item: LibraryItem, refresh: () => void) {
     if (isDirty && !window.confirm("Nội dung hiện tại sẽ bị thay thế bằng mẫu tin từ thư viện. Tiếp tục?")) return;
