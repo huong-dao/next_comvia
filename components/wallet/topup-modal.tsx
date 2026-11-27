@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { HiCheck, HiOutlineClipboardDocument, HiQrCode } from "react-icons/hi2";
+import { HiQrCode } from "react-icons/hi2";
+import { ManualTransferInfo, toTransferContent } from "@/components/payment/manual-transfer-info";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/input";
@@ -43,74 +44,6 @@ type MoneyAccountsResponse = {
   message: string;
 };
 
-/**
- * Nội dung chuyển khoản để webhook Pay2S khớp topup khi khách chuyển tay: `COMVIA<8hex>`
- * (docs/architecture/modules/subscription/component-design.md), suy từ `COMVIA_TOPUP_<8hex>`.
- */
-function toTransferContent(topupCode: string | undefined): string | null {
-  const hex = topupCode?.split("_").pop();
-  return hex ? `COMVIA${hex}` : null;
-}
-
-/** Một dòng thông tin chuyển khoản; `copyValue` khác `value` khi cần copy dạng thô (vd số tiền không dấu chấm). */
-function TransferInfoRow({
-  label,
-  value,
-  copyValue,
-  emphasize,
-}: {
-  label: string;
-  value: string;
-  copyValue?: string;
-  emphasize?: boolean;
-}) {
-  const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    if (!copied) return;
-    const t = setTimeout(() => setCopied(false), 1500);
-    return () => clearTimeout(t);
-  }, [copied]);
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(copyValue ?? value);
-      setCopied(true);
-    } catch {
-      // Clipboard bị chặn (quyền/môi trường) — bỏ qua, không chặn UI.
-    }
-  }
-
-  return (
-    <div className="flex items-center justify-between gap-3 py-2">
-      <span className="shrink-0 text-muted-foreground">{label}</span>
-      <div className="flex min-w-0 items-center gap-1.5">
-        <span
-          className={cn(
-            "break-all text-right font-semibold tabular-nums",
-            emphasize && "font-mono text-primary",
-          )}
-        >
-          {value}
-        </span>
-        <button
-          type="button"
-          onClick={() => void copy()}
-          aria-label={`Sao chép ${label.toLowerCase()}`}
-          title={copied ? "Đã sao chép" : "Sao chép"}
-          className="shrink-0 rounded-md p-1 text-muted-foreground transition hover:bg-surface-muted hover:text-foreground"
-        >
-          {copied ? (
-            <HiCheck className="size-4 text-success" />
-          ) : (
-            <HiOutlineClipboardDocument className="size-4" />
-          )}
-        </button>
-      </div>
-    </div>
-  );
-}
-
 export type TopupModalProps = {
   open: boolean;
   onClose: () => void;
@@ -149,7 +82,7 @@ export function TopupModal({ open, onClose, workspaceId, onPaid }: TopupModalPro
     () => moneyAccounts.find((a) => a.id === moneyAccountId),
     [moneyAccounts, moneyAccountId],
   );
-  const transferContent = toTransferContent(qr?.topupCode);
+  const transferContent = toTransferContent(qr?.topupCode, "COMVIA");
   const payAmount = qr?.amountInclVat ?? incl;
 
   // Chỉ poll khi popup mở và đang ở bước QR có topupCode — đóng popup → null → hook tự dọn.
@@ -384,38 +317,12 @@ export function TopupModal({ open, onClose, workspaceId, onPaid }: TopupModalPro
               Quét mã qua ứng dụng Ngân hàng hoặc Ví điện tử
             </p>
 
-            {selectedAccount && transferContent ? (
-              <div className="w-full border-t border-border/60 pt-3 text-sm">
-                <p className="mb-1 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Hoặc chuyển khoản thủ công
-                </p>
-                <div className="divide-y divide-border/60">
-                  {selectedAccount.bankCode ? (
-                    <TransferInfoRow label="Ngân hàng" value={selectedAccount.bankCode} />
-                  ) : null}
-                  {/* `bankName` được admin nhập là "Tên tài khoản" (chủ tài khoản) — app/admin/money-accounts. */}
-                  {selectedAccount.bankName ? (
-                    <TransferInfoRow label="Chủ tài khoản" value={selectedAccount.bankName} />
-                  ) : null}
-                  {selectedAccount.accountNumber ? (
-                    <TransferInfoRow label="Số tài khoản" value={selectedAccount.accountNumber} />
-                  ) : null}
-                  <TransferInfoRow
-                    label="Số tiền"
-                    value={formatVND(payAmount)}
-                    copyValue={String(payAmount)}
-                  />
-                  <TransferInfoRow
-                    label="Nội dung chuyển khoản"
-                    value={transferContent}
-                    emphasize
-                  />
-                </div>
-                <p className="mt-2 text-center text-xs text-amber-600">
-                  Nhập chính xác số tiền và nội dung chuyển khoản để hệ thống tự cộng tiền vào ví.
-                </p>
-              </div>
-            ) : null}
+            <ManualTransferInfo
+              account={selectedAccount}
+              amount={payAmount}
+              transferContent={transferContent}
+              note="Nhập chính xác số tiền và nội dung chuyển khoản để hệ thống tự cộng tiền vào ví."
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4 text-sm">

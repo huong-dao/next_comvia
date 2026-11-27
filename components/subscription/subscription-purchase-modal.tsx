@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { HiQrCode } from "react-icons/hi2";
+import { ManualTransferInfo, toTransferContent } from "@/components/payment/manual-transfer-info";
 import { Button } from "@/components/ui/button";
 import { useAlertModal } from "@/components/ui/alert-modal";
 import { Select } from "@/components/ui/input";
@@ -231,6 +232,13 @@ export function SubscriptionPurchaseModal({ plan, workspaceId, onClose, onPaid }
               </div>
             )}
             <p className="text-[10px] italic text-muted-foreground">Quét mã qua ứng dụng Ngân hàng hoặc Ví điện tử</p>
+
+            <ManualTransferInfo
+              account={moneyAccounts.find((a) => a.id === moneyAccountId)}
+              amount={purchase.amountInclVat}
+              transferContent={toTransferContent(purchase.purchaseCode, "COMVIASUB")}
+              note="Nhập chính xác số tiền và nội dung chuyển khoản để hệ thống tự kích hoạt gói."
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4 text-sm">
